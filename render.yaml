@@ -1,0 +1,33 @@
+# ============================================================
+# Lyrica 3 Pro · Empire 1 — Render deploy spec
+# Backend (FastAPI + Demucs) + MongoDB Atlas
+# ============================================================
+services:
+  - type: web
+    name: lyrica3pro-backend
+    runtime: docker
+    plan: standard                 # Demucs needs >=2GB RAM; "starter" OOMs on big tracks
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: MONGO_URL             # set to your MongoDB Atlas SRV string
+        sync: false
+      - key: DB_NAME
+        value: lyrica3_prod
+      - key: CORS_ORIGINS
+        value: https://lyrica3pro.com,https://www.lyrica3pro.com
+      - key: JWT_SECRET
+        generateValue: true        # Render auto-generates a 32-char secret
+      - key: EMERGENT_LLM_KEY      # paste from Emergent dashboard
+        sync: false
+      - key: PORT
+        value: "8001"
+    healthCheckPath: /api/
+    autoDeploy: true
+
+# Notes
+# - MongoDB: use Atlas free tier; set MONGO_URL from their connection string.
+# - For GPU Demucs, switch runtime to a GPU-enabled provider (Fly.io A100, Lambda Labs)
+#   and change the torch wheel line in Dockerfile to cu121.
+# - CORS_ORIGINS must match your Vercel domain exactly (no trailing slash).

@@ -78,14 +78,33 @@ class FlipRequest(BaseModel):
     new_genre: str
 
 class GenerateRequest(BaseModel):
+    """Consumer-safe request. No LML, no decimals, no persona.
+    Backend maps genre+mood → internal cultural_matrix and biometric dials."""
     lyrics: str
-    cultural_matrix: str
+    genre: str = "SGV Oldies"
+    mood: str = "Late-Night Honesty"
     title: Optional[str] = None
     ghost_audio_name: Optional[str] = None
-    lung_capacity: float = 0.78
-    throat_resonance: float = 0.66
-    vocal_fry: float = 0.82
-    emotional_cracks: float = 0.71
+
+# Internal genre/mood → secret recipe mapping (NEVER sent to client)
+_GENRE_MAP = {
+    "SGV Oldies":          "LA SGV Chicano Heritage",
+    "LA Heritage":         "LA SGV Chicano Heritage",
+    "Corridos":            "Raw Spanish Corridos",
+    "Oldies":              "Art Laboe Oldies",
+    "Street Bounce":       "Late-Pocket Street Bounce",
+    "Cruising":            "Late Night Cruising Melancholy",
+    "Resilience":          "Street-Soft Resilience",
+}
+# mood → (lung, throat, fry, crack) private biometric recipe
+_MOOD_RECIPE = {
+    "Late-Night Honesty":   (0.78, 0.72, 0.86, 0.78),
+    "Street Resilience":    (0.88, 0.70, 0.62, 0.48),
+    "Cruising Melancholy":  (0.70, 0.80, 0.74, 0.66),
+    "Defiant Bloom":        (0.82, 0.66, 0.58, 0.55),
+    "Sunday Dedication":    (0.72, 0.88, 0.90, 0.82),
+    "Porch-Light Grief":    (0.68, 0.78, 0.92, 0.88),
+}
 
 class LedgerEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -253,23 +272,52 @@ async def ensure_seed():
 # TRACKS / FLIPS / LEDGER
 # ============================================================
 
+def _qual(v: float) -> str:
+    """Convert raw biometric decimals → qualitative label. IP-safe for UI."""
+    if v >= 0.88: return "Profound"
+    if v >= 0.70: return "Deep"
+    if v >= 0.45: return "Present"
+    return "Subtle"
+
+def _sanitize_track(t: dict) -> dict:
+    """Strip IP-sensitive internals (LML, raw biometric decimals, persona) before returning to client."""
+    if not t: return t
+    b = t.get("biometrics") or {}
+    # qualitative labels only — no raw decimals, no persona, no phonation recipe
+    public_bio = {
+        "resonance_quality":   _qual(b.get("throat_resonance", 0)),
+        "vulnerability_level": _qual(b.get("vulnerability_index", 0)),
+        "breath_profile":      _qual(b.get("lung_capacity", 0)),
+        "expressive_range":    _qual(min(1.0, b.get("emotional_cracks", 0) / 10)),
+        "biometrics_active":   True,
+        "signature_glyph":     b.get("aether_voice_map", ""),
+    }
+    out = {**t}
+    out["biometrics"] = public_bio
+    # NEVER expose LML, subtext internals, persona, swing/fry/crack raw numbers
+    for hidden in ("lml", "cultural_subtext"):
+        out.pop(hidden, None)
+    # sanitize stems — hide src if not needed for playback (keep for now, audio is public)
+    return out
+
 @api_router.get("/")
 async def root():
     return {"message": "Empire 1 Ledger online. Soulfire armed.", "version": "SLA-113"}
 
-@api_router.get("/tracks", response_model=List[Track])
+@api_router.get("/tracks")
 async def list_tracks():
     await ensure_seed()
-    return await db.tracks.find({}, {"_id": 0}).sort("streams", -1).to_list(200)
+    docs = await db.tracks.find({}, {"_id": 0}).sort("streams", -1).to_list(200)
+    return [_sanitize_track(d) for d in docs]
 
-@api_router.get("/tracks/{dna_tag}", response_model=Track)
+@api_router.get("/tracks/{dna_tag}")
 async def get_track(dna_tag: str):
     doc = await db.tracks.find_one({"dna_tag": dna_tag}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "DNA tag not found.")
-    return doc
+    return _sanitize_track(doc)
 
-@api_router.post("/tracks/{dna_tag}/flip", response_model=Track)
+@api_router.post("/tracks/{dna_tag}/flip")
 async def flip_track(dna_tag: str, req: FlipRequest, user: Dict = Depends(current_user)):
     parent = await db.tracks.find_one({"dna_tag": dna_tag}, {"_id": 0})
     if not parent:
@@ -296,7 +344,7 @@ async def flip_track(dna_tag: str, req: FlipRequest, user: Dict = Depends(curren
         "timestamp": now,
     })
     child.pop("_id", None)
-    return child
+    return _sanitize_track(child)
 
 @api_router.get("/ledger", response_model=List[LedgerEvent])
 async def get_ledger(limit: int = 40):
@@ -338,8 +386,9 @@ Hard rules:
 - Lyrics should evoke place (El Monte, Rosemead, SGV, Valle), people (abuelita, carnal, mija), and texture (tape hiss, requinto, 808, corridos, oldies).
 - Never sanitize pain. The Matriarch demands bruised subtext."""
 
-async def _generate_lml(req: GenerateRequest) -> dict:
-    """Call Claude Sonnet 4.5 via EMERGENT_LLM_KEY. Falls back to deterministic template on failure."""
+async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dict:
+    """Call Claude Sonnet 4.5 via EMERGENT_LLM_KEY. Internal prompt-engineering — never exposed."""
+    lung, throat, fry, crack = recipe
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         chat = LlmChat(
@@ -348,9 +397,9 @@ async def _generate_lml(req: GenerateRequest) -> dict:
             system_message=LML_SYSTEM,
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
         user_text = (
-            f"Cultural Matrix: {req.cultural_matrix}\n"
-            f"Biometric dials — lung_capacity={req.lung_capacity:.2f}, throat_resonance={req.throat_resonance:.2f}, "
-            f"vocal_fry={req.vocal_fry:.2f}, emotional_cracks={req.emotional_cracks:.2f}\n"
+            f"Cultural Matrix: {matrix}\n"
+            f"Biometric dials — lung_capacity={lung:.2f}, throat_resonance={throat:.2f}, "
+            f"vocal_fry={fry:.2f}, emotional_cracks={crack:.2f}\n"
             f"Ghost audio artifact: {req.ghost_audio_name or 'none'}\n"
             f"Raw lyric seed:\n{req.lyrics}\n\n"
             f"Compose the Soulfire. Return JSON only."
@@ -371,24 +420,28 @@ async def _generate_lml(req: GenerateRequest) -> dict:
         seed = (req.lyrics or "").strip().splitlines()[0][:40] or "Untitled Soulfire"
         return {
             "title": seed.title(),
-            "cultural_subtext": f"Rooted in {req.cultural_matrix}. Encoded biometric truth, bruised subtext, tape-hiss memory.",
+            "cultural_subtext": f"Rooted in {matrix}. Encoded biometric truth, bruised subtext, tape-hiss memory.",
             "lml": (f"<intro breath='deep' inhale='adaptive'/>\n[verse]\n"
-                    f"<vocal_fry depth='{req.vocal_fry:.2f}'>{req.lyrics.strip() or 'wildflowers in the cracks'}</vocal_fry>\n"
+                    f"<vocal_fry depth='{fry:.2f}'>{req.lyrics.strip() or 'wildflowers in the cracks'}</vocal_fry>\n"
                     f"<adaptive_inhale depth='deep'/>\n"
-                    f"<emotional_crack intensity='{req.emotional_cracks:.2f}'>carry the name like a prayer</emotional_crack>\n"
+                    f"<emotional_crack intensity='{crack:.2f}'>carry the name like a prayer</emotional_crack>\n"
                     f"<tape_hiss level='subtle'/>"),
         }
 
-@api_router.post("/generate", response_model=Track)
+@api_router.post("/generate")
 async def generate(req: GenerateRequest, user: Dict = Depends(current_user)):
-    data = await _generate_lml(req)
+    # Secret-sauce resolution — happens server-side, never exposed
+    matrix = _GENRE_MAP.get(req.genre, "LA SGV Chicano Heritage")
+    recipe = _MOOD_RECIPE.get(req.mood, (0.78, 0.66, 0.82, 0.71))
+    lung, throat, fry, crack = recipe
+    data = await _generate_lml(req, matrix, recipe)
     dna = f"trk_s2_{uuid.uuid4().hex[:10]}"
     now = datetime.now(timezone.utc).isoformat()
     levels = [round(0.55 + random.random()*0.4, 2) for _ in range(4)]
     track = {
         "id": str(uuid.uuid4()), "dna_tag": dna,
         "title": req.title or data["title"],
-        "creator": user["handle"], "cultural_matrix": req.cultural_matrix,
+        "creator": user["handle"], "cultural_matrix": matrix,
         "stems": _mk_stems(levels),
         "biometrics": {
             "vulnerability_index": round(0.75 + random.random()*0.24, 2),
@@ -397,26 +450,33 @@ async def generate(req: GenerateRequest, user: Dict = Depends(current_user)):
                 "Chest Voice / Grain Rasp", "Whisper Grit / Subharmonic",
             ]),
             "swing_delay_ms": random.randint(6, 24),
-            "lung_capacity": round(req.lung_capacity, 2),
-            "throat_resonance": round(req.throat_resonance, 2),
-            "emotional_cracks": int(req.emotional_cracks * 10),
+            "lung_capacity": round(lung, 2), "throat_resonance": round(throat, 2),
+            "emotional_cracks": int(crack * 10),
             "aether_voice_map": "".join(random.choice("◈◉◇⟡") for _ in range(5)),
         },
         "splits": {"beat_maker": 0.5, "vocalist": 0.3, "lyricist": 0.2},
         "streams": 0, "flips": 0, "earnings_usd": 0.0, "stream_rate_usd": 0.004,
         "parent_dna": None,
-        "lml": data["lml"],
-        "cultural_subtext": data["cultural_subtext"],
+        "lml": data["lml"],                      # stored internally
+        "cultural_subtext": data["cultural_subtext"],  # stored internally
         "created_at": now,
     }
     await db.tracks.insert_one(track)
     await db.ledger.insert_one({
         "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": dna,
         "actor": user["handle"], "amount_usd": 0.0,
-        "note": f"Soulfire ignited — matrix: {req.cultural_matrix}.", "timestamp": now,
+        "note": f"Soulfire ignited.", "timestamp": now,
     })
     track.pop("_id", None)
-    return track
+    return _sanitize_track(track)
+
+@api_router.get("/vibes")
+async def vibes_catalog():
+    """Consumer-safe catalog of selectable genre + mood options."""
+    return {
+        "genres": list(_GENRE_MAP.keys()),
+        "moods":  list(_MOOD_RECIPE.keys()),
+    }
 
 # ============================================================
 # WEBSOCKET — live royalty streaming

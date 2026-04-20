@@ -1,7 +1,7 @@
-"""Backend test suite for Empire 1 Ledger / Lyrica 3 Pro / Sonance Pro."""
+"""Backend test suite — Empire 1 Ledger / Lyrica 3 Pro (iter 2, sanitized IP)."""
 import os, time, json, asyncio, pytest, requests, websockets
 
-BASE = os.environ.get("REACT_APP_BACKEND_URL", "https://can-cant-builder.preview.emergentagent.com").rstrip("/")
+BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/")
 WS_BASE = BASE.replace("https://", "wss://").replace("http://", "ws://")
 
 HANDLE = "lyrica.prime"
@@ -19,10 +19,7 @@ def _ensure_user():
     if r.status_code != 200:
         r = session.post(f"{BASE}/api/auth/register", json={"handle": HANDLE, "password": PASS})
         assert r.status_code in (200, 201), f"register failed: {r.status_code} {r.text}"
-    else:
-        pass
-    data = r.json()
-    _token["t"] = data["token"]
+    _token["t"] = r.json()["token"]
     return _token["t"]
 
 def auth_headers():
@@ -35,9 +32,7 @@ class TestAuth:
         r = session.post(f"{BASE}/api/auth/register", json={"handle": handle, "password": "abc123"})
         assert r.status_code == 200, r.text
         d = r.json()
-        assert d["handle"] == handle
-        assert d["token"]
-        assert d["wallet"].startswith("0x")
+        assert d["handle"] == handle and d["token"] and d["wallet"].startswith("0x")
 
     def test_register_duplicate(self):
         _ensure_user()
@@ -47,8 +42,7 @@ class TestAuth:
     def test_login_success(self):
         _ensure_user()
         r = session.post(f"{BASE}/api/auth/login", json={"handle": HANDLE, "password": PASS})
-        assert r.status_code == 200
-        assert r.json()["token"]
+        assert r.status_code == 200 and r.json()["token"]
 
     def test_login_invalid(self):
         r = session.post(f"{BASE}/api/auth/login", json={"handle": HANDLE, "password": "wrong"})
@@ -56,16 +50,35 @@ class TestAuth:
 
     def test_me_with_token(self):
         r = session.get(f"{BASE}/api/auth/me", headers=auth_headers())
-        assert r.status_code == 200
-        assert r.json()["handle"] == HANDLE
+        assert r.status_code == 200 and r.json()["handle"] == HANDLE
 
     def test_me_without_token(self):
         r = session.get(f"{BASE}/api/auth/me")
         assert r.status_code in (401, 403)
 
-# ---------- TRACKS ----------
+# ---------- SANITIZATION (critical for iter 2) ----------
+FORBIDDEN_TRACK_KEYS = {"lml", "cultural_subtext"}
+FORBIDDEN_BIO_KEYS = {"lung_capacity", "throat_resonance", "vocal_fry",
+                     "emotional_cracks", "phonation_type", "swing_delay_ms",
+                     "vulnerability_index"}
+EXPECTED_BIO_KEYS = {"resonance_quality", "vulnerability_level", "breath_profile",
+                    "expressive_range", "biometrics_active", "signature_glyph"}
+QUAL_VALUES = {"Subtle", "Present", "Deep", "Profound"}
+
+def _assert_sanitized(t):
+    for k in FORBIDDEN_TRACK_KEYS:
+        assert k not in t or t.get(k) is None, f"track leaks {k}: {t.get(k)}"
+    bio = t.get("biometrics", {}) or {}
+    for k in FORBIDDEN_BIO_KEYS:
+        assert k not in bio, f"biometrics leaks {k}: {bio.get(k)}"
+    for k in EXPECTED_BIO_KEYS:
+        assert k in bio, f"biometrics missing {k}"
+    for qk in ("resonance_quality", "vulnerability_level", "breath_profile", "expressive_range"):
+        assert bio[qk] in QUAL_VALUES, f"{qk}={bio[qk]!r} not qualitative"
+    assert bio["biometrics_active"] is True
+
 class TestTracks:
-    def test_list_tracks_seeded(self):
+    def test_list_tracks_seeded_and_sanitized(self):
         r = session.get(f"{BASE}/api/tracks")
         assert r.status_code == 200
         tracks = r.json()
@@ -73,16 +86,18 @@ class TestTracks:
         titles = [t["title"] for t in tracks]
         for needed in ["Wildflowers in El Monte", "Dedication on a Sunday Night",
                         "Corrido del Valle", "Late Pocket Cruisin'"]:
-            assert needed in titles, f"missing {needed}"
+            assert needed in titles
+        # sanitization applies to every track
+        for t in tracks:
+            _assert_sanitized(t)
 
-    def test_get_track_by_dna(self):
+    def test_get_track_sanitized(self):
         r = session.get(f"{BASE}/api/tracks/trk_alpha_006_elmonte")
         assert r.status_code == 200
         t = r.json()
         assert t["title"] == "Wildflowers in El Monte"
         assert len(t["stems"]) == 4
-        assert "vulnerability_index" in t["biometrics"]
-        assert t["lml"]
+        _assert_sanitized(t)
 
     def test_get_track_404(self):
         r = session.get(f"{BASE}/api/tracks/nonexistent_dna")
@@ -101,10 +116,9 @@ class TestFlip:
         assert child["parent_dna"] == parent_dna
         assert child["title"] == "TEST_Flip Child"
         assert child["creator"] == HANDLE
-        # parent flips incremented
+        _assert_sanitized(child)  # flip response also sanitized
         after = session.get(f"{BASE}/api/tracks/{parent_dna}").json()
         assert after["flips"] == before["flips"] + 1
-        # ledger has flip event
         led = session.get(f"{BASE}/api/ledger").json()
         assert any(e["kind"] == "flip" and e["dna_tag"] == child["dna_tag"] for e in led)
 
@@ -137,29 +151,72 @@ class TestWallet:
         r = session.get(f"{BASE}/api/wallet")
         assert r.status_code in (401, 403)
 
-# ---------- GENERATE (LLM) ----------
+# ---------- VIBES CATALOG (new in iter 2) ----------
+class TestVibes:
+    def test_vibes(self):
+        r = session.get(f"{BASE}/api/vibes")
+        assert r.status_code == 200
+        d = r.json()
+        assert isinstance(d.get("genres"), list) and isinstance(d.get("moods"), list)
+        assert len(d["genres"]) == 7, f"expected 7 genres got {len(d['genres'])}"
+        assert len(d["moods"])  == 6, f"expected 6 moods got {len(d['moods'])}"
+        assert "SGV Oldies" in d["genres"]
+        assert "Late-Night Honesty" in d["moods"]
+
+# ---------- GENERATE (LLM) — new consumer schema ----------
 class TestGenerate:
-    def test_generate_llm(self):
+    def test_generate_new_schema(self):
         payload = {
             "lyrics": "East of the freeway wildflowers bloom",
-            "cultural_matrix": "LA SGV Chicano Heritage",
-            "lung_capacity": 0.8, "throat_resonance": 0.7,
-            "vocal_fry": 0.82, "emotional_cracks": 0.7,
+            "genre": "SGV Oldies",
+            "mood": "Late-Night Honesty",
+            "title": "TEST_Wildflowers Echo",
         }
-        r = session.post(f"{BASE}/api/generate", headers=auth_headers(), json=payload, timeout=90)
+        r = session.post(f"{BASE}/api/generate", headers=auth_headers(), json=payload, timeout=120)
         assert r.status_code == 200, r.text
         t = r.json()
-        assert t["lml"] and len(t["lml"]) > 20
-        assert t["cultural_subtext"]
+        _assert_sanitized(t)  # no lml/persona leaked
         assert t["creator"] == HANDLE
         assert t["dna_tag"].startswith("trk_s2_")
-        # Verify persistence
+        assert t["title"]  # honors provided or generated title
+        # Persisted
         g = session.get(f"{BASE}/api/tracks/{t['dna_tag']}")
         assert g.status_code == 200
+        _assert_sanitized(g.json())
 
     def test_generate_requires_auth(self):
-        r = session.post(f"{BASE}/api/generate", json={"lyrics": "x", "cultural_matrix": "y"})
+        r = session.post(f"{BASE}/api/generate",
+                         json={"lyrics": "x", "genre": "SGV Oldies", "mood": "Late-Night Honesty"})
         assert r.status_code in (401, 403)
+
+    def test_generate_missing_lyrics(self):
+        r = session.post(f"{BASE}/api/generate", headers=auth_headers(),
+                         json={"genre": "SGV Oldies", "mood": "Late-Night Honesty"})
+        assert r.status_code == 422, r.text
+
+    def test_generate_ignores_old_schema_fields(self):
+        """Old schema (cultural_matrix, lung_capacity, …) should be ignored; request still succeeds if lyrics present."""
+        payload = {
+            "lyrics": "late night mija",
+            "cultural_matrix": "LEAKED",
+            "lung_capacity": 0.9,
+            "throat_resonance": 0.9,
+            "vocal_fry": 0.9,
+            "emotional_cracks": 0.9,
+        }
+        r = session.post(f"{BASE}/api/generate", headers=auth_headers(), json=payload, timeout=120)
+        assert r.status_code == 200, r.text
+        t = r.json()
+        _assert_sanitized(t)
+
+# ---------- PWA manifest ----------
+class TestManifest:
+    def test_manifest(self):
+        r = requests.get(f"{BASE}/manifest.json", timeout=10)
+        assert r.status_code == 200
+        d = r.json()
+        assert d["start_url"] == "/deck"
+        assert d["theme_color"] == "#030303"
 
 # ---------- WEBSOCKET ----------
 class TestWebSocket:
@@ -169,11 +226,8 @@ class TestWebSocket:
         async def run():
             async with websockets.connect(url, open_timeout=10) as ws:
                 msg = await asyncio.wait_for(ws.recv(), timeout=8)
-                data = json.loads(msg)
-                assert "amount_usd" in data
-                assert "dna_tag" in data
-                assert "title" in data
-                assert "splits_usd" in data
-                return data
-        data = asyncio.get_event_loop().run_until_complete(run()) if False else asyncio.run(run())
+                return json.loads(msg)
+        data = asyncio.run(run())
         assert data["kind"] == "stream"
+        for k in ("amount_usd", "dna_tag", "title", "splits_usd"):
+            assert k in data
