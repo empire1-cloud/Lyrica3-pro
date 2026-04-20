@@ -24,11 +24,15 @@ export default function StemMixer({ stems, onStemsChange, onPulse }) {
     audios.current.forEach((a) => { try { a.pause(); } catch {} });
     audios.current = stems.map((s) => {
       const a = new Audio();
-      a.src = s.src || "";
+      const url = s.src
+        ? (s.src.startsWith("http") || s.src.startsWith("blob:")
+            ? s.src
+            : `${process.env.REACT_APP_BACKEND_URL}${s.src}`)
+        : "";
+      a.src = url;
       a.loop = true;
       a.preload = "auto";
       a.volume = s.level;
-      // NOTE: no crossOrigin — SoundHelix lacks CORS headers.
       return a;
     });
     const first = audios.current[0];

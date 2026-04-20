@@ -1,48 +1,86 @@
 import React, { useEffect, useState } from "react";
-import { generate, apiGet } from "../lib/api";
+import { generate, apiGet, getVibes } from "../lib/api";
 import { useNavigate } from "react-router-dom";
-import { Flame, UploadCloud, Sparkles, Volume2, Check } from "lucide-react";
+import { Flame, UploadCloud, Sparkles, Volume2, Check, ChevronDown, ChevronUp } from "lucide-react";
 
-const FALLBACK_GENRES = ["SGV Oldies", "LA Heritage", "Corridos", "Oldies", "Street Bounce", "Cruising", "Resilience"];
-const FALLBACK_MOODS  = ["Late-Night Honesty", "Street Resilience", "Cruising Melancholy", "Defiant Bloom", "Sunday Dedication", "Porch-Light Grief"];
+const FALLBACK_GROUPS = {
+  genre_groups: [
+    { title: "LA · SGV · Chicano",
+      items: ["SGV Oldies","LA Heritage","Art Laboe Sunday Dedication","SGV Backyard Party",
+              "Nahuatl Ancestry","West Coast G-Funk Piano","Acoustic Requinto Weeping",
+              "Corridos","Oldies","Street Bounce","Cruising","Resilience"] },
+    { title: "Urban · Contemporary",
+      items: ["R&B","Trap Soul","Hip Hop","Rap","Drill"] },
+    { title: "Global",
+      items: ["Afrobeats","UK Garage","Jersey Club","Bossa Nova"] },
+  ],
+  mood_groups: [
+    { title: "Chicano/Oldies Lineage",
+      items: ["Late-Night Honesty","Sunday Dedication","Porch-Light Grief","Requinto Lament","Ancestral Fire","Lowrider Calm"] },
+    { title: "Street / Bounce",
+      items: ["Street Resilience","Defiant Bloom","Backyard Euphoria","Soft Menace"] },
+    { title: "Intimate",
+      items: ["Cruising Melancholy","After-Hours Prayer"] },
+  ],
+};
 
-const ChipGrid = ({ options, value, onChange, color = "#f5a524", testId }) => (
-  <div className="flex flex-wrap gap-2" data-testid={testId}>
-    {options.map((o) => {
-      const on = value === o;
-      return (
-        <button key={o} onClick={() => onChange(o)} type="button"
-          className={`px-3 py-2 rounded-full border text-[11px] uppercase tracking-[0.14em] transition-all
-            ${on
-              ? "text-[#1a0e00] border-transparent"
-              : "text-[#c9bfae] border-[#22222a] bg-[#0d0d10] hover:border-[#f5a524]/40 hover:text-[#f3ece1]"}`}
-          style={on ? { background: `linear-gradient(180deg, ${color} 0%, ${color}aa 100%)`, boxShadow: `0 0 18px ${color}66` } : undefined}>
-          {on && <Check size={11} className="inline mr-1 -translate-y-[1px]"/>}
-          {o}
-        </button>
-      );
-    })}
-  </div>
-);
+const ChipGroupGrid = ({ groups, value, onChange, color = "#f5a524", testId }) => {
+  const [open, setOpen] = useState(() => groups.map((_, i) => i === 0));
+  return (
+    <div className="space-y-3" data-testid={testId}>
+      {groups.map((g, gi) => (
+        <div key={g.title} className="border border-[#1c1c22] rounded-[4px] bg-[#0a0a0c]">
+          <button
+            type="button"
+            onClick={() => setOpen((o) => o.map((v, i) => (i === gi ? !v : v)))}
+            className="w-full px-3 py-2.5 flex items-center justify-between text-left">
+            <span className="etched text-[#c9bfae]">{g.title}</span>
+            <span className="text-[#6b6257]">
+              {open[gi] ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+            </span>
+          </button>
+          {open[gi] && (
+            <div className="px-3 pb-3 flex flex-wrap gap-2">
+              {g.items.map((o) => {
+                const on = value === o;
+                return (
+                  <button key={o} type="button" onClick={() => onChange(o)}
+                    className={`px-3 py-1.5 rounded-full border text-[10.5px] uppercase tracking-[0.12em] transition-all
+                      ${on
+                        ? "text-[#1a0e00] border-transparent"
+                        : "text-[#c9bfae] border-[#22222a] bg-[#0d0d10] hover:border-[#f5a524]/40 hover:text-[#f3ece1]"}`}
+                    style={on ? { background: `linear-gradient(180deg, ${color} 0%, ${color}aa 100%)`, boxShadow: `0 0 16px ${color}66` } : undefined}>
+                    {on && <Check size={10} className="inline mr-1 -translate-y-[1px]"/>}
+                    {o}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default function MutationEngine() {
   const nav = useNavigate();
   const [lyrics, setLyrics] = useState("");
   const [title, setTitle] = useState("");
   const [ghost, setGhost] = useState("");
-  const [genres, setGenres] = useState(FALLBACK_GENRES);
-  const [moods, setMoods] = useState(FALLBACK_MOODS);
-  const [genre, setGenre] = useState(FALLBACK_GENRES[0]);
-  const [mood, setMood] = useState(FALLBACK_MOODS[0]);
+  const [genreGroups, setGenreGroups] = useState(FALLBACK_GROUPS.genre_groups);
+  const [moodGroups, setMoodGroups]   = useState(FALLBACK_GROUPS.mood_groups);
+  const [genre, setGenre] = useState(FALLBACK_GROUPS.genre_groups[0].items[0]);
+  const [mood, setMood]   = useState(FALLBACK_GROUPS.mood_groups[0].items[0]);
   const [igniting, setIgniting] = useState(false);
   const [stage, setStage] = useState("");
   const [result, setResult] = useState(null);
   const [err, setErr] = useState("");
 
   useEffect(() => {
-    apiGet("/vibes").then((v) => {
-      if (v?.genres?.length) { setGenres(v.genres); setGenre(v.genres[0]); }
-      if (v?.moods?.length)  { setMoods(v.moods);   setMood(v.moods[0]); }
+    getVibes().then((v) => {
+      if (v?.genre_groups?.length) { setGenreGroups(v.genre_groups); setGenre(v.genre_groups[0].items[0]); }
+      if (v?.mood_groups?.length)  { setMoodGroups(v.mood_groups);   setMood(v.mood_groups[0].items[0]); }
     }).catch(() => {});
   }, []);
 
@@ -128,13 +166,13 @@ export default function MutationEngine() {
 
         <div className="col-span-12 lg:col-span-5 space-y-4 md:space-y-5">
           <div className="panel rounded-[6px] p-4 md:p-6">
-            <div className="etched text-[#c9bfae] mb-3">Genre</div>
-            <ChipGrid options={genres} value={genre} onChange={setGenre} color="#f5a524" testId="genre-chips"/>
+            <div className="etched text-[#c9bfae] mb-3">Genre · Cultural Matrix</div>
+            <ChipGroupGrid groups={genreGroups} value={genre} onChange={setGenre} color="#f5a524" testId="genre-chips"/>
           </div>
 
           <div className="panel rounded-[6px] p-4 md:p-6">
-            <div className="etched text-[#c9bfae] mb-3">Mood</div>
-            <ChipGrid options={moods} value={mood} onChange={setMood} color="#ff5eac" testId="mood-chips"/>
+            <div className="etched text-[#c9bfae] mb-3">Mood · Emotional Register</div>
+            <ChipGroupGrid groups={moodGroups} value={mood} onChange={setMood} color="#ff5eac" testId="mood-chips"/>
           </div>
 
           <div className="panel rounded-[6px] p-4 md:p-6 relative overflow-hidden">

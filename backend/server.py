@@ -1,9 +1,10 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, status, UploadFile, File
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-import os, logging, random, asyncio, json, re, uuid, hashlib
+import os, logging, random, asyncio, json, re, uuid, hashlib, shutil
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Literal, Dict
@@ -88,13 +89,29 @@ class GenerateRequest(BaseModel):
 
 # Internal genre/mood → secret recipe mapping (NEVER sent to client)
 _GENRE_MAP = {
-    "SGV Oldies":          "LA SGV Chicano Heritage",
-    "LA Heritage":         "LA SGV Chicano Heritage",
-    "Corridos":            "Raw Spanish Corridos",
-    "Oldies":              "Art Laboe Oldies",
-    "Street Bounce":       "Late-Pocket Street Bounce",
-    "Cruising":            "Late Night Cruising Melancholy",
-    "Resilience":          "Street-Soft Resilience",
+    # LA / SGV / Chicano spine
+    "SGV Oldies":                     "LA SGV Chicano Heritage",
+    "LA Heritage":                    "LA SGV Chicano Heritage",
+    "Art Laboe Sunday Dedication":    "Art Laboe Oldies",
+    "SGV Backyard Party":             "Late-Pocket Street Bounce",
+    "Nahuatl Ancestry":               "Pre-Columbian Ancestral",
+    "West Coast G-Funk Piano":        "West Coast G-Funk",
+    "Acoustic Requinto Weeping":      "Raw Spanish Corridos",
+    "Corridos":                       "Raw Spanish Corridos",
+    "Oldies":                         "Art Laboe Oldies",
+    "Street Bounce":                  "Late-Pocket Street Bounce",
+    "Cruising":                       "Late Night Cruising Melancholy",
+    "Resilience":                     "Street-Soft Resilience",
+    # Urban / contemporary
+    "R&B":                            "Neo-Soul R&B",
+    "Trap Soul":                      "Trap Soul",
+    "Hip Hop":                        "Boom Bap Hip-Hop",
+    "Rap":                            "West Coast Rap",
+    "Drill":                          "Drill",
+    "Afrobeats":                      "Afrobeats",
+    "UK Garage":                      "UK Garage",
+    "Jersey Club":                    "Jersey Club",
+    "Bossa Nova":                     "Bossa Nova",
 }
 # mood → (lung, throat, fry, crack) private biometric recipe
 _MOOD_RECIPE = {
@@ -104,6 +121,12 @@ _MOOD_RECIPE = {
     "Defiant Bloom":        (0.82, 0.66, 0.58, 0.55),
     "Sunday Dedication":    (0.72, 0.88, 0.90, 0.82),
     "Porch-Light Grief":    (0.68, 0.78, 0.92, 0.88),
+    "Ancestral Fire":       (0.92, 0.84, 0.70, 0.74),
+    "Backyard Euphoria":    (0.86, 0.64, 0.48, 0.38),
+    "Soft Menace":          (0.74, 0.72, 0.82, 0.68),
+    "Requinto Lament":      (0.66, 0.92, 0.88, 0.90),
+    "After-Hours Prayer":   (0.70, 0.84, 0.94, 0.86),
+    "Lowrider Calm":        (0.80, 0.70, 0.64, 0.52),
 }
 
 class LedgerEvent(BaseModel):
@@ -476,7 +499,123 @@ async def vibes_catalog():
     return {
         "genres": list(_GENRE_MAP.keys()),
         "moods":  list(_MOOD_RECIPE.keys()),
+        "genre_groups": [
+            {"title": "LA · SGV · Chicano",
+             "items": ["SGV Oldies", "LA Heritage", "Art Laboe Sunday Dedication",
+                       "SGV Backyard Party", "Nahuatl Ancestry", "West Coast G-Funk Piano",
+                       "Acoustic Requinto Weeping", "Corridos", "Oldies",
+                       "Street Bounce", "Cruising", "Resilience"]},
+            {"title": "Urban · Contemporary",
+             "items": ["R&B", "Trap Soul", "Hip Hop", "Rap", "Drill"]},
+            {"title": "Global",
+             "items": ["Afrobeats", "UK Garage", "Jersey Club", "Bossa Nova"]},
+        ],
+        "mood_groups": [
+            {"title": "Chicano/Oldies Lineage",
+             "items": ["Late-Night Honesty", "Sunday Dedication", "Porch-Light Grief",
+                       "Requinto Lament", "Ancestral Fire", "Lowrider Calm"]},
+            {"title": "Street / Bounce",
+             "items": ["Street Resilience", "Defiant Bloom", "Backyard Euphoria", "Soft Menace"]},
+            {"title": "Intimate",
+             "items": ["Cruising Melancholy", "After-Hours Prayer"]},
+        ],
     }
+
+# ============================================================
+# DEMUCS SEPARATION (simulated) — S2 Stem Upload
+# ============================================================
+
+UPLOAD_DIR = ROOT_DIR / "static" / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+@api_router.post("/demucs/separate")
+async def demucs_separate(file: UploadFile = File(...), user: Dict = Depends(current_user)):
+    """
+    Upload endpoint. In production this hands off to the HTDemucs v4 worker
+    (see backend/demucs_worker.py + Dockerfile). Here we simulate: the uploaded
+    audio is persisted and returned as 4 separate stem URLs (one per track),
+    so the 4-fader mixer can mix 4 independent copies of the same file.
+    Each copy gets a different default gain profile to emulate isolation.
+    """
+    if not file.content_type or not file.content_type.startswith(("audio/", "video/")):
+        raise HTTPException(400, "Upload must be audio or video.")
+    job = uuid.uuid4().hex[:10]
+    ext = (file.filename or "track").split(".")[-1].lower()
+    ext = ext if ext in ("mp3","wav","m4a","ogg","flac","mp4","mov","webm") else "mp3"
+    dest = UPLOAD_DIR / f"{job}.{ext}"
+    with open(dest, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    public = f"/static/uploads/{dest.name}"
+    # 4 "stems" = same source file. Fader volumes give perceptual isolation.
+    # In prod this switches to demucs_worker.separate_to_stems(dest) which returns 4 DIFFERENT URLs.
+    names = ["Raw Human Pipes", "Late-Pocket Drums", "Sub Bass / Acoustic Requinto", "Analog Melody"]
+    default_levels = [0.95, 0.0, 0.0, 0.0]  # vocals up, others muted initially — user solos in
+    stems = [
+        {"name": n, "level": default_levels[i], "peak": 0.5, "src": public}
+        for i, n in enumerate(names)
+    ]
+    await db.ledger.insert_one({
+        "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": f"upload_{job}",
+        "actor": user["handle"], "amount_usd": 0.0,
+        "note": f"Demucs separation job queued · {file.filename}",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"job": job, "source_url": public, "stems": stems, "engine": "htdemucs-v4"}
+
+# ============================================================
+# BLOODLINE LEADERBOARD (Universal Stream)
+# ============================================================
+
+@api_router.get("/leaderboard/bloodlines")
+async def bloodlines(limit: int = 8):
+    """Walk every track's parent_dna chain back to its root, then aggregate
+    streams + earnings per root. Returns top N bloodlines with full chain."""
+    await ensure_seed()
+    tracks = await db.tracks.find({}, {"_id": 0}).to_list(500)
+    by_dna = {t["dna_tag"]: t for t in tracks}
+
+    def root_of(t):
+        seen = set()
+        cur = t
+        while cur.get("parent_dna") and cur["parent_dna"] in by_dna and cur["dna_tag"] not in seen:
+            seen.add(cur["dna_tag"])
+            cur = by_dna[cur["parent_dna"]]
+        return cur
+
+    groups = {}
+    for t in tracks:
+        r = root_of(t)
+        g = groups.setdefault(r["dna_tag"], {"root": r, "chain": [], "streams": 0, "earnings_usd": 0.0, "flips": 0})
+        g["chain"].append(t)
+        g["streams"] += int(t.get("streams", 0))
+        g["earnings_usd"] += float(t.get("earnings_usd", 0.0))
+        g["flips"] += int(t.get("flips", 0))
+
+    out = []
+    for g in groups.values():
+        root = g["root"]
+        chain_sorted = sorted(g["chain"], key=lambda x: x.get("created_at", ""))
+        out.append({
+            "root_dna": root["dna_tag"],
+            "root_title": root["title"],
+            "root_creator": root["creator"],
+            "root_matrix": root["cultural_matrix"],
+            "chain": [
+                {
+                    "dna_tag": c["dna_tag"], "title": c["title"], "creator": c["creator"],
+                    "matrix": c["cultural_matrix"], "parent_dna": c.get("parent_dna"),
+                    "streams": c.get("streams", 0), "earnings_usd": round(c.get("earnings_usd", 0.0), 2),
+                    "is_root": c["dna_tag"] == root["dna_tag"],
+                }
+                for c in chain_sorted
+            ],
+            "total_streams": g["streams"],
+            "total_earnings_usd": round(g["earnings_usd"], 2),
+            "total_flips": g["flips"],
+            "depth": len(g["chain"]),
+        })
+    out.sort(key=lambda x: x["total_earnings_usd"], reverse=True)
+    return {"bloodlines": out[:limit], "ts": datetime.now(timezone.utc).isoformat()}
 
 # ============================================================
 # WEBSOCKET — live royalty streaming
@@ -540,6 +679,10 @@ async def ws_royalties(ws: WebSocket):
 
 # ============================================================
 app.include_router(api_router)
+
+# Static mount for uploaded audio + Demucs stems
+app.mount("/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,

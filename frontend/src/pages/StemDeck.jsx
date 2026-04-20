@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { getTracks, getWallet } from "../lib/api";
+import React, { useEffect, useRef, useState } from "react";
+import { getTracks, getWallet, uploadForDemucs } from "../lib/api";
 import StemMixer from "../components/StemMixer";
-import { Activity, Fingerprint, Zap, Heart, Sparkles } from "lucide-react";
+import { Activity, Fingerprint, Zap, Heart, Sparkles, UploadCloud, Loader2 } from "lucide-react";
 
 /** Glowing qualitative chip — no decimals, no math, just vibe. */
 const QualChip = ({ icon: Icon, label, value, color = "#f5a524", testId }) => (
@@ -28,16 +28,49 @@ export default function StemDeck() {
   const [active, setActive] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [pulse, setPulse] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadErr, setUploadErr] = useState("");
+  const fileRef = useRef(null);
 
   useEffect(() => {
     getTracks().then((ts) => { setTracks(ts); setActive(ts[0]); });
     getWallet().then(setWallet).catch(() => {});
   }, []);
 
-  // fire a short pulse when the mixer reports a simulated vocal-fry / crack spike
   const onPulse = () => {
     setPulse(true);
     setTimeout(() => setPulse(false), 650);
+  };
+
+  const onUpload = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setUploading(true); setUploadErr("");
+    try {
+      const { job, stems } = await uploadForDemucs(f);
+      // craft a synthetic "uploaded" track that feeds straight into the mixer
+      const synthetic = {
+        id: job,
+        dna_tag: `upload_${job}`,
+        title: f.name.replace(/\.[^.]+$/, "") || "Uploaded Track",
+        creator: "you",
+        cultural_matrix: "User Upload · HTDemucs v4",
+        stems,
+        biometrics: {
+          resonance_quality: "Present", vulnerability_level: "Deep",
+          breath_profile: "Present", expressive_range: "Present",
+          biometrics_active: true, signature_glyph: "◈◉◇⟡◉",
+        },
+        streams: 0, flips: 0, earnings_usd: 0,
+      };
+      setTracks((prev) => [synthetic, ...prev.filter(t => t.dna_tag !== synthetic.dna_tag)]);
+      setActive(synthetic);
+    } catch (ex) {
+      setUploadErr(ex?.response?.data?.detail || "Upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   if (!active) {
@@ -72,7 +105,24 @@ export default function StemDeck() {
       </div>
 
       {/* track ribbon */}
-      <div className="flex gap-2 mb-5 md:mb-6 overflow-x-auto pb-2 -mx-2 px-2" data-testid="track-ribbon">
+      <div className="flex gap-2 mb-5 md:mb-6 overflow-x-auto pb-2 -mx-2 px-2 items-center" data-testid="track-ribbon">
+        {/* Upload button */}
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          data-testid="demucs-upload-btn"
+          className="shrink-0 px-3 md:px-4 py-2 rounded-[3px] border border-[#ff5eac]/50 bg-[#ff5eac]/10 text-[#ffb3d5] uppercase text-[10px] md:text-[11px] tracking-[0.16em] hover:bg-[#ff5eac]/20 transition flex items-center gap-2">
+          {uploading ? <Loader2 size={12} className="animate-spin"/> : <UploadCloud size={12}/>}
+          {uploading ? "Separating stems…" : "Upload · HTDemucs v4"}
+        </button>
+        <input
+          ref={fileRef} type="file" accept="audio/*,video/*"
+          onChange={onUpload}
+          className="hidden"
+          data-testid="demucs-upload-input"
+        />
+        {uploadErr && <span className="shrink-0 text-[10px] text-[#ff5eac] font-mono">{uploadErr}</span>}
+
         {tracks.map((t) => (
           <button
             key={t.dna_tag}

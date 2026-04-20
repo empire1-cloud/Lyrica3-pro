@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { Radio, Sliders, Flame, LogOut, CircleUser, Menu, X } from "lucide-react";
+import { Radio, Sliders, Flame, LogOut, CircleUser, Menu, X, Globe } from "lucide-react";
 
 const navItems = [
-  { to: "/deck",   label: "Stem Deck",    icon: Sliders },
-  { to: "/feed",   label: "Flip-It Feed", icon: Radio },
-  { to: "/ignite", label: "S2 Mutation",  icon: Flame },
+  { to: "/deck",      label: "Stem Deck",        icon: Sliders },
+  { to: "/feed",      label: "Flip-It Feed",     icon: Radio },
+  { to: "/universal", label: "Universal Stream", icon: Globe },
+  { to: "/ignite",    label: "S2 Mutation",      icon: Flame },
 ];
 
 export default function Shell({ children }) {

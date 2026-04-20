@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import StemDeck from "./pages/StemDeck";
 import FlipFeed from "./pages/FlipFeed";
 import MutationEngine from "./pages/MutationEngine";
+import UniversalStream from "./pages/UniversalStream";
 
 function Protected({ children }) {
   const { user, loading, token } = useAuth();
@@ -21,12 +22,13 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login"  element={<Login/>}/>
-            <Route path="/deck"   element={<Protected><StemDeck/></Protected>}/>
-            <Route path="/feed"   element={<Protected><FlipFeed/></Protected>}/>
-            <Route path="/ignite" element={<Protected><MutationEngine/></Protected>}/>
-            <Route path="/"       element={<Navigate to="/deck" replace/>}/>
-            <Route path="*"       element={<Navigate to="/deck" replace/>}/>
+            <Route path="/login"     element={<Login/>}/>
+            <Route path="/deck"      element={<Protected><StemDeck/></Protected>}/>
+            <Route path="/feed"      element={<Protected><FlipFeed/></Protected>}/>
+            <Route path="/ignite"    element={<Protected><MutationEngine/></Protected>}/>
+            <Route path="/universal" element={<Protected><UniversalStream/></Protected>}/>
+            <Route path="/"          element={<Navigate to="/deck" replace/>}/>
+            <Route path="*"          element={<Navigate to="/deck" replace/>}/>
           </Routes>
         </BrowserRouter>
       </AuthProvider>
