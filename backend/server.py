@@ -215,12 +215,23 @@ SEED = [
 ]
 
 async def ensure_seed():
-    if await db.tracks.count_documents({}) > 0:
-        return
+    """Idempotent upsert — also backfills new fields (lml, cultural_subtext) on existing docs."""
     now = datetime.now(timezone.utc).isoformat()
-    docs = []
     for s in SEED:
-        docs.append({
+        existing = await db.tracks.find_one({"dna_tag": s["dna_tag"]}, {"_id": 0})
+        if existing:
+            # backfill any missing/null fields without clobbering streams/earnings/flips
+            updates = {}
+            if not existing.get("lml"):              updates["lml"] = s["lml"]
+            if not existing.get("cultural_subtext"): updates["cultural_subtext"] = f"Rooted in {s['cultural_matrix']}. Encoded biometric truth."
+            # ensure stems have src (audio URLs)
+            stems = existing.get("stems", [])
+            if any(not st.get("src") for st in stems):
+                updates["stems"] = _mk_stems(s["levels"])
+            if updates:
+                await db.tracks.update_one({"dna_tag": s["dna_tag"]}, {"$set": updates})
+            continue
+        await db.tracks.insert_one({
             "id": str(uuid.uuid4()),
             "dna_tag": s["dna_tag"], "title": s["title"], "creator": s["creator"],
             "cultural_matrix": s["cultural_matrix"], "stems": _mk_stems(s["levels"]),
@@ -232,12 +243,11 @@ async def ensure_seed():
             "cultural_subtext": f"Rooted in {s['cultural_matrix']}. Encoded biometric truth.",
             "created_at": now,
         })
-    await db.tracks.insert_many(docs)
-    events = [{"id": str(uuid.uuid4()), "kind": "mint", "dna_tag": d["dna_tag"],
-               "actor": d["creator"], "amount_usd": 0.0,
-               "note": "Genesis mint — DNA pinned to Empire 1 Ledger.", "timestamp": now}
-              for d in docs]
-    await db.ledger.insert_many(events)
+        await db.ledger.insert_one({
+            "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": s["dna_tag"],
+            "actor": s["creator"], "amount_usd": 0.0,
+            "note": "Genesis mint — DNA pinned to Empire 1 Ledger.", "timestamp": now,
+        })
 
 # ============================================================
 # TRACKS / FLIPS / LEDGER
