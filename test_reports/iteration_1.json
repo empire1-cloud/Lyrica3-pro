@@ -1,0 +1,35 @@
+{
+  "summary": "Full backend (17 pytest) + frontend (3 screens, WS ticker, auth guard) testing. Backend 16/17 pass. Frontend all 3 screens render correctly with live royalty WS populating, nav, and auth protection working.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/tracks/{dna_tag}", "issue": "Seeded tracks return lml=null. Likely DB was seeded before lml was added to SEED; ensure_seed() short-circuits when any track exists so new lml field never persisted. Fix: upsert or migration to populate lml on existing seed docs."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Stem Deck audio", "issue": "Console shows WebSocket warning 'closed before established' on first deck mount (non-blocking; ws reconnects). Stems button shows 'LOADING STEMS...' - verify audio <audio> element plays soundhelix MP3 on click (not tested in headless).", "affected_selectors": []}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Fix seeded tracks missing lml: either drop tracks collection and re-seed, or update ensure_seed() to patch lml on existing docs. Current seeds return null lml so StemDeck LML viewer may be empty for Wildflowers/Corrido/etc.",
+    "Optionally investigate initial WS connect close warning on deck mount"
+  ],
+  "critical_code_review_comments": [
+    "ensure_seed() is non-idempotent for schema changes (only inserts if count==0). Consider upsert-by-dna_tag so schema evolution (adding lml/cultural_subtext) applies to existing DBs.",
+    "server.py is a single 488-line file; acceptable for MVP but approaching split threshold.",
+    "WebSocket endpoint has no auth enforcement—unauth users still receive stream events (only wallet delta gated by handle). Acceptable for demo ticker, flag for prod.",
+    "Pydantic Stem.name is Literal of 4 values — any future stem name will 500 on read."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py", "/app/memory/test_credentials.md"],
+  "success_rate": {"backend": "94%", "frontend": "100%"},
+  "test_credentials": "handle=lyrica.prime password=soulfire123 (verified working via /api/auth/login)",
+  "seed_data_creation": "Created test_<ts> users during register tests; not cleaned up (no delete endpoint). Lyrica.prime reused from seed creator references.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend tests at /app/backend/tests/backend_test.py (pytest, 17 tests). LLM /api/generate works and returns tagged LML via Claude Sonnet 4.5. WS ticker confirmed streaming. Only failing test: seeded tracks lack lml field due to stale seed. Frontend login/deck/feed/ignite all render; auth redirect to /login verified.",
+  "rca of the issue": "lml null on seeded tracks: ensure_seed() guards with 'if count > 0 return', so when lml key was added to SEED after initial boot, existing rows never backfilled. Mitigation: either db.tracks.drop() once, or change ensure_seed to upsert per dna_tag."
+}
