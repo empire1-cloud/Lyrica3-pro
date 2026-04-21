@@ -9,6 +9,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+import ipaddress
 import os, logging, random, asyncio, json, re, uuid, hashlib, shutil, time
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
@@ -34,9 +36,72 @@ api_router = APIRouter(prefix="/api")
 security = HTTPBearer(auto_error=False)
 
 # ------------------------------------------------------------
-# Rate limiting — fixed-window per IP. In-memory; swap to Redis for HA.
+# Trusted-proxy client-IP extraction.
+# Chain: Cloudflare → GCP LB → Cloud Run  →  our app.
+# We only accept `CF-Connecting-IP` / `X-Forwarded-For` when the immediate
+# peer is on a known-proxy CIDR. Everything else falls back to socket IP.
 # ------------------------------------------------------------
-limiter = Limiter(key_func=get_remote_address)
+TRUSTED_PROXY_CIDRS = [
+    c.strip() for c in os.environ.get(
+        "TRUSTED_PROXY_CIDRS",
+        # Cloudflare v4 ranges (2024) + loopback + GCP LB egress shared range.
+        # Keep the list small on purpose — widen only when you add an L7.
+        "173.245.48.0/20,103.21.244.0/22,103.22.200.0/22,103.31.4.0/22,"
+        "141.101.64.0/18,108.162.192.0/18,190.93.240.0/20,188.114.96.0/20,"
+        "197.234.240.0/22,198.41.128.0/17,162.158.0.0/15,104.16.0.0/13,"
+        "104.24.0.0/14,172.64.0.0/13,131.0.72.0/22,"
+        "127.0.0.0/8,10.0.0.0/8,35.191.0.0/16,130.211.0.0/22"
+    ).split(",") if c.strip()
+]
+_TRUSTED_NETS = []
+for c in TRUSTED_PROXY_CIDRS:
+    try: _TRUSTED_NETS.append(ipaddress.ip_network(c, strict=False))
+    except Exception: pass
+
+def _peer_is_trusted(peer_ip: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(peer_ip)
+        return any(ip in n for n in _TRUSTED_NETS)
+    except Exception:
+        return False
+
+def trusted_client_ip(request: Request) -> str:
+    """Resolve the real client IP behind Cloudflare/GCP LB. Spoof-safe:
+    only trust headers when the immediate peer is a known proxy CIDR."""
+    peer = (request.client.host if request.client else "") or ""
+    if not _peer_is_trusted(peer):
+        return peer or "unknown"
+    cf = request.headers.get("cf-connecting-ip")
+    if cf: return cf.strip()
+    xff = request.headers.get("x-forwarded-for", "")
+    if xff:
+        # take the left-most non-trusted IP — that's the real client
+        for part in [p.strip() for p in xff.split(",")]:
+            if part and not _peer_is_trusted(part):
+                return part
+        # all hops trusted → fall back to the left-most
+        first = xff.split(",")[0].strip()
+        if first: return first
+    xri = request.headers.get("x-real-ip")
+    return (xri or peer or "unknown").strip()
+
+# ------------------------------------------------------------
+# Rate limiting — Redis-backed for multi-replica safety.
+# When REDIS_URL is absent we degrade to in-memory (single-replica only).
+# ------------------------------------------------------------
+REDIS_URL = os.environ.get("REDIS_URL", "").strip()
+_limiter_storage = REDIS_URL if REDIS_URL else "memory://"
+try:
+    limiter = Limiter(
+        key_func=trusted_client_ip,
+        storage_uri=_limiter_storage,
+        strategy="fixed-window",
+    )
+except Exception as _e:
+    # Fail-open in a documented way: Redis unreachable at boot → in-memory fallback.
+    logging.getLogger("empire1").warning(f"limiter storage fallback to memory: {_e}")
+    limiter = Limiter(key_func=trusted_client_ip, storage_uri="memory://")
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)

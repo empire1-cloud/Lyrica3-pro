@@ -1,0 +1,64 @@
+# ============================================================
+# Lyrica 3 Pro · Empire 1 — Cloud Build pipeline
+# Builds 3 container images and pushes them to Artifact Registry.
+# After push, `gcloud run deploy ...` (from DEPLOYMENT.md) picks them up.
+# ============================================================
+
+substitutions:
+  _REGION: us-central1
+  _REPO:   lyrica3
+  _API_URL: https://api.lyrica3.com   # baked into the frontend bundle
+
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY
+
+steps:
+  # ------ backend (FastAPI + Demucs-ready) ------
+  - id: build-backend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:latest
+      - -f
+      - Dockerfile
+      - .
+
+  # ------ frontend (nginx-served React PWA) ------
+  - id: build-frontend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg
+      - REACT_APP_BACKEND_URL=${_API_URL}
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:latest
+      - -f
+      - frontend/Dockerfile
+      - frontend
+
+  # ------ Discord bot worker ------
+  - id: build-bot
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:$SHORT_SHA
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:latest
+      - -f
+      - discord_bot/Dockerfile
+      - discord_bot
+
+images:
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:latest

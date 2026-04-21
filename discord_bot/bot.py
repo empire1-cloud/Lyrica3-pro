@@ -36,6 +36,7 @@ from pathlib import Path
 
 import httpx
 import discord
+from aiohttp import web
 from discord import app_commands
 from dotenv import load_dotenv
 
@@ -269,10 +270,27 @@ async def on_ready():
 def main():
     if not DISCORD_BOT_TOKEN:
         raise SystemExit("DISCORD_BOT_TOKEN missing. Paste into .env (see .env.example).")
-    try:
-        client.run(DISCORD_BOT_TOKEN)
-    finally:
-        asyncio.run(auth.close())
+
+    async def _health(_req):
+        return web.json_response({"ok": True, "bot": str(client.user) if client.is_ready() else None})
+
+    async def run():
+        # tiny aiohttp server on $PORT for Cloud Run / Render health checks
+        port = int(os.environ.get("PORT", "8080"))
+        app = web.Application()
+        app.router.add_get("/", _health)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        await web.TCPSite(runner, "0.0.0.0", port).start()
+        log.info("health endpoint listening on :%d", port)
+
+        try:
+            await client.start(DISCORD_BOT_TOKEN)
+        finally:
+            await auth.close()
+            await runner.cleanup()
+
+    asyncio.run(run())
 
 
 if __name__ == "__main__":
