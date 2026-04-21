@@ -38,6 +38,7 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
     setBusy(true); setFlash("");
     try {
       const dataUrl = await buildPng();
+      if (!dataUrl) throw new Error("render failed");
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = `lyrica3-bloodline-${track.dna_tag.slice(0, 12)}.png`;

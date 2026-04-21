@@ -10,9 +10,12 @@ Static mount `/static/` for user uploads. Demucs v4 pipeline prepared (`backend/
 
 ## Screens
 - `/deck`      — Sonance Pro Stem Deck (4-track mixer, qualitative biometrics, **HTDemucs upload**, DNA panel)
-- `/feed`      — Flip-It Economy (odometer wallet, live WS royalty ticker, cinematic MintingModal)
-- `/universal` — **Bloodline Remix Leaderboard** (parent→flip chains, Network Gravity orbit SVG, immutable ledger)
+- `/feed`      — Flip-It Economy (odometer wallet, live WS royalty ticker, cinematic MintingModal, **Bloodline Share Card** export)
+- `/universal` — **Bloodline Remix Leaderboard** (parent→flip chains, Network Gravity orbit SVG, immutable ledger, **Share Bloodline** PNG export)
 - `/ignite`    — S2 Mutation Engine (**21 genres / 12 moods grouped**, ghost audio upload, IGNITE SOULFIRE)
+
+## Viral / Sharing
+**Bloodline Share Card** (`/components/BloodlineShareCard.jsx`) — html-to-image PNG exporter with SSL dark + pink/cyan haze + SynthID + royalty stats + ancestry chain, 4:5 portrait aspect for TikTok / IG Reels / Stories. Web Share API integration with download fallback.
 
 ## IP sanitization
 Backend strips `lml`, `cultural_subtext`, raw biometric decimals before any client response.
