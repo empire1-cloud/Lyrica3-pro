@@ -2,17 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { getTracks, getLedger, flipTrack, getWallet, WS_URL } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Radio, Repeat2, Fingerprint, TrendingUp, X } from "lucide-react";
+import { Radio, Repeat2, Fingerprint, TrendingUp, X, Share2 } from "lucide-react";
 import Odometer from "../components/Odometer";
 import MintingModal from "../components/MintingModal";
 import ProviderBadge from "../components/ProviderBadge";
+import BloodlineShareCard from "../components/BloodlineShareCard";
 
 const GENRES = [
   "SGV Oldies", "Corridos", "Oldies", "Street Bounce", "Cruising", "Resilience",
   "UK Garage", "Afrobeats", "Drill", "Jersey Club", "Bossa Nova",
 ];
 
-function TrackCard({ t, onFlip }) {
+function TrackCard({ t, onFlip, onShare }) {
   return (
     <div className="panel rounded-[6px] p-4 md:p-5 relative overflow-hidden group" data-testid={`track-card-${t.dna_tag}`}>
       <div className="absolute -top-20 -right-20 w-[180px] md:w-[200px] h-[180px] md:h-[200px] rounded-full bg-[#f5a524]/10 blur-3xl pointer-events-none" />
@@ -65,6 +66,15 @@ function TrackCard({ t, onFlip }) {
           <span className="mx-2">·</span>
           earned <span className="text-[#ffd88a]">${t.earnings_usd.toFixed(2)}</span>
         </div>
+        <button
+          onClick={() => onShare(t)}
+          data-testid={`share-card-btn-${t.dna_tag}`}
+          className="px-3 md:px-4 py-2 md:py-2.5 rounded-[3px] border border-[#59d3ff]/50 bg-[#59d3ff]/10
+                     text-[#59d3ff] uppercase text-[10px] md:text-[11px] tracking-[0.2em] font-medium
+                     hover:bg-[#59d3ff]/20 transition-all">
+          <Share2 size={12} className="inline mr-1.5 -translate-y-[1px]"/>
+          Share Card
+        </button>
         <button
           onClick={() => onFlip(t)}
           data-testid={`flip-btn-${t.dna_tag}`}
@@ -176,6 +186,7 @@ export default function FlipFeed() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [tracks, setTracks] = useState([]);
   const [flipOpen, setFlipOpen] = useState(null);
+  const [shareOpen, setShareOpen] = useState(null);
   const [events, setEvents] = useState([]);
   const [wallet, setWallet] = useState(null);
   const [liveBal, setLiveBal] = useState(0);
@@ -253,7 +264,7 @@ export default function FlipFeed() {
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         <div className="col-span-12 lg:col-span-8 space-y-4 md:space-y-5" data-testid="track-feed">
           {tracks.length === 0 && <div className="text-[#8a8278] font-mono">Loading Empire 1 feed…</div>}
-          {tracks.map((t) => <TrackCard key={t.dna_tag} t={t} onFlip={setFlipOpen}/>)}
+          {tracks.map((t) => <TrackCard key={t.dna_tag} t={t} onFlip={setFlipOpen} onShare={setShareOpen}/>)}
         </div>
         <div className="col-span-12 lg:col-span-4">
           <RoyaltyTicker events={events}/>
@@ -265,6 +276,13 @@ export default function FlipFeed() {
           track={flipOpen}
           onClose={() => setFlipOpen(null)}
           onSubmit={submitFlip}
+        />
+      )}
+
+      {shareOpen && (
+        <BloodlineShareCard
+          track={shareOpen}
+          onClose={() => setShareOpen(null)}
         />
       )}
 

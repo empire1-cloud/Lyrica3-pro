@@ -53,6 +53,12 @@ VERTEX_LYRIA_MODEL  = os.environ.get("VERTEX_LYRIA_MODEL",  "lyria-002")
 VERTEX_CHIRP_VOICE  = os.environ.get("VERTEX_CHIRP_VOICE",  "en-US-Chirp3-HD-Orus")
 
 
+# Full-song composition knobs
+LYRIA_SEGMENT_SECONDS = int(os.environ.get("LYRIA_SEGMENT_SECONDS", "30"))  # per-call max
+LYRIA_SEGMENTS        = int(os.environ.get("LYRIA_SEGMENTS", "6"))           # 6×30 = 3 min
+LYRIA_CROSSFADE_MS    = int(os.environ.get("LYRIA_CROSSFADE_MS", "1500"))
+
+
 def _available() -> bool:
     return VERTEX_AI_ENABLED and bool(VERTEX_PROJECT_ID)
 
@@ -104,15 +110,14 @@ async def vertex_gemini_lml(system_prompt: str, user_prompt: str) -> Optional[Di
 async def vertex_lyria_music(prompt: str, duration_seconds: int = 20,
                               out_dir: str = "/tmp") -> Optional[str]:
     """
-    Generates an instrumental from a text prompt.
-    Returns a local file path, or None if unavailable / error.
-    Caller is responsible for moving the file to the static mount + public URL.
+    Generates a single instrumental clip (≤30s).
+    Use vertex_lyria_full_song() for multi-minute tracks.
+    Returns a local .wav path, or None if unavailable / error.
     """
     if not _available():
         return None
     try:
         import vertexai
-        from vertexai.preview.vision_models import GenerativeModel  # generic predict path
         from google.cloud import aiplatform
         from google.protobuf import json_format
         from google.protobuf.struct_pb2 import Value
@@ -129,7 +134,7 @@ async def vertex_lyria_music(prompt: str, duration_seconds: int = 20,
                 client_options={"api_endpoint": f"{VERTEX_LOCATION}-aiplatform.googleapis.com"}
             )
             instance = {"prompt": prompt, "negative_prompt": "", "seed": 0}
-            parameters = {"sample_count": 1, "duration_seconds": int(duration_seconds)}
+            parameters = {"sample_count": 1, "duration_seconds": int(min(duration_seconds, 30))}
             resp = api_client.predict(
                 endpoint=endpoint_path,
                 instances=[json_format.ParseDict(instance, Value())],
@@ -144,12 +149,77 @@ async def vertex_lyria_music(prompt: str, duration_seconds: int = 20,
         if not audio_bytes: return None
 
         Path(out_dir).mkdir(parents=True, exist_ok=True)
-        path = Path(out_dir) / f"lyria_{uuid.uuid4().hex[:10]}.wav"
+        path = Path(out_dir) / f"lyria_seg_{uuid.uuid4().hex[:10]}.wav"
         path.write_bytes(audio_bytes)
         return str(path)
     except Exception as e:
         logger.warning("vertex_lyria_music error: %s", e)
         return None
+
+
+async def vertex_lyria_full_song(base_prompt: str, matrix: str, mood_recipe: tuple,
+                                  out_dir: str = "/tmp",
+                                  segments: Optional[int] = None) -> Optional[str]:
+    """
+    Compose a full-length track by firing N parallel Lyria calls with
+    section-specific prompt variants, then crossfading the results into
+    a single MP3.
+
+    Returns the local .mp3 path or None on failure.
+    A 6-segment song at 30s each with 1.5s crossfade = ~168s (~2:48).
+    """
+    if not _available():
+        return None
+    n = segments or LYRIA_SEGMENTS
+    lung, throat, fry, crack = mood_recipe
+
+    # section-aware prompt variants — keeps the song from sounding like a loop
+    sections = [
+        ("intro",   "tape hiss intro, ambient room tone, soft arrival"),
+        ("verse",   "full arrangement, steady groove, late-pocket drums"),
+        ("prechorus","building tension, ride cymbal, rising bass"),
+        ("chorus",  "climactic hook, layered vocals, wide stereo"),
+        ("verse2",  "stripped verse, minimal, intimate close-mic"),
+        ("outro",   "fade out, tape slow, final vinyl crackle"),
+    ][:n]
+
+    prompts = [
+        f"{base_prompt}. Section: {label}. {flavor}."
+        for label, flavor in sections
+    ]
+
+    # fire all segments concurrently
+    tasks = [
+        vertex_lyria_music(p, duration_seconds=LYRIA_SEGMENT_SECONDS, out_dir=out_dir)
+        for p in prompts
+    ]
+    paths = await asyncio.gather(*tasks, return_exceptions=True)
+    good = [p for p in paths if isinstance(p, str) and p]
+    if not good:
+        return None
+    if len(good) == 1:
+        # single segment came back — promote directly to mp3
+        return good[0]
+
+    # stitch with pydub + crossfade
+    try:
+        from pydub import AudioSegment
+        def _stitch():
+            combined: Optional[AudioSegment] = None
+            for p in good:
+                seg = AudioSegment.from_file(p)
+                combined = seg if combined is None else combined.append(seg, crossfade=LYRIA_CROSSFADE_MS)
+            out = Path(out_dir) / f"lyria_song_{uuid.uuid4().hex[:10]}.mp3"
+            combined.export(out, format="mp3", bitrate="192k")
+            # cleanup segment files — they served their purpose
+            for p in good:
+                try: Path(p).unlink()
+                except Exception: pass
+            return str(out)
+        return await asyncio.to_thread(_stitch)
+    except Exception as e:
+        logger.warning("lyria stitch error: %s", e)
+        return good[0]  # at least return the first clip
 
 
 # ============================================================

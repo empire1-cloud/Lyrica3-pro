@@ -571,8 +571,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         vocal_performance, REPLICATE_API_KEY,
     )
     from vertex_ai import (
-        vertex_lyria_music, vertex_chirp_tts, _available as vertex_available,
-        VERTEX_CHIRP_VOICE,
+        vertex_lyria_full_song, vertex_chirp_tts, _available as vertex_available,
     )
     stems: list = []
     synth_source_url: Optional[str] = None
@@ -581,14 +580,14 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     # ---- Instrumental ------------------------------------------------
     if vertex_available():
         lyria_prompt = build_synth_prompt(matrix, recipe, data["lml"])
-        lyria_path = await vertex_lyria_music(
-            lyria_prompt, duration_seconds=20,
+        lyria_path = await vertex_lyria_full_song(
+            lyria_prompt, matrix, recipe,
             out_dir=str(ROOT_DIR / "static" / "stems"),
         )
         if lyria_path:
             public_url = f"/api/static/stems/{Path(lyria_path).name}"
             synth_source_url = public_url
-            synth_provider = "vertex:lyria-2"
+            synth_provider = "vertex:lyria-2-full"
             stems = await auto_split(public_url,
                                      out_dir=str(ROOT_DIR / "static" / "stems"))
     if not stems and REPLICATE_API_KEY:
