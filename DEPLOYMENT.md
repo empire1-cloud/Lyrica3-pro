@@ -54,6 +54,21 @@ for s in MONGO_URL EMERGENT_LLM_KEY JWT_SECRET REPLICATE_API_KEY \
     || printf "%s" "$v" | gcloud secrets versions add "$s" --data-file=-
 done
 
+# ─── 1b · Vertex AI IAM (the killer unlock — real music via Lyria) ─
+# One-time grants on the Cloud Run runtime service account.
+# This is what turns $REPLICATE_API_KEY from "needed" to "optional".
+gcloud services enable aiplatform.googleapis.com texttospeech.googleapis.com
+RUNTIME_SA="$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
+for role in aiplatform.user texttospeech.user; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:${RUNTIME_SA}" --role="roles/${role}"
+done
+
+# Lyria 2 access: may require one-time allowlist approval at
+#   https://cloud.google.com/vertex-ai/generative-ai/docs/music-generation
+# until approved, the pipeline auto-falls-back to Replicate → SoundHelix.
+
+
 # Grant Cloud Run runtime SA read access to all of them
 RUNTIME_SA="$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
 for s in MONGO_URL EMERGENT_LLM_KEY JWT_SECRET REPLICATE_API_KEY \
@@ -96,7 +111,7 @@ gcloud run deploy lyrica3-backend \
   --min-instances=1 --max-instances=10 \
   --timeout=300 \
   --concurrency=40 \
-  --set-env-vars=DB_NAME=lyrica3_prod,CORS_ORIGINS=https://www.lyrica3.com\,https://lyrica3.com,VOICE_TTL_MIN=240,UPLOAD_TTL_MIN=1440,DEMUCS_ENABLED=false \
+  --set-env-vars=DB_NAME=lyrica3_prod,CORS_ORIGINS=https://www.lyrica3.com\,https://lyrica3.com,VOICE_TTL_MIN=240,UPLOAD_TTL_MIN=1440,DEMUCS_ENABLED=false,VERTEX_AI_ENABLED=true,VERTEX_PROJECT_ID=$PROJECT_ID,VERTEX_LOCATION=us-central1 \
   --set-secrets=MONGO_URL=MONGO_URL:latest,EMERGENT_LLM_KEY=EMERGENT_LLM_KEY:latest,JWT_SECRET=JWT_SECRET:latest,REPLICATE_API_KEY=REPLICATE_API_KEY:latest
 ```
 

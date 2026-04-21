@@ -560,44 +560,72 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     data = await _generate_lml(req, matrix, recipe)
 
     # ============================================================
-    # LIVE AUDIO PIPELINE — Replicate (MusicGen) → Demucs auto-split,
-    # with AI VOCAL PERFORMANCE (OpenAI TTS via Universal Key) overlaid
-    # on the "Raw Human Pipes" stem. Falls back to CORS-safe placeholders.
+    # LIVE AUDIO PIPELINE — engines chosen by env flags:
+    #   1. Vertex Lyria 2  (if VERTEX_AI_ENABLED)     — real music, GCP-native
+    #   2. Replicate MusicGen (if REPLICATE_API_KEY)  — real music, pay-per-use
+    #   3. Fallback SoundHelix placeholders           — investor demo
+    # Vocal: Vertex Chirp 3 HD → OpenAI TTS → none
     # ============================================================
     from integrations import (
         audio_synth, auto_split, fallback_stems, build_synth_prompt,
         vocal_performance, REPLICATE_API_KEY,
     )
+    from vertex_ai import (
+        vertex_lyria_music, vertex_chirp_tts, _available as vertex_available,
+        VERTEX_CHIRP_VOICE,
+    )
     stems: list = []
     synth_source_url: Optional[str] = None
     synth_provider = "fallback"
-    if REPLICATE_API_KEY:
+
+    # ---- Instrumental ------------------------------------------------
+    if vertex_available():
+        lyria_prompt = build_synth_prompt(matrix, recipe, data["lml"])
+        lyria_path = await vertex_lyria_music(
+            lyria_prompt, duration_seconds=20,
+            out_dir=str(ROOT_DIR / "static" / "stems"),
+        )
+        if lyria_path:
+            public_url = f"/api/static/stems/{Path(lyria_path).name}"
+            synth_source_url = public_url
+            synth_provider = "vertex:lyria-2"
+            stems = await auto_split(public_url,
+                                     out_dir=str(ROOT_DIR / "static" / "stems"))
+    if not stems and REPLICATE_API_KEY:
         synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
         synth_source_url = await audio_synth(synth_prompt)
         if synth_source_url:
             synth_provider = "replicate:musicgen"
-            stems = await auto_split(
-                synth_source_url,
-                out_dir=str(ROOT_DIR / "static" / "stems"),
-            )
+            stems = await auto_split(synth_source_url,
+                                     out_dir=str(ROOT_DIR / "static" / "stems"))
     if not stems:
         stems = fallback_stems()
-        synth_provider = "fallback" if not REPLICATE_API_KEY else "fallback:replicate_error"
+        synth_provider = "fallback" if synth_provider == "fallback" else f"fallback:{synth_provider}_error"
 
-    # AI Vocal Performance (OpenAI TTS) — overrides the vocal stem when successful
+    # ---- AI Vocal Performance ---------------------------------------
     voice_provider = "none"
     voice_meta: Optional[dict] = None
-    vp = await vocal_performance(
-        lml=data["lml"], mood=req.mood,
-        out_dir=str(ROOT_DIR / "static" / "voices"),
-    )
-    if vp:
-        voice_provider = "openai:tts-1-hd"
-        voice_meta = vp
-        # replace the Raw Human Pipes stem with the real AI voice
+    # Prefer Vertex Chirp; fall back to OpenAI TTS via Universal Key
+    from integrations import _strip_lml
+    clean_lyrics = _strip_lml(data["lml"])
+    if vertex_available():
+        vp = await vertex_chirp_tts(clean_lyrics,
+                                     out_dir=str(ROOT_DIR / "static" / "voices"))
+        if vp:
+            voice_provider = "vertex:chirp-3-hd"
+            voice_meta = vp
+    if not voice_meta:
+        vp = await vocal_performance(
+            lml=data["lml"], mood=req.mood,
+            out_dir=str(ROOT_DIR / "static" / "voices"),
+        )
+        if vp:
+            voice_provider = "openai:tts-1-hd"
+            voice_meta = vp
+    if voice_meta:
         for i, s in enumerate(stems):
             if s["name"] == "Raw Human Pipes":
-                stems[i] = {**s, "src": vp["url"], "level": 0.95, "peak": 0.8}
+                stems[i] = {**s, "src": voice_meta["url"], "level": 0.95, "peak": 0.8}
                 break
 
     dna = f"trk_s2_{uuid.uuid4().hex[:10]}"
