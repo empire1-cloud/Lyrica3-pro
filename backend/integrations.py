@@ -1,18 +1,21 @@
 """
 Empire 1 · Live Audio Integrations
 ===================================
-- audio_synth(prompt) → generated track URL via Replicate (MusicGen)
-- auto_split(url)     → 4 stem URLs via HTDemucs v4 worker
-- fallback_stems()    → CORS-safe Chicano/G-Funk placeholders for investor demos
+- audio_synth(prompt)       → generated track URL via Replicate (MusicGen)
+- auto_split(url)           → 4 stem URLs via HTDemucs v4 worker
+- fallback_stems()          → CORS-safe Chicano/G-Funk placeholders for demos
+- vocal_performance(lml, mood) → AI Vocal Performance via OpenAI TTS (Universal Key)
 
 All wire-ups are env-gated. Missing keys never crash the server —
 /api/generate returns beautiful mock data so the studio always ignites.
 """
 from __future__ import annotations
 import os
+import re
 import asyncio
 import logging
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -28,8 +31,84 @@ REPLICATE_MODEL    = os.environ.get(
 REPLICATE_DURATION = int(os.environ.get("REPLICATE_DURATION", "20"))
 DEMUCS_ENABLED     = os.environ.get("DEMUCS_ENABLED", "false").lower() == "true"
 DEMUCS_DEVICE      = os.environ.get("DEMUCS_DEVICE", "cpu")
+EMERGENT_LLM_KEY   = os.environ.get("EMERGENT_LLM_KEY", "").strip()
 
 REPLICATE_URL = "https://api.replicate.com/v1/predictions"
+
+# Mood → OpenAI TTS voice mapping. Keep this SERVER-SIDE.
+_MOOD_VOICE = {
+    "Late-Night Honesty":   "onyx",
+    "Street Resilience":    "onyx",
+    "Cruising Melancholy":  "echo",
+    "Defiant Bloom":        "nova",
+    "Sunday Dedication":    "fable",
+    "Porch-Light Grief":    "sage",
+    "Ancestral Fire":       "onyx",
+    "Backyard Euphoria":    "shimmer",
+    "Soft Menace":          "onyx",
+    "Requinto Lament":      "echo",
+    "After-Hours Prayer":   "sage",
+    "Lowrider Calm":        "echo",
+}
+
+
+# ============================================================
+# 4 · AI VOCAL PERFORMANCE  (OpenAI TTS via Emergent Universal Key)
+# ============================================================
+
+def _strip_lml(lml: str) -> str:
+    """Remove biometric/prosody tags and section markers from LML for TTS input.
+    Keeps the raw lyric lines, collapses whitespace, clamps to ≤ 4000 chars."""
+    if not lml: return ""
+    txt = re.sub(r"<[^>]+>", "", lml)
+    txt = re.sub(r"\[(?:intro|verse|hook|bridge|verso|chorus|outro)[^\]]*\]",
+                 "", txt, flags=re.I)
+    lines = [ln.strip() for ln in txt.splitlines() if ln.strip()]
+    out = "\n".join(lines)
+    return out[:4000]
+
+
+async def vocal_performance(
+    lml: str,
+    mood: str,
+    out_dir: str,
+    public_base: str = "/static/voices",
+    voice: Optional[str] = None,
+    model: str = "tts-1-hd",
+) -> Optional[Dict]:
+    """
+    Synthesize a vocal performance from LML lyrics using OpenAI TTS via the
+    Emergent Universal Key. Returns {"url":..., "voice":..., "model":...} or None.
+    """
+    if not EMERGENT_LLM_KEY:
+        return None
+    text = _strip_lml(lml)
+    if not text:
+        return None
+    chosen_voice = voice or _MOOD_VOICE.get(mood, "onyx")
+    try:
+        from emergentintegrations.llm.openai import OpenAITextToSpeech
+    except Exception as e:
+        logger.warning(f"TTS import failed: {e}")
+        return None
+    try:
+        tts = OpenAITextToSpeech(api_key=EMERGENT_LLM_KEY)
+        audio_bytes = await tts.generate_speech(
+            text=text, model=model, voice=chosen_voice, response_format="mp3"
+        )
+        Path(out_dir).mkdir(parents=True, exist_ok=True)
+        filename = f"voice_{uuid.uuid4().hex[:10]}.mp3"
+        dest = Path(out_dir) / filename
+        dest.write_bytes(audio_bytes)
+        return {
+            "url":    f"{public_base}/{filename}",
+            "voice":  chosen_voice,
+            "model":  model,
+            "chars":  len(text),
+        }
+    except Exception as e:
+        logger.warning(f"vocal_performance error: {e}")
+        return None
 
 
 # ============================================================

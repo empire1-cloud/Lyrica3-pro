@@ -460,12 +460,13 @@ async def generate(req: GenerateRequest, user: Dict = Depends(current_user)):
     data = await _generate_lml(req, matrix, recipe)
 
     # ============================================================
-    # LIVE AUDIO PIPELINE — Replicate (MusicGen) → Demucs auto-split
-    # Falls back to CORS-safe 4-stem placeholders if keys missing.
+    # LIVE AUDIO PIPELINE — Replicate (MusicGen) → Demucs auto-split,
+    # with AI VOCAL PERFORMANCE (OpenAI TTS via Universal Key) overlaid
+    # on the "Raw Human Pipes" stem. Falls back to CORS-safe placeholders.
     # ============================================================
     from integrations import (
         audio_synth, auto_split, fallback_stems, build_synth_prompt,
-        REPLICATE_API_KEY,
+        vocal_performance, REPLICATE_API_KEY,
     )
     stems: list = []
     synth_source_url: Optional[str] = None
@@ -480,9 +481,24 @@ async def generate(req: GenerateRequest, user: Dict = Depends(current_user)):
                 out_dir=str(ROOT_DIR / "static" / "stems"),
             )
     if not stems:
-        # Either no key, or the external call errored — ship the demo.
         stems = fallback_stems()
         synth_provider = "fallback" if not REPLICATE_API_KEY else "fallback:replicate_error"
+
+    # AI Vocal Performance (OpenAI TTS) — overrides the vocal stem when successful
+    voice_provider = "none"
+    voice_meta: Optional[dict] = None
+    vp = await vocal_performance(
+        lml=data["lml"], mood=req.mood,
+        out_dir=str(ROOT_DIR / "static" / "voices"),
+    )
+    if vp:
+        voice_provider = "openai:tts-1-hd"
+        voice_meta = vp
+        # replace the Raw Human Pipes stem with the real AI voice
+        for i, s in enumerate(stems):
+            if s["name"] == "Raw Human Pipes":
+                stems[i] = {**s, "src": vp["url"], "level": 0.95, "peak": 0.8}
+                break
 
     dna = f"trk_s2_{uuid.uuid4().hex[:10]}"
     now = datetime.now(timezone.utc).isoformat()
@@ -509,13 +525,16 @@ async def generate(req: GenerateRequest, user: Dict = Depends(current_user)):
         "cultural_subtext": data["cultural_subtext"],  # stored internally
         "synth_source_url": synth_source_url,    # stored internally
         "synth_provider": synth_provider,        # stored internally
+        "voice_provider": voice_provider,        # stored internally
+        "voice_meta": voice_meta,                # stored internally
         "created_at": now,
     }
     await db.tracks.insert_one(track)
     await db.ledger.insert_one({
         "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": dna,
         "actor": user["handle"], "amount_usd": 0.0,
-        "note": f"Soulfire ignited · synth={synth_provider}", "timestamp": now,
+        "note": f"Soulfire ignited · synth={synth_provider} · voice={voice_provider}",
+        "timestamp": now,
     })
     track.pop("_id", None)
     return _sanitize_track(track)
