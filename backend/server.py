@@ -458,14 +458,39 @@ async def generate(req: GenerateRequest, user: Dict = Depends(current_user)):
     recipe = _MOOD_RECIPE.get(req.mood, (0.78, 0.66, 0.82, 0.71))
     lung, throat, fry, crack = recipe
     data = await _generate_lml(req, matrix, recipe)
+
+    # ============================================================
+    # LIVE AUDIO PIPELINE — Replicate (MusicGen) → Demucs auto-split
+    # Falls back to CORS-safe 4-stem placeholders if keys missing.
+    # ============================================================
+    from integrations import (
+        audio_synth, auto_split, fallback_stems, build_synth_prompt,
+        REPLICATE_API_KEY,
+    )
+    stems: list = []
+    synth_source_url: Optional[str] = None
+    synth_provider = "fallback"
+    if REPLICATE_API_KEY:
+        synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
+        synth_source_url = await audio_synth(synth_prompt)
+        if synth_source_url:
+            synth_provider = "replicate:musicgen"
+            stems = await auto_split(
+                synth_source_url,
+                out_dir=str(ROOT_DIR / "static" / "stems"),
+            )
+    if not stems:
+        # Either no key, or the external call errored — ship the demo.
+        stems = fallback_stems()
+        synth_provider = "fallback" if not REPLICATE_API_KEY else "fallback:replicate_error"
+
     dna = f"trk_s2_{uuid.uuid4().hex[:10]}"
     now = datetime.now(timezone.utc).isoformat()
-    levels = [round(0.55 + random.random()*0.4, 2) for _ in range(4)]
     track = {
         "id": str(uuid.uuid4()), "dna_tag": dna,
         "title": req.title or data["title"],
         "creator": user["handle"], "cultural_matrix": matrix,
-        "stems": _mk_stems(levels),
+        "stems": stems,
         "biometrics": {
             "vulnerability_index": round(0.75 + random.random()*0.24, 2),
             "phonation_type": random.choice([
@@ -482,13 +507,15 @@ async def generate(req: GenerateRequest, user: Dict = Depends(current_user)):
         "parent_dna": None,
         "lml": data["lml"],                      # stored internally
         "cultural_subtext": data["cultural_subtext"],  # stored internally
+        "synth_source_url": synth_source_url,    # stored internally
+        "synth_provider": synth_provider,        # stored internally
         "created_at": now,
     }
     await db.tracks.insert_one(track)
     await db.ledger.insert_one({
         "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": dna,
         "actor": user["handle"], "amount_usd": 0.0,
-        "note": f"Soulfire ignited.", "timestamp": now,
+        "note": f"Soulfire ignited · synth={synth_provider}", "timestamp": now,
     })
     track.pop("_id", None)
     return _sanitize_track(track)
