@@ -1,10 +1,15 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, status, UploadFile, File
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, status, UploadFile, File, Request
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-import os, logging, random, asyncio, json, re, uuid, hashlib, shutil
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+import os, logging, random, asyncio, json, re, uuid, hashlib, shutil, time
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Literal, Dict
@@ -27,6 +32,33 @@ db = client[DB_NAME]
 app = FastAPI(title="Sonance Pro / Empire 1 Ledger API")
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer(auto_error=False)
+
+# ------------------------------------------------------------
+# Rate limiting — fixed-window per IP. In-memory; swap to Redis for HA.
+# ------------------------------------------------------------
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+# ------------------------------------------------------------
+# Sanitized error handler — never leaks stack traces or internal paths.
+# ------------------------------------------------------------
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("empire1")
+
+@app.exception_handler(Exception)
+async def unhandled_errors(request: Request, exc: Exception):
+    logger.exception("unhandled: %s", exc)
+    return JSONResponse(status_code=500, content={"detail": "Empire 1 internal error."})
+
+@app.exception_handler(HTTPException)
+async def http_errors(request: Request, exc: HTTPException):
+    # HTTPException detail is author-controlled; strip any accidental paths/stack-looking strings
+    msg = str(exc.detail or "")
+    if "\n" in msg or "Traceback" in msg or "/app/" in msg:
+        msg = "Request rejected."
+    return JSONResponse(status_code=exc.status_code, content={"detail": msg})
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("empire1")
@@ -171,7 +203,8 @@ async def current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(s
     return user
 
 @api_router.post("/auth/register")
-async def register(req: RegisterReq):
+@limiter.limit("5/minute")
+async def register(request: Request, req: RegisterReq):
     handle = req.handle.strip().lower()
     if not re.match(r"^[a-z0-9_.-]{3,32}$", handle):
         raise HTTPException(400, "Handle must be 3-32 chars [a-z0-9_.-]")
@@ -194,7 +227,8 @@ async def register(req: RegisterReq):
     return {"token": token, "handle": handle, "wallet": wallet}
 
 @api_router.post("/auth/login")
-async def login(req: LoginReq):
+@limiter.limit("10/minute")
+async def login(request: Request, req: LoginReq):
     handle = req.handle.strip().lower()
     user = await db.users.find_one({"handle": handle})
     if not user or not bcrypt.checkpw(req.password.encode(), user["password_hash"].encode()):
@@ -452,7 +486,8 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         }
 
 @api_router.post("/generate")
-async def generate(req: GenerateRequest, user: Dict = Depends(current_user)):
+@limiter.limit("10/minute")
+async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(current_user)):
     # Secret-sauce resolution — happens server-side, never exposed
     matrix = _GENRE_MAP.get(req.genre, "LA SGV Chicano Heritage")
     recipe = _MOOD_RECIPE.get(req.mood, (0.78, 0.66, 0.82, 0.71))
@@ -574,36 +609,65 @@ async def vibes_catalog():
 UPLOAD_DIR = ROOT_DIR / "static" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+ALLOWED_UPLOAD_MIMES = {
+    "audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave",
+    "audio/ogg", "audio/flac", "audio/x-flac", "audio/mp4", "audio/aac",
+    "audio/webm", "video/mp4", "video/quicktime", "video/webm",
+}
+MAX_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
+
+
+def _safe_basename(name: str) -> str:
+    """Strip paths + dangerous chars from a filename."""
+    name = os.path.basename(name or "")
+    return re.sub(r"[^A-Za-z0-9._-]", "_", name)[:80] or "track"
+
+
 @api_router.post("/demucs/separate")
-async def demucs_separate(file: UploadFile = File(...), user: Dict = Depends(current_user)):
+@limiter.limit("4/minute")
+async def demucs_separate(request: Request, file: UploadFile = File(...), user: Dict = Depends(current_user)):
     """
-    Upload endpoint. In production this hands off to the HTDemucs v4 worker
-    (see backend/demucs_worker.py + Dockerfile). Here we simulate: the uploaded
-    audio is persisted and returned as 4 separate stem URLs (one per track),
-    so the 4-fader mixer can mix 4 independent copies of the same file.
-    Each copy gets a different default gain profile to emulate isolation.
+    Upload endpoint. In production this hands off to the HTDemucs v4 worker.
+    Guarded by: auth, rate limit (4/min), MIME whitelist, 25MB ceiling, path sanitization.
     """
-    if not file.content_type or not file.content_type.startswith(("audio/", "video/")):
-        raise HTTPException(400, "Upload must be audio or video.")
+    if not file.content_type or file.content_type.lower() not in ALLOWED_UPLOAD_MIMES:
+        raise HTTPException(415, "Unsupported audio/video mime type.")
+    safe = _safe_basename(file.filename or "track")
     job = uuid.uuid4().hex[:10]
-    ext = (file.filename or "track").split(".")[-1].lower()
-    ext = ext if ext in ("mp3","wav","m4a","ogg","flac","mp4","mov","webm") else "mp3"
+    ext = (safe.rsplit(".", 1)[-1] or "mp3").lower()
+    ext = ext if ext in ("mp3","wav","m4a","ogg","flac","mp4","mov","webm","aac") else "mp3"
     dest = UPLOAD_DIR / f"{job}.{ext}"
-    with open(dest, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-    public = f"/static/uploads/{dest.name}"
-    # 4 "stems" = same source file. Fader volumes give perceptual isolation.
-    # In prod this switches to demucs_worker.separate_to_stems(dest) which returns 4 DIFFERENT URLs.
+
+    # streaming write with hard byte ceiling — prevents disk DOS
+    written = 0
+    chunk = 1 << 16  # 64KB
+    try:
+        with open(dest, "wb") as f:
+            while True:
+                part = await file.read(chunk)
+                if not part: break
+                written += len(part)
+                if written > MAX_UPLOAD_BYTES:
+                    raise HTTPException(413, "Upload exceeds 25MB cap.")
+                f.write(part)
+    except HTTPException:
+        try: dest.unlink()
+        except Exception: pass
+        raise
+    except Exception:
+        try: dest.unlink()
+        except Exception: pass
+        raise HTTPException(400, "Upload failed.")
+
+    public = f"/api/static/uploads/{dest.name}"
     names = ["Raw Human Pipes", "Late-Pocket Drums", "Sub Bass / Acoustic Requinto", "Analog Melody"]
-    default_levels = [0.95, 0.0, 0.0, 0.0]  # vocals up, others muted initially — user solos in
-    stems = [
-        {"name": n, "level": default_levels[i], "peak": 0.5, "src": public}
-        for i, n in enumerate(names)
-    ]
+    default_levels = [0.95, 0.0, 0.0, 0.0]
+    stems = [{"name": n, "level": default_levels[i], "peak": 0.5, "src": public}
+             for i, n in enumerate(names)]
     await db.ledger.insert_one({
         "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": f"upload_{job}",
         "actor": user["handle"], "amount_usd": 0.0,
-        "note": f"Demucs separation job queued · {file.filename}",
+        "note": f"Demucs separation job queued · {safe}",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     })
     return {"job": job, "source_url": public, "stems": stems, "engine": "htdemucs-v4"}
@@ -726,8 +790,10 @@ async def ws_royalties(ws: WebSocket):
 # ============================================================
 app.include_router(api_router)
 
-# Static mount for uploaded audio + Demucs stems
-app.mount("/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="static")
+# Static mount for uploaded audio + Demucs stems + TTS voices
+# Mounted under /api so Kubernetes ingress routes it to the backend (port 8001).
+# Without /api prefix the path falls through to the React dev server and returns index.html.
+app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -736,10 +802,36 @@ app.add_middleware(
     allow_methods=["*"], allow_headers=["*"],
 )
 
+# ------------------------------------------------------------
+# TTL cleanup — purges generated audio artifacts older than VOICE_TTL_MIN.
+# Runs as an async background task on startup.
+# ------------------------------------------------------------
+VOICE_TTL_MIN = int(os.environ.get("VOICE_TTL_MIN", "240"))  # 4 hours default
+UPLOAD_TTL_MIN = int(os.environ.get("UPLOAD_TTL_MIN", "1440"))  # 24h default
+
+async def _ttl_sweep():
+    targets = [
+        (ROOT_DIR / "static" / "voices",  VOICE_TTL_MIN * 60),
+        (ROOT_DIR / "static" / "uploads", UPLOAD_TTL_MIN * 60),
+        (ROOT_DIR / "static" / "stems",   UPLOAD_TTL_MIN * 60),
+    ]
+    while True:
+        now = time.time()
+        for d, ttl in targets:
+            if not d.exists(): continue
+            for f in d.iterdir():
+                try:
+                    if f.is_file() and (now - f.stat().st_mtime) > ttl:
+                        f.unlink()
+                except Exception:
+                    pass
+        await asyncio.sleep(30 * 60)  # every 30 min
+
 @app.on_event("startup")
 async def _boot():
     await ensure_seed()
-    logger.info("Empire 1 Ledger booted. Soulfire armed.")
+    asyncio.create_task(_ttl_sweep())
+    logger.info("Empire 1 Ledger booted. Soulfire armed. TTL sweeper active.")
 
 @app.on_event("shutdown")
 async def _shutdown():

@@ -72,7 +72,7 @@ async def vocal_performance(
     lml: str,
     mood: str,
     out_dir: str,
-    public_base: str = "/static/voices",
+    public_base: str = "/api/static/voices",
     voice: Optional[str] = None,
     model: str = "tts-1-hd",
 ) -> Optional[Dict]:
@@ -180,7 +180,7 @@ async def audio_synth(prompt: str, duration: Optional[int] = None) -> Optional[s
 async def auto_split(
     source_url: str,
     out_dir: str,
-    public_base: str = "/static/stems",
+    public_base: str = "/api/static/stems",
 ) -> List[Dict]:
     """
     Pipe a synthesized track through Demucs. Returns 4 stem dicts in the

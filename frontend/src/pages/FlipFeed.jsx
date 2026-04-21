@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getTracks, getLedger, flipTrack, getWallet, WS_URL } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Radio, Repeat2, Fingerprint, TrendingUp, X } from "lucide-react";
 import Odometer from "../components/Odometer";
 import MintingModal from "../components/MintingModal";
+import ProviderBadge from "../components/ProviderBadge";
 
 const GENRES = [
   "SGV Oldies", "Corridos", "Oldies", "Street Bounce", "Cruising", "Resilience",
@@ -24,6 +25,9 @@ function TrackCard({ t, onFlip }) {
           <div className="text-[11px] md:text-[12px] font-mono text-[#8a8278] mt-1 md:mt-2">
             by <span className="text-[#ffd88a]">{t.creator}</span>
             {t.parent_dna && <> · <span className="text-[#59d3ff]">flipped from {t.parent_dna.slice(0, 16)}…</span></>}
+          </div>
+          <div className="mt-2">
+            <ProviderBadge synth={t.synth_provider} voice={t.voice_provider} size="sm"/>
           </div>
         </div>
         <div className="text-right">
@@ -169,16 +173,29 @@ function RoyaltyTicker({ events }) {
 export default function FlipFeed() {
   const { token } = useAuth();
   const nav = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tracks, setTracks] = useState([]);
   const [flipOpen, setFlipOpen] = useState(null);
   const [events, setEvents] = useState([]);
   const [wallet, setWallet] = useState(null);
   const [liveBal, setLiveBal] = useState(0);
-  const [minting, setMinting] = useState(null); // {parent, newTitle, newGenre, child}
+  const [minting, setMinting] = useState(null);
   const wsRef = useRef(null);
 
   const refresh = () => {
-    getTracks().then(setTracks);
+    getTracks().then((ts) => {
+      setTracks(ts);
+      // Discord deep-link: /feed?flip=<dna> auto-opens the flip modal
+      const flipDna = searchParams.get("flip");
+      if (flipDna) {
+        const match = ts.find((t) => t.dna_tag === flipDna);
+        if (match) setFlipOpen(match);
+        // clear the param so it doesn't reopen on refresh
+        const next = new URLSearchParams(searchParams);
+        next.delete("flip");
+        setSearchParams(next, { replace: true });
+      }
+    });
     getWallet().then((w) => { setWallet(w); setLiveBal(w?.balance_usd ?? 0); }).catch(() => {});
   };
 

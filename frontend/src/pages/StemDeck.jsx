@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { getTracks, getWallet, uploadForDemucs } from "../lib/api";
 import StemMixer from "../components/StemMixer";
+import ProviderBadge from "../components/ProviderBadge";
 import { Activity, Fingerprint, Zap, Heart, Sparkles, UploadCloud, Loader2 } from "lucide-react";
 
 /** Glowing qualitative chip — no decimals, no math, just vibe. */
@@ -24,6 +26,7 @@ const QualChip = ({ icon: Icon, label, value, color = "#f5a524", testId }) => (
 );
 
 export default function StemDeck() {
+  const [searchParams] = useSearchParams();
   const [tracks, setTracks] = useState([]);
   const [active, setActive] = useState(null);
   const [wallet, setWallet] = useState(null);
@@ -33,9 +36,15 @@ export default function StemDeck() {
   const fileRef = useRef(null);
 
   useEffect(() => {
-    getTracks().then((ts) => { setTracks(ts); setActive(ts[0]); });
+    getTracks().then((ts) => {
+      setTracks(ts);
+      // Deep-link support: /deck?dna=<id> arrives from Discord bot / share cards
+      const dna = searchParams.get("dna");
+      const match = dna ? ts.find((t) => t.dna_tag === dna) : null;
+      setActive(match || ts[0]);
+    });
     getWallet().then(setWallet).catch(() => {});
-  }, []);
+  }, [searchParams]);
 
   const onPulse = () => {
     setPulse(true);
@@ -149,6 +158,9 @@ export default function StemDeck() {
                 <h3 className="font-display text-[22px] md:text-[28px] text-[#f3ece1] mt-1 tracking-tight">{active.title}</h3>
                 <div className="text-[11px] md:text-[12px] font-mono text-[#8a8278] mt-1">
                   {active.cultural_matrix} · <span className="text-[#f5a524]">{active.dna_tag}</span>
+                </div>
+                <div className="mt-2">
+                  <ProviderBadge synth={active.synth_provider} voice={active.voice_provider}/>
                 </div>
               </div>
               <div className="text-right">
