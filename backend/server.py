@@ -175,14 +175,58 @@ class FlipRequest(BaseModel):
     new_title: str
     new_genre: str
 
+class AxisSelection(BaseModel):
+    """EMSS 4-axis multi-dimensional musical control.
+    Each axis is independent — stack Trap Corrido rhythm + Ranchera melody + Soulfire delivery."""
+    rhythm: Optional[str]          = None   # e.g. "Trap Corrido", "Lowrider Cruise 76 BPM"
+    melody: Optional[str]          = None   # e.g. "Ranchera Belt", "Souldies 6th/9th"
+    instrumentation: Optional[str] = None   # e.g. "Warm Souldies Analog", "70s Motown Live Band"
+    emotion: Optional[str]         = None   # e.g. "Hurt-Girl Mirror", "Playful-Pain (Broken Smile)"
+
+class PerformerDNA(BaseModel):
+    """Performer DNA sliders — all 0.0-1.0. Routed into Claude prompt + TTS style."""
+    vulnerability:   float = 0.75
+    raspiness:       float = 0.50
+    warmth:          float = 0.60
+    breath:          float = 0.60
+    breathiness:     float = 0.50
+    clarity:         float = 0.70
+    resonance:       float = 0.65
+    glottal_tension: float = 0.40
+
+class HarmonyLayer(BaseModel):
+    """A stacked harmony take rendered alongside the lead vocal."""
+    interval:  int   = 3                     # semitones
+    direction: Literal["above", "below"] = "above"
+    intensity: float = 0.50                  # 0-1 loudness relative to lead
+    dry_wet:   float = 0.50                  # 0=fully dry, 1=fully wet (reverb/space)
+    timing_ms: int   = 0                     # micro-offset (−50..+50 ms)
+    voice:     Optional[str] = None          # optional TTS voice override
+
 class GenerateRequest(BaseModel):
     """Consumer-safe request. No LML, no decimals, no persona.
-    Backend maps genre+mood → internal cultural_matrix and biometric dials."""
+    Backend maps genre+mood → internal cultural_matrix and biometric dials.
+    EMSS extension: axes / performer_dna / harmony_layers stack on top."""
     lyrics: str
     genre: str = "SGV Oldies"
     mood: str = "Late-Night Honesty"
     title: Optional[str] = None
     ghost_audio_name: Optional[str] = None
+    axes:            Optional[AxisSelection] = None
+    performer_dna:   Optional[PerformerDNA]  = None
+    harmony_layers:  List[HarmonyLayer]      = Field(default_factory=list)
+    subtextual_splicer: bool = False         # "Broken Smile" — never say the pain directly
+    bridge_enabled:     bool = False         # instrumental bridge section
+
+class DuetRequest(BaseModel):
+    """Duo-Soul Engine — alternating-line duet between 2 voice profiles.
+    `lyrics` uses `A: ...` / `B: ...` line-prefix convention."""
+    lyrics: str
+    voice_a: str = "mateo"
+    voice_b: str = "elara"
+    title: Optional[str] = None
+    axes: Optional[AxisSelection] = None
+    performer_dna: Optional[PerformerDNA] = None
 
 # Internal genre/mood → secret recipe mapping (NEVER sent to client)
 _GENRE_MAP = {
@@ -225,6 +269,70 @@ _MOOD_RECIPE = {
     "After-Hours Prayer":   (0.70, 0.84, 0.94, 0.86),
     "Lowrider Calm":        (0.80, 0.70, 0.64, 0.52),
 }
+
+# ============================================================
+# EMSS Multi-Axis Catalogs — independent musical dimensions.
+# These overlay on genre+mood so you can stack e.g. Trap Corrido rhythm
+# + Ranchera melody + Warm Souldies instruments + Hurt-Girl emotion.
+# ============================================================
+AXIS_CATALOG = {
+    "rhythm": [
+        {"id": "lowrider_cruise_76",  "label": "Lowrider Cruise · 76 BPM",         "tag": "72-84 BPM, lazy swing, snare dragged 12-15ms behind the grid"},
+        {"id": "trap_corrido",        "label": "Trap Corrido",                      "tag": "808s + acoustic bajo quinto, triplet hats, 140 BPM half-time feel"},
+        {"id": "late_pocket_bounce",  "label": "Late-Pocket SGV Bounce",            "tag": "85 BPM, dilla-swing, fat kick, snare pushed late"},
+        {"id": "laboe_sunday_68",     "label": "Laboe Sunday · 68 BPM",             "tag": "slow-jam swing, brushed snare, tape-warped kick"},
+        {"id": "drill_uk_140",        "label": "UK Drill · 140",                    "tag": "sliding 808s, syncopated hats, rim-click snare"},
+        {"id": "g_funk_94",           "label": "West Coast G-Funk · 94",            "tag": "TR-808 kicks, live snare, head-nod pocket"},
+        {"id": "afrobeat_105",        "label": "Afrobeat · 105",                    "tag": "log drum, agogo, off-beat open hat"},
+        {"id": "jersey_club_135",     "label": "Jersey Club · 135",                 "tag": "bed-squeak kicks, 5-stroke pattern, pitched vocal chops"},
+        {"id": "bossa_cruise_82",     "label": "Bossa Cruise · 82",                 "tag": "brush snare, rim clave, upright bass walks"},
+        {"id": "requinto_bolero",     "label": "Requinto Bolero Free",              "tag": "rubato rhythm, no click, breath-timed"},
+    ],
+    "melody": [
+        {"id": "ranchera_belt",       "label": "Ranchera Belt",                     "tag": "wide interval jumps, sustained belts, ranchera vibrato"},
+        {"id": "souldies_6_9",        "label": "Souldies 6th/9th Phrasing",         "tag": "Major 7th, Minor 9th chord-tones, bluesy bends"},
+        {"id": "hurt_girl_mirror",    "label": "Hurt-Girl Mirror Melody",           "tag": "closed-mouth resonance, stepwise descending phrases, tears at end"},
+        {"id": "corrido_narration",   "label": "Corrido Narrative",                 "tag": "story-arc phrasing, octave lifts on climactic lines"},
+        {"id": "trap_soul_drip",      "label": "Trap Soul Drip",                    "tag": "melismatic runs, pitched ad-libs, pentatonic cascades"},
+        {"id": "laboe_crooner",       "label": "Laboe Crooner",                     "tag": "doo-wop thirds, falsetto break on refrain, vibrato on final word"},
+        {"id": "drill_monotone",      "label": "Drill Monotone Chant",              "tag": "3-note chant, emphasis on off-beats, menacing stillness"},
+        {"id": "afro_pentatonic",     "label": "Afro Pentatonic",                   "tag": "5-note phrases, call-and-response, melismatic turns"},
+        {"id": "ancestral_nahuatl",   "label": "Ancestral Nahuatl",                 "tag": "pre-Columbian modal scales, throat drone overtones"},
+    ],
+    "instrumentation": [
+        {"id": "warm_souldies_analog","label": "Warm Souldies Analog",              "tag": "tape saturation, 200-500Hz wood-and-wire bump, fender rhodes, warm bass"},
+        {"id": "70s_motown_live",     "label": "70s Motown Live Band",              "tag": "live drums, tambourine, horn stabs, strings, walking bass"},
+        {"id": "lo_fi_tape_hiss",     "label": "Lo-Fi Tape Hiss",                   "tag": "4-track cassette, pitch wobble, vinyl crackle, muted piano"},
+        {"id": "trap_808_heavy",      "label": "Trap 808 Heavy",                    "tag": "sub 808, detuned synth bass, triplet hats, vocal chops"},
+        {"id": "acoustic_requinto",   "label": "Acoustic Requinto Ensemble",         "tag": "requinto, bajo sexto, accordion, spanish guitar, light percussion"},
+        {"id": "synthwave_analog",    "label": "Synthwave Analog",                  "tag": "Juno-6 pads, gated reverb snare, saw bass, arpeggios"},
+        {"id": "gospel_chicano",      "label": "Gospel Chicano Choir",              "tag": "live Hammond B3, upright piano, choir stacks, tambourine"},
+        {"id": "minimal_808",         "label": "Minimal 808 + Voice",               "tag": "just 808 sub, clap, hat; vocal carries the song"},
+        {"id": "orchestral_cinematic","label": "Orchestral Cinematic",              "tag": "strings, cello, french horns, timpani, bells"},
+    ],
+    "emotion": [
+        {"id": "soulfire_hurt_girl",  "label": "Soulfire · Hurt-Girl",              "tag": "closed-mouth intimacy, internal singing, pain-in-the-eyes delivery"},
+        {"id": "playful_pain",        "label": "Playful-Pain (Broken Smile)",       "tag": "bright harmony + sad lyrics, glottal tension on optimistic lines, audible smile-cracks"},
+        {"id": "defiant_bloom",       "label": "Defiant Bloom",                     "tag": "chest-voice belt, survival energy, rising dynamics"},
+        {"id": "abuela_lament",       "label": "Abuela Lament",                     "tag": "requinto grief, long breaths, generational mourning"},
+        {"id": "lowrider_melancholy", "label": "Lowrider Melancholy",               "tag": "cruising reflection, late-night honesty, half-smile nostalgia"},
+        {"id": "street_menace",       "label": "Street Menace · Soft",              "tag": "whisper-grit, subharmonic undercurrent, controlled rage"},
+        {"id": "sunday_dedication",   "label": "Sunday Dedication",                  "tag": "Laboe-style longing, caller-to-lockup tenderness, falsetto breaks"},
+        {"id": "ancestral_fire",      "label": "Ancestral Fire",                     "tag": "pre-Columbian invocation, throat resonance, conjuring energy"},
+        {"id": "after_hours_prayer",  "label": "After-Hours Prayer",                 "tag": "whisper, tape hiss, candlelit confession at 4am"},
+    ],
+}
+
+# Duo-Soul voice profiles — paired to OpenAI TTS voices server-side
+DUET_PROFILES = [
+    {"id": "mateo",    "label": "Mateo",    "tts_voice": "onyx",    "persona": "Deep chest voice · SGV carnal", "color": "#f5a524"},
+    {"id": "elara",    "label": "Elara",    "tts_voice": "nova",    "persona": "Bright airy female · defiant bloom", "color": "#ff5eac"},
+    {"id": "requinto", "label": "Requinto", "tts_voice": "echo",    "persona": "Warm mid-range · oldies crooner", "color": "#ffd88a"},
+    {"id": "solana",   "label": "Solana",   "tts_voice": "shimmer", "persona": "Airy breath · hurt-girl mirror", "color": "#59d3ff"},
+    {"id": "abuela",   "label": "Abuela",   "tts_voice": "sage",    "persona": "Gentle generational · prayer", "color": "#c9bfae"},
+    {"id": "carnal",   "label": "Carnal",   "tts_voice": "ash",     "persona": "Raspy grain · street resilience", "color": "#6a8cff"},
+]
+_DUET_VOICE_BY_ID = {p["id"]: p for p in DUET_PROFILES}
 
 class LedgerEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -511,6 +619,56 @@ Hard rules:
 async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dict:
     """Call Claude Sonnet 4.5 via EMERGENT_LLM_KEY. Internal prompt-engineering — never exposed."""
     lung, throat, fry, crack = recipe
+
+    # --- EMSS multi-axis overlay --------------------------------------
+    axes = req.axes
+    axis_lines: list = []
+    if axes:
+        cat = AXIS_CATALOG
+        def _lookup(axis_key, sel_id):
+            if not sel_id: return None
+            for opt in cat.get(axis_key, []):
+                if opt["id"] == sel_id: return opt
+            return None
+        for key, lbl in (("rhythm","Rhythm/Structure"), ("melody","Melody"),
+                         ("instrumentation","Instrumentation"), ("emotion","Emotional Delivery")):
+            sel = _lookup(key, getattr(axes, key, None))
+            if sel:
+                axis_lines.append(f"- {lbl}: {sel['label']} — {sel['tag']}")
+    axis_block = "\n".join(axis_lines) if axis_lines else "- (using genre+mood defaults)"
+
+    # --- Performer DNA overlay ---------------------------------------
+    dna = req.performer_dna
+    dna_block = "(default performer DNA)"
+    if dna:
+        dna_block = (
+            f"vulnerability={dna.vulnerability:.2f} raspiness={dna.raspiness:.2f} "
+            f"warmth={dna.warmth:.2f} breath={dna.breath:.2f} breathiness={dna.breathiness:.2f} "
+            f"clarity={dna.clarity:.2f} resonance={dna.resonance:.2f} "
+            f"glottal_tension={dna.glottal_tension:.2f}"
+        )
+
+    # --- Broken Smile subtextual splicer + bridge directive ----------
+    splicer_rule = ""
+    if req.subtextual_splicer:
+        splicer_rule = (
+            "\n- BROKEN SMILE RULE: The pain must be FELT but never spoken directly. "
+            "For every sad line, swap 20% of the sad words with 'soft-street' slang or phonetic breaks "
+            "(vocal fry, sighs, half-laughs). Pair sad lyrics with bright harmonic implication (irony)."
+        )
+    bridge_rule = ""
+    if req.bridge_enabled:
+        bridge_rule = (
+            "\n- BRIDGE MANDATORY: Include a [bridge] section that shifts instrumental focus, "
+            "explores a contrasting harmonic texture, and returns cleanly to the main theme."
+        )
+    harmony_rule = ""
+    if req.harmony_layers:
+        lyr = ", ".join(
+            f"{h.direction[:1]}{h.interval}@{h.intensity:.1f}" for h in req.harmony_layers
+        )
+        harmony_rule = f"\n- Harmony layers planned externally: [{lyr}]. Keep lead vocal arrangement clean to accommodate stacking."
+
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         chat = LlmChat(
@@ -522,17 +680,18 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
             f"Cultural Matrix: {matrix}\n"
             f"Biometric dials — lung_capacity={lung:.2f}, throat_resonance={throat:.2f}, "
             f"vocal_fry={fry:.2f}, emotional_cracks={crack:.2f}\n"
+            f"EMSS Multi-Axis Overlay:\n{axis_block}\n"
+            f"Performer DNA: {dna_block}"
+            f"{splicer_rule}{bridge_rule}{harmony_rule}\n"
             f"Ghost audio artifact: {req.ghost_audio_name or 'none'}\n"
             f"Raw lyric seed:\n{req.lyrics}\n\n"
             f"Compose the Soulfire. Return JSON only."
         )
         resp = await chat.send_message(UserMessage(text=user_text))
         txt = resp.strip()
-        # strip accidental fences
         m = re.search(r"\{[\s\S]*\}", txt)
         if m: txt = m.group(0)
         data = json.loads(txt)
-        # minimal validation
         for k in ("title", "cultural_subtext", "lml"):
             if k not in data or not isinstance(data[k], str):
                 raise ValueError(f"missing {k}")
@@ -627,6 +786,41 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 stems[i] = {**s, "src": voice_meta["url"], "level": 0.95, "peak": 0.8}
                 break
 
+    # ---- Harmony layers (EMSS) --------------------------------------
+    # Render each requested harmony layer as an additional TTS take with an
+    # alternate voice. Stored as extra stems alongside the 4 base stems so the
+    # Stem Deck can surface them. Pitch-shift to exact interval is a future
+    # DSP step — for now each layer is an independent take with its own voice.
+    harmony_meta: list = []
+    if req.harmony_layers and voice_meta and EMERGENT_LLM_KEY:
+        harmony_voice_pool = ["nova", "shimmer", "sage", "fable", "echo", "ash", "coral"]
+        for idx, h in enumerate(req.harmony_layers[:4]):   # cap at 4 layers
+            try:
+                hv = h.voice or harmony_voice_pool[idx % len(harmony_voice_pool)]
+                hv_meta = await vocal_performance(
+                    lml=data["lml"], mood=req.mood,
+                    out_dir=str(ROOT_DIR / "static" / "voices"),
+                    voice=hv,
+                )
+                if hv_meta:
+                    harmony_meta.append({
+                        "url": hv_meta["url"],
+                        "voice": hv,
+                        "interval": h.interval,
+                        "direction": h.direction,
+                        "intensity": h.intensity,
+                        "dry_wet": h.dry_wet,
+                        "timing_ms": h.timing_ms,
+                    })
+                    stems.append({
+                        "name": f"Harmony {h.direction[:1].upper()}{h.interval}",
+                        "level": max(0.2, min(1.0, h.intensity)),
+                        "peak":  round(h.intensity * 0.8, 2),
+                        "src":   hv_meta["url"],
+                    })
+            except Exception as e:
+                logger.warning(f"harmony layer {idx} failed: {e}")
+
     dna = f"trk_s2_{uuid.uuid4().hex[:10]}"
     now = datetime.now(timezone.utc).isoformat()
     track = {
@@ -665,6 +859,117 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     })
     track.pop("_id", None)
     return _sanitize_track(track)
+
+@api_router.get("/vibes/axes")
+async def vibes_axes():
+    """EMSS Multi-Axis catalog — 4 independent musical dimensions.
+    Each axis can be freely stacked with genre+mood to produce hybrid outputs."""
+    return {
+        "rhythm":          AXIS_CATALOG["rhythm"],
+        "melody":          AXIS_CATALOG["melody"],
+        "instrumentation": AXIS_CATALOG["instrumentation"],
+        "emotion":         AXIS_CATALOG["emotion"],
+    }
+
+@api_router.get("/duet/profiles")
+async def duet_profiles():
+    """Public Duo-Soul voice profiles. `tts_voice` is stored but never exposed client-side
+    beyond the id — we don't want consumers poking at OpenAI voice names directly."""
+    return {
+        "profiles": [
+            {k: v for k, v in p.items() if k != "tts_voice"}
+            for p in DUET_PROFILES
+        ],
+    }
+
+@api_router.post("/duet/generate")
+@limiter.limit("6/minute")
+async def duet_generate(request: Request, req: DuetRequest, user: Dict = Depends(current_user)):
+    """Duo-Soul Engine — split conversational lyrics by `A:` / `B:` prefixes, synthesize
+    each line with the assigned voice profile, return an ordered segment list.
+    Mixing into a single audio file is deferred to the frontend (sequential Web Audio
+    playback) until ffmpeg is wired for server-side concat."""
+    prof_a = _DUET_VOICE_BY_ID.get(req.voice_a.lower())
+    prof_b = _DUET_VOICE_BY_ID.get(req.voice_b.lower())
+    if not prof_a or not prof_b:
+        raise HTTPException(400, "Unknown voice profile.")
+    if prof_a["id"] == prof_b["id"]:
+        raise HTTPException(400, "Pick two distinct voices.")
+
+    # Parse conversational lyrics: `A: ... / B: ...`
+    lines = []
+    for raw in (req.lyrics or "").splitlines():
+        s = raw.strip()
+        if not s: continue
+        m = re.match(r"^\s*([ABab12])\s*[:|\-]\s*(.+)$", s)
+        if m:
+            tag = m.group(1).upper()
+            who = prof_a if tag in ("A", "1") else prof_b
+            txt = m.group(2).strip()
+        else:
+            # No prefix → alternate starting with A for the first unprefixed line
+            who = prof_a if (len(lines) % 2 == 0) else prof_b
+            txt = s
+        if txt:
+            lines.append({"who": who, "text": txt})
+    if not lines:
+        raise HTTPException(400, "No lyric lines parsed.")
+    if len(lines) > 24:
+        lines = lines[:24]   # safety cap
+
+    # Synthesize each line via OpenAI TTS (Universal Key)
+    segments: list = []
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(503, "Vocal engine offline (no LLM key).")
+    try:
+        from emergentintegrations.llm.openai import OpenAITextToSpeech
+        tts = OpenAITextToSpeech(api_key=EMERGENT_LLM_KEY)
+    except Exception as e:
+        logger.warning(f"TTS init failed: {e}")
+        raise HTTPException(503, "Vocal engine unavailable.")
+
+    out_dir = ROOT_DIR / "static" / "voices"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for idx, ln in enumerate(lines):
+        try:
+            audio_bytes = await tts.generate_speech(
+                text=ln["text"], model="tts-1-hd",
+                voice=ln["who"]["tts_voice"], response_format="mp3",
+            )
+            fname = f"duet_{uuid.uuid4().hex[:10]}.mp3"
+            (out_dir / fname).write_bytes(audio_bytes)
+            segments.append({
+                "index": idx,
+                "voice_id": ln["who"]["id"],
+                "voice_label": ln["who"]["label"],
+                "color": ln["who"]["color"],
+                "text": ln["text"],
+                "url": f"/api/static/voices/{fname}",
+            })
+        except Exception as e:
+            logger.warning(f"duet tts line {idx} failed: {e}")
+            continue
+
+    if not segments:
+        raise HTTPException(502, "Duet synthesis failed — try again.")
+
+    dna = f"duet_{uuid.uuid4().hex[:10]}"
+    now = datetime.now(timezone.utc).isoformat()
+    title = req.title or f"Duet · {prof_a['label']} × {prof_b['label']}"
+    await db.ledger.insert_one({
+        "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": dna,
+        "actor": user["handle"], "amount_usd": 0.0,
+        "note": f"Duo-Soul duet minted · {prof_a['label']} × {prof_b['label']} · {len(segments)} segments",
+        "timestamp": now,
+    })
+    return {
+        "dna_tag": dna,
+        "title": title,
+        "voice_a": {k: v for k, v in prof_a.items() if k != "tts_voice"},
+        "voice_b": {k: v for k, v in prof_b.items() if k != "tts_voice"},
+        "segments": segments,
+        "created_at": now,
+    }
 
 @api_router.get("/vibes")
 async def vibes_catalog():

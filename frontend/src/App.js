@@ -8,6 +8,7 @@ import StemDeck from "./pages/StemDeck";
 import FlipFeed from "./pages/FlipFeed";
 import MutationEngine from "./pages/MutationEngine";
 import UniversalStream from "./pages/UniversalStream";
+import DuetEngine from "./pages/DuetEngine";
 
 function Protected({ children }) {
   const { user, loading, token } = useAuth();
@@ -26,6 +27,7 @@ function App() {
             <Route path="/deck"      element={<Protected><StemDeck/></Protected>}/>
             <Route path="/feed"      element={<Protected><FlipFeed/></Protected>}/>
             <Route path="/ignite"    element={<Protected><MutationEngine/></Protected>}/>
+            <Route path="/duet"      element={<Protected><DuetEngine/></Protected>}/>
             <Route path="/universal" element={<Protected><UniversalStream/></Protected>}/>
             <Route path="/"          element={<Navigate to="/deck" replace/>}/>
             <Route path="*"          element={<Navigate to="/deck" replace/>}/>

@@ -21,6 +21,9 @@ export const generate   = (body) => apiPost("/generate", body);
 export const getLedger  = (limit = 40) => apiGet(`/ledger?limit=${limit}`);
 export const getWallet  = () => apiGet("/wallet");
 export const getVibes   = () => apiGet("/vibes");
+export const getAxes    = () => apiGet("/vibes/axes");
+export const getDuetProfiles = () => apiGet("/duet/profiles");
+export const generateDuet    = (body) => apiPost("/duet/generate", body);
 export const getBloodlines = () => apiGet("/leaderboard/bloodlines");
 
 export const uploadForDemucs = (file) => {
