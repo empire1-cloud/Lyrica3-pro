@@ -168,7 +168,7 @@ export default function StemDeck() {
                   {active.cultural_matrix} · <span className="text-[#f5a524]">{active.dna_tag}</span>
                 </div>
                 <div className="mt-2">
-                  <ProviderBadge synth={active.synth_provider} voice={active.voice_provider}/>
+                  <ProviderBadge synth={active.synth_provider || "blackbox"} voice={active.voice_provider || "blackbox"} />
                 </div>
               </div>
               <div className="text-right">

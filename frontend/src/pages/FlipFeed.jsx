@@ -28,7 +28,7 @@ function TrackCard({ t, onFlip, onShare }) {
             {t.parent_dna && <> · <span className="text-[#59d3ff]">flipped from {t.parent_dna.slice(0, 16)}…</span></>}
           </div>
           <div className="mt-2">
-            <ProviderBadge synth={t.synth_provider} voice={t.voice_provider} size="sm"/>
+            <ProviderBadge synth={t.synth_provider || "blackbox"} voice={t.voice_provider || "blackbox"} size="sm" />
           </div>
         </div>
         <div className="text-right">
