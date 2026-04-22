@@ -15,6 +15,10 @@ if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/service-worker.js")
-      .catch(() => {});
+      .catch((err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("service worker registration failed", err);
+        }
+      });
   });
 }

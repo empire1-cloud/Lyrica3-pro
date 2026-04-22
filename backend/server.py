@@ -27,6 +27,11 @@ DB_NAME   = os.environ['DB_NAME']
 JWT_SECRET = os.environ.get('JWT_SECRET', 'dev_secret_change_me')
 JWT_ALGO   = "HS256"
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+AUTH_COOKIE_NAME = os.environ.get("AUTH_COOKIE_NAME", "e1_token")
+AUTH_COOKIE_MAX_AGE = int(os.environ.get("AUTH_COOKIE_MAX_AGE", str(14 * 24 * 60 * 60)))
+AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", "false").lower() == "true"
+AUTH_COOKIE_SAMESITE = os.environ.get("AUTH_COOKIE_SAMESITE", "lax")
+COOKIE_DOMAIN = os.environ.get("COOKIE_DOMAIN")
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
@@ -363,11 +368,41 @@ def _make_token(handle: str) -> str:
     payload = {"handle": handle, "exp": datetime.now(timezone.utc) + timedelta(days=14)}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
 
-async def current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict:
-    if not creds:
+def _set_auth_cookie(resp: JSONResponse, token: str) -> None:
+    resp.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=AUTH_COOKIE_SECURE,
+        samesite=AUTH_COOKIE_SAMESITE,
+        max_age=AUTH_COOKIE_MAX_AGE,
+        path="/",
+        domain=COOKIE_DOMAIN,
+    )
+
+
+def _clear_auth_cookie(resp: JSONResponse) -> None:
+    resp.delete_cookie(
+        key=AUTH_COOKIE_NAME,
+        path="/",
+        secure=AUTH_COOKIE_SECURE,
+        samesite=AUTH_COOKIE_SAMESITE,
+        domain=COOKIE_DOMAIN,
+    )
+
+
+def _extract_token(request: Request, creds: Optional[HTTPAuthorizationCredentials]) -> Optional[str]:
+    if creds and creds.credentials:
+        return creds.credentials
+    return request.cookies.get(AUTH_COOKIE_NAME)
+
+
+async def current_user(request: Request, creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict:
+    token = _extract_token(request, creds)
+    if not token:
         raise HTTPException(401, "Unauthenticated — Empire 1 Ledger access denied.")
     try:
-        data = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGO])
+        data = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGO])
     except jwt.PyJWTError:
         raise HTTPException(401, "Invalid token.")
     user = await db.users.find_one({"handle": data["handle"]}, {"_id": 0, "password_hash": 0})
@@ -397,7 +432,9 @@ async def register(request: Request, req: RegisterReq):
     }
     await db.users.insert_one(doc)
     token = _make_token(handle)
-    return {"token": token, "handle": handle, "wallet": wallet}
+    resp = JSONResponse({"token": token, "handle": handle, "wallet": wallet})
+    _set_auth_cookie(resp, token)
+    return resp
 
 @api_router.post("/auth/login")
 @limiter.limit("10/minute")
@@ -407,7 +444,16 @@ async def login(request: Request, req: LoginReq):
     if not user or not bcrypt.checkpw(req.password.encode(), user["password_hash"].encode()):
         raise HTTPException(401, "Invalid credentials.")
     token = _make_token(handle)
-    return {"token": token, "handle": handle, "wallet": user["wallet"]}
+    resp = JSONResponse({"token": token, "handle": handle, "wallet": user["wallet"]})
+    _set_auth_cookie(resp, token)
+    return resp
+
+
+@api_router.post("/auth/logout")
+async def logout():
+    resp = JSONResponse({"ok": True})
+    _clear_auth_cookie(resp)
+    return resp
 
 @api_router.get("/auth/me")
 async def me(user: Dict = Depends(current_user)):
@@ -1135,8 +1181,8 @@ async def bloodlines(limit: int = 8):
 @app.websocket("/api/ws/royalties")
 async def ws_royalties(ws: WebSocket):
     await ws.accept()
-    # auth via query param ?token=
-    token = ws.query_params.get("token")
+    # auth via query param ?token= (legacy) or secure cookie.
+    token = ws.query_params.get("token") or ws.cookies.get(AUTH_COOKIE_NAME)
     handle = None
     if token:
         try:
@@ -1197,8 +1243,8 @@ app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="
 
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_credentials=os.environ.get("ALLOW_CREDENTIALS", "true").lower() == "true",
+    allow_origins=[o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()],
     allow_methods=["*"], allow_headers=["*"],
 )
 

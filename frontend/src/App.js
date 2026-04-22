@@ -11,9 +11,9 @@ import UniversalStream from "./pages/UniversalStream";
 import DuetEngine from "./pages/DuetEngine";
 
 function Protected({ children }) {
-  const { user, loading, token } = useAuth();
+  const { user, loading } = useAuth();
   if (loading) return <div className="p-12 font-mono text-[#8a8278]">Priming Empire 1 Ledger…</div>;
-  if (!token || !user) return <Navigate to="/login" replace/>;
+  if (!user) return <Navigate to="/login" replace/>;
   return <Shell>{children}</Shell>;
 }
 

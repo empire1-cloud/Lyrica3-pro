@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { generate, getVibes, getAxes } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import {
@@ -267,15 +267,27 @@ export default function MutationEngine() {
   const [result, setResult] = useState(null);
   const [err, setErr] = useState("");
 
-  useEffect(() => {
+  const loadCatalogs = useCallback(() => {
     getVibes().then((v) => {
       if (v?.genre_groups?.length) { setGenreGroups(v.genre_groups); setGenre(v.genre_groups[0].items[0]); }
       if (v?.mood_groups?.length)  { setMoodGroups(v.mood_groups);   setMood(v.mood_groups[0].items[0]); }
-    }).catch(() => {});
+    }).catch((err) => {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("getVibes failed", err);
+      }
+    });
     getAxes().then((a) => {
       if (a?.rhythm) setAxisCatalog(a);
-    }).catch(() => {});
+    }).catch((err) => {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("getAxes failed", err);
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    loadCatalogs();
+  }, [loadCatalogs]);
 
   const stages = [
     "Routing vibe matrix",
@@ -446,7 +458,7 @@ export default function MutationEngine() {
             {harmonyOpen && (
               <div className="space-y-2.5">
                 {harmonyLayers.map((l, i) => (
-                  <HarmonyRow key={i} idx={i} layer={l}
+                  <HarmonyRow key={`${l.direction}-${l.interval}-${i}`} idx={i} layer={l}
                               onChange={(nl) => updateHarmony(i, nl)}
                               onRemove={() => removeHarmony(i)}/>
                 ))}

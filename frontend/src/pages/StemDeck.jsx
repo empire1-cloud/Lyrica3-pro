@@ -34,17 +34,25 @@ export default function StemDeck() {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
   const fileRef = useRef(null);
+  const dnaParam = searchParams.get("dna");
 
   useEffect(() => {
     getTracks().then((ts) => {
       setTracks(ts);
       // Deep-link support: /deck?dna=<id> arrives from Discord bot / share cards
-      const dna = searchParams.get("dna");
-      const match = dna ? ts.find((t) => t.dna_tag === dna) : null;
+      const match = dnaParam ? ts.find((t) => t.dna_tag === dnaParam) : null;
       setActive(match || ts[0]);
+    }).catch((ex) => {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("getTracks failed", ex);
+      }
     });
-    getWallet().then(setWallet).catch(() => {});
-  }, [searchParams]);
+    getWallet().then(setWallet).catch((ex) => {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("getWallet failed", ex);
+      }
+    });
+  }, [dnaParam]);
 
   const onPulse = () => {
     setPulse(true);

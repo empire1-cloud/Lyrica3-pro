@@ -16,6 +16,8 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
   const cardRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState("");
+  const [platform, setPlatform] = useState("tiktok");
+  const [brandVariant, setBrandVariant] = useState("classic");
 
   // Derive lineage chain (root → ... → this track)
   const lineage = chain && chain.length ? chain : [
@@ -32,6 +34,43 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
       backgroundColor: "#08080a",
       style: { transform: "none" },
     });
+  };
+
+  const ctaLink = `${window.location.origin}/feed?flip=${track.dna_tag}`;
+  const shortDna = `${track.dna_tag.slice(0, 12)}…`;
+  const captionByPlatform = {
+    tiktok: `${track.title} // DNA ${shortDna}\nFlip this bloodline on Lyrica 3\n${ctaLink}\n#Lyrica3 #Empire1 #ChicanoFuture #AIMusic #FlipIt`,
+    instagram: `${track.title} · SynthID ${shortDna}\nCultural bloodline remix economy.\n${ctaLink}\n#Lyrica3 #Empire1 #BloodlineRemix #SovereignCreator #AIMusic`,
+    x: `${track.title} · DNA ${shortDna}\nFlip this bloodline: ${ctaLink}\n#Lyrica3 #Empire1 #AIMusic`,
+  };
+  const shareCaption = captionByPlatform[platform];
+  const hashtagLine = (shareCaption.split("\n").find((line) => line.includes("#")) || "").trim();
+
+  const copyCaption = async () => {
+    try {
+      await navigator.clipboard.writeText(shareCaption);
+      setFlash("Caption copied");
+    } catch (e) {
+      setFlash("Clipboard blocked · copy manually");
+    }
+  };
+
+  const copyCta = async () => {
+    try {
+      await navigator.clipboard.writeText(ctaLink);
+      setFlash("Flip link copied");
+    } catch (e) {
+      setFlash("Clipboard blocked · copy manually");
+    }
+  };
+
+  const copyHashtags = async () => {
+    try {
+      await navigator.clipboard.writeText(hashtagLine || "#Lyrica3 #Empire1 #AIMusic");
+      setFlash("Hashtags copied");
+    } catch (e) {
+      setFlash("Clipboard blocked · copy manually");
+    }
   };
 
   const download = async () => {
@@ -55,7 +94,7 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
       const dataUrl = await buildPng();
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `lyrica3-${track.dna_tag.slice(0,12)}.png`, { type: "image/png" });
-      const shareText = `${track.title} · DNA ${track.dna_tag.slice(0,16)}… · flip it on lyrica3.com`;
+      const shareText = shareCaption;
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -68,7 +107,7 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
         setFlash("Link shared");
       } else {
         // Fallback: copy link + trigger download
-        await navigator.clipboard.writeText(`${window.location.origin}/feed?flip=${track.dna_tag}`);
+        await navigator.clipboard.writeText(ctaLink);
         download();
         setFlash("Link copied · PNG downloaded");
       }
@@ -102,7 +141,7 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
           style={{
             aspectRatio: "4 / 5",
             background: "linear-gradient(160deg, #08080a 0%, #0d0d12 50%, #12080f 100%)",
-            border: "1px solid #2a2a34",
+            border: brandVariant === "watermark" ? "1px solid #59d3ff55" : "1px solid #2a2a34",
           }}
         >
           {/* Pink/cyan biometric haze */}
@@ -116,6 +155,16 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
           {/* Grain / scanlines overlay */}
           <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
                style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,255,255,0.04) 2px, rgba(255,255,255,0.04) 3px)" }}/>
+          {brandVariant === "watermark" && (
+            <div className="absolute right-4 bottom-4 pointer-events-none">
+              <div className="font-display text-[16px] tracking-[0.22em] text-[#59d3ff]/55">
+                LYRICA 3
+              </div>
+              <div className="font-mono text-[8px] uppercase tracking-[0.2em] text-[#59d3ff]/45 text-right">
+                empire 1 verified
+              </div>
+            </div>
+          )}
 
           {/* Content */}
           <div className="relative h-full flex flex-col justify-between p-5 md:p-7">
@@ -246,6 +295,83 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
                 <span className="shrink-0">© Empire 1</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Platform caption + variant controls */}
+        <div className="mt-3 border border-[#1c1c22] rounded-[4px] bg-[#0d0d10] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#8a8278]">
+              Social preset
+            </div>
+            <div className="flex gap-1.5">
+              {["tiktok", "instagram", "x"].map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPlatform(p)}
+                  className={`px-2 py-1 rounded-[3px] border text-[9px] uppercase tracking-[0.18em] transition ${
+                    platform === p
+                      ? "border-[#f5a524]/70 bg-[#f5a524]/15 text-[#ffd88a]"
+                      : "border-[#2a2a34] text-[#8a8278] hover:text-[#f3ece1]"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-[#8a8278]">
+              Brand variant
+            </div>
+            <div className="flex gap-1.5">
+              {[
+                ["classic", "Classic"],
+                ["watermark", "Reel Focus"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setBrandVariant(value)}
+                  className={`px-2 py-1 rounded-[3px] border text-[9px] uppercase tracking-[0.18em] transition ${
+                    brandVariant === value
+                      ? "border-[#59d3ff]/70 bg-[#59d3ff]/15 text-[#59d3ff]"
+                      : "border-[#2a2a34] text-[#8a8278] hover:text-[#f3ece1]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-[3px] border border-[#2a2a34] bg-[#0a0a0c] p-2.5">
+            <div className="font-mono text-[8px] uppercase tracking-[0.2em] text-[#6b6257] mb-1.5">
+              Suggested caption
+            </div>
+            <pre className="whitespace-pre-wrap break-words font-mono text-[10px] leading-relaxed text-[#c9bfae]">
+              {shareCaption}
+            </pre>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2.5">
+            <button
+              type="button"
+              onClick={copyCaption}
+              className="px-2.5 py-1.5 rounded-[3px] border border-[#59d3ff]/45 bg-[#59d3ff]/10 text-[#59d3ff] text-[9px] uppercase tracking-[0.18em]">
+              Copy caption
+            </button>
+            <button
+              type="button"
+              onClick={copyCta}
+              className="px-2.5 py-1.5 rounded-[3px] border border-[#ff5eac]/45 bg-[#ff5eac]/10 text-[#ff5eac] text-[9px] uppercase tracking-[0.18em]">
+              Copy flip link
+            </button>
+            <button
+              type="button"
+              onClick={copyHashtags}
+              className="px-2.5 py-1.5 rounded-[3px] border border-[#ffd88a]/45 bg-[#ffd88a]/10 text-[#ffd88a] text-[9px] uppercase tracking-[0.18em]">
+              Copy hashtags
+            </button>
           </div>
         </div>
 

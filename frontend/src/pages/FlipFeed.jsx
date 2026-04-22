@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getTracks, getLedger, flipTrack, getWallet, WS_URL } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -181,7 +181,7 @@ function RoyaltyTicker({ events }) {
 }
 
 export default function FlipFeed() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const nav = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [tracks, setTracks] = useState([]);
@@ -193,7 +193,7 @@ export default function FlipFeed() {
   const [minting, setMinting] = useState(null);
   const wsRef = useRef(null);
 
-  const refresh = () => {
+  const refresh = useCallback(() => {
     getTracks().then((ts) => {
       setTracks(ts);
       // Discord deep-link: /feed?flip=<dna> auto-opens the flip modal
@@ -207,22 +207,40 @@ export default function FlipFeed() {
         setSearchParams(next, { replace: true });
       }
     });
-    getWallet().then((w) => { setWallet(w); setLiveBal(w?.balance_usd ?? 0); }).catch(() => {});
-  };
+    getWallet()
+      .then((w) => { setWallet(w); setLiveBal(w?.balance_usd ?? 0); })
+      .catch((err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("wallet refresh failed", err);
+        }
+      });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     refresh();
-    if (!token) return;
-    const ws = new WebSocket(`${WS_URL}?token=${token}`);
+    if (!user) return;
+    const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
     ws.onmessage = (m) => {
       const d = JSON.parse(m.data);
       setEvents((prev) => [d, ...prev].slice(0, 40));
       if (d.wallet_delta_usd) setLiveBal((b) => +(b + d.wallet_delta_usd).toFixed(4));
     };
-    ws.onerror = () => {};
-    return () => { try { ws.close(); } catch {} };
-  }, [token]);
+    ws.onerror = (err) => {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("ws error", err);
+      }
+    };
+    return () => {
+      try {
+        ws.close();
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("ws close failed", err);
+        }
+      }
+    };
+  }, [refresh, user]);
 
   const submitFlip = async (newTitle, newGenre) => {
     const parent = flipOpen;
