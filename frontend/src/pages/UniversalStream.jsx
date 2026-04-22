@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getBloodlines, getLedger, WS_URL } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { Globe, Radio, TrendingUp, Fingerprint, Zap, Repeat2, Crown, Share2 } from "lucide-react";
@@ -108,8 +108,8 @@ function NetworkGravityOrbit({ bloodlines }) {
       <div className="relative w-full aspect-square max-w-[320px] mx-auto">
         <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
           {/* orbits */}
-          {[0.32, 0.56, 0.82].map((r, i) => (
-            <circle key={i} cx={cx} cy={cy} r={r * (size/2 - 8)}
+          {[0.32, 0.56, 0.82].map((r) => (
+            <circle key={`orbit-${r}`} cx={cx} cy={cy} r={r * (size/2 - 8)}
                     fill="none" stroke="#22222a" strokeDasharray="2 4"/>
           ))}
           {/* center star */}
@@ -143,35 +143,55 @@ function NetworkGravityOrbit({ bloodlines }) {
 }
 
 export default function UniversalStream() {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [bloodlines, setBloodlines] = useState([]);
   const [ledger, setLedger] = useState([]);
   const [live, setLive] = useState([]);
   const [shareOpen, setShareOpen] = useState(null);
   const wsRef = useRef(null);
 
-  const refresh = () => {
-    getBloodlines().then((d) => setBloodlines(d.bloodlines || [])).catch(() => {});
-    getLedger(12).then(setLedger).catch(() => {});
-  };
+  const refresh = useCallback(() => {
+    getBloodlines()
+      .then((d) => setBloodlines(d.bloodlines || []))
+      .catch((err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("bloodline refresh failed", err);
+        }
+      });
+    getLedger(12)
+      .then(setLedger)
+      .catch((err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("ledger refresh failed", err);
+        }
+      });
+  }, []);
 
   useEffect(() => {
     refresh();
     const id = setInterval(refresh, 15000);
     return () => clearInterval(id);
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
-    if (!token) return;
-    const ws = new WebSocket(`${WS_URL}?token=${token}`);
+    if (!user) return;
+    const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
     ws.onmessage = (m) => {
       const d = JSON.parse(m.data);
       setLive((prev) => [d, ...prev].slice(0, 20));
     };
     ws.onerror = () => {};
-    return () => { try { ws.close(); } catch {} };
-  }, [token]);
+    return () => {
+      try {
+        ws.close();
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("ws close failed", err);
+        }
+      }
+    };
+  }, [user]);
 
   return (
     <div className="min-h-screen p-4 md:p-8 lg:p-12">

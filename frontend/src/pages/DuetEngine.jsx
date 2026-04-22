@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getDuetProfiles, generateDuet, resolveAudioUrl } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import { Users, Play, Pause, Square, Mic2, Sparkles, Check } from "lucide-react";
@@ -53,14 +53,27 @@ export default function DuetEngine() {
   const audioRef = useRef(null);
 
   useEffect(() => {
-    getDuetProfiles().then((d) => setProfiles(d.profiles || [])).catch(() => {});
-    return () => { if (audioRef.current) audioRef.current.pause(); };
+    let cancelled = false;
+    getDuetProfiles()
+      .then((d) => {
+        if (!cancelled) setProfiles(d.profiles || []);
+      })
+      .catch((err) => {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("duet profile fetch failed", err);
+        }
+      });
+    const audio = audioRef.current;
+    return () => {
+      cancelled = true;
+      if (audio) audio.pause();
+    };
   }, []);
 
   const profA = profiles.find((p) => p.id === voiceA);
   const profB = profiles.find((p) => p.id === voiceB);
 
-  const generate = async () => {
+  const generate = useCallback(async () => {
     if (!lyrics.trim()) { setErr("Lyric seed required."); return; }
     if (voiceA === voiceB) { setErr("Pick two distinct voices."); return; }
     setErr(""); setLoading(true); setResult(null); setPlayIdx(-1); setPlaying(false);
@@ -72,18 +85,18 @@ export default function DuetEngine() {
     } catch (e) {
       setErr(e?.response?.data?.detail || "Duet synthesis failed.");
     } finally { setLoading(false); }
-  };
+  }, [lyrics, voiceA, voiceB, title]);
 
-  const playAll = () => {
+  const playAll = useCallback(() => {
     if (!result?.segments?.length) return;
     setPlaying(true);
     setPlayIdx(0);
-  };
-  const stopAll = () => {
+  }, [result]);
+  const stopAll = useCallback(() => {
     setPlaying(false);
     setPlayIdx(-1);
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-  };
+  }, []);
 
   // Drive sequential playback
   useEffect(() => {
@@ -176,7 +189,7 @@ export default function DuetEngine() {
                 {result.segments.map((s, i) => {
                   const active = playIdx === i && playing;
                   return (
-                    <div key={i}
+                    <div key={`${s.voice_id}-${s.index}-${s.url}`}
                          data-testid={`duet-segment-${i}`}
                          className="flex items-start gap-3 bg-[#0d0d10] border rounded-[3px] p-3 transition-all"
                          style={{

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Fingerprint, Sparkles, Check } from "lucide-react";
 
 /**
@@ -7,13 +7,13 @@ import { Fingerprint, Sparkles, Check } from "lucide-react";
  */
 export default function MintingModal({ parentTrack, newTitle, newGenre, child, onComplete }) {
   const [stage, setStage] = useState(0);
-  const stages = [
+  const stages = useMemo(() => [
     { label: "Isolating parent stems",       glyph: "◈" },
     { label: "Routing cultural matrix",      glyph: "◉" },
     { label: "Cryptographic DNA forge",      glyph: "⟡" },
     { label: "Pinning to Empire 1 Ledger",   glyph: "◇" },
     { label: "Soulfire confirmed",           glyph: "✓" },
-  ];
+  ], []);
 
   useEffect(() => {
     // advance through stages, then complete once child is present + final stage shown
@@ -24,16 +24,14 @@ export default function MintingModal({ parentTrack, newTitle, newGenre, child, o
       });
     }, 620);
     return () => clearInterval(id);
-    // eslint-disable-next-line
-  }, []);
+  }, [stages]);
 
   useEffect(() => {
     if (stage === stages.length - 1 && child) {
       const t = setTimeout(() => onComplete?.(child), 900);
       return () => clearTimeout(t);
     }
-    // eslint-disable-next-line
-  }, [stage, child]);
+  }, [stage, child, onComplete, stages]);
 
   const done = stage === stages.length - 1 && !!child;
 

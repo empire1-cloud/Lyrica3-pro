@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Play, Pause } from "lucide-react";
 import Fader from "./Fader";
 
@@ -17,11 +17,20 @@ export default function StemMixer({ stems, onStemsChange, onPulse }) {
   const [peaks, setPeaks] = useState(stems.map((s) => s.peak || 0.5));
   const tickRef = useRef(0);
   const lastPulseRef = useRef(0);
+  const stemSrcKey = useMemo(() => stems.map((s) => s.src).join("|"), [stems]);
 
   // (re)build audio elements whenever src list changes
   useEffect(() => {
     // teardown old
-    audios.current.forEach((a) => { try { a.pause(); } catch {} });
+    audios.current.forEach((a) => {
+      try {
+        a.pause();
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn("stem audio pause failed", err);
+        }
+      }
+    });
     audios.current = stems.map((s) => {
       const a = new Audio();
       const url = s.src
@@ -44,11 +53,18 @@ export default function StemMixer({ stems, onStemsChange, onPulse }) {
       if (first.readyState >= 3) setLoaded(true);
     }
     return () => {
-      audios.current.forEach((a) => { try { a.pause(); } catch {} });
+      audios.current.forEach((a) => {
+        try {
+          a.pause();
+        } catch (err) {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("stem audio cleanup pause failed", err);
+          }
+        }
+      });
       if (first) first.removeEventListener("canplay", mark);
     };
-    // eslint-disable-next-line
-  }, [stems.map((s) => s.src).join("|")]);
+  }, [stemSrcKey, stems]);
 
   // volume sync
   useEffect(() => {
@@ -85,7 +101,7 @@ export default function StemMixer({ stems, onStemsChange, onPulse }) {
     return () => clearInterval(id);
   }, [playing, stems, onPulse]);
 
-  const toggle = async () => {
+  const toggle = useCallback(async () => {
     if (playing) {
       audios.current.forEach((a) => a.pause());
       setPlaying(false);
@@ -102,9 +118,11 @@ export default function StemMixer({ stems, onStemsChange, onPulse }) {
       );
       setPlaying(true);
     } catch (e) {
-      console.warn("transport fail", e);
+      if (process.env.NODE_ENV === "development") {
+        console.warn("transport fail", e);
+      }
     }
-  };
+  }, [playing]);
 
   const setLevel = (i, v) => {
     const next = stems.map((s, idx) => (idx === i ? { ...s, level: v } : s));
