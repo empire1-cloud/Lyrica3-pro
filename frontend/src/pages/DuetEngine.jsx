@@ -40,7 +40,7 @@ export default function DuetEngine() {
   const [voiceA, setVoiceA] = useState("mateo");
   const [voiceB, setVoiceB] = useState("elara");
   const [lyrics, setLyrics] = useState(
-    "A: Hey mija, you still up?\nB: Late-night pacing, same as always.\nA: The porch-light never turns off.\nB: Neither does the ache."
+    "A: Hey — you still up?\nB: Late-night pacing, same as always.\nA: The porch light never turns off.\nB: Neither does the ache."
   );
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
@@ -142,7 +142,7 @@ export default function DuetEngine() {
             <textarea
               value={lyrics} onChange={(e) => setLyrics(e.target.value)}
               data-testid="duet-lyrics-input"
-              placeholder="A: Hey mija, you still up?&#10;B: Late-night pacing, same as always.&#10;A: The porch-light never turns off.&#10;B: Neither does the ache."
+              placeholder="A: Hey — you still up?&#10;B: Late-night pacing, same as always.&#10;A: The porch light never turns off.&#10;B: Neither does the ache."
               className="w-full h-[200px] md:h-[240px] bg-[#0d0d10] border border-[#22222a] focus:border-[#f5a524] rounded-[3px] px-4 py-3 text-[#f3ece1] font-mono text-[13px] outline-none leading-relaxed resize-y"/>
 
             <div className="mt-4">
