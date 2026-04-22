@@ -32,11 +32,32 @@ AUTH_COOKIE_MAX_AGE = int(os.environ.get("AUTH_COOKIE_MAX_AGE", str(14 * 24 * 60
 AUTH_COOKIE_SECURE = os.environ.get("AUTH_COOKIE_SECURE", "false").lower() == "true"
 AUTH_COOKIE_SAMESITE = os.environ.get("AUTH_COOKIE_SAMESITE", "lax")
 COOKIE_DOMAIN = os.environ.get("COOKIE_DOMAIN")
+BLACK_BOX_MODE = os.environ.get("BLACK_BOX_MODE", "true").lower() == "true"
+EXPOSE_API_DOCS = os.environ.get("EXPOSE_API_DOCS", "false").lower() == "true" and not BLACK_BOX_MODE
+CORS_ORIGINS = [
+    o.strip() for o in os.environ.get(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000"
+    ).split(",") if o.strip()
+]
+ALLOW_CREDENTIALS = os.environ.get("ALLOW_CREDENTIALS", "true").lower() == "true"
+if "*" in CORS_ORIGINS and ALLOW_CREDENTIALS:
+    # Browsers reject wildcard origins for credentialed requests.
+    # In black-box mode we favor secure cookie posture over permissive CORS.
+    logging.getLogger("empire1.config").warning(
+        "CORS_ORIGINS contains '*' with ALLOW_CREDENTIALS=true; forcing ALLOW_CREDENTIALS=false"
+    )
+    ALLOW_CREDENTIALS = False
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
-app = FastAPI(title="Sonance Pro / Empire 1 Ledger API")
+app = FastAPI(
+    title="Sonance Pro / Empire 1 Ledger API",
+    docs_url="/docs" if EXPOSE_API_DOCS else None,
+    redoc_url="/redoc" if EXPOSE_API_DOCS else None,
+    openapi_url="/openapi.json" if EXPOSE_API_DOCS else None,
+)
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer(auto_error=False)
 
@@ -392,7 +413,7 @@ def _clear_auth_cookie(resp: JSONResponse) -> None:
 
 
 def _extract_token(request: Request, creds: Optional[HTTPAuthorizationCredentials]) -> Optional[str]:
-    if creds and creds.credentials:
+    if not BLACK_BOX_MODE and creds and creds.credentials:
         return creds.credentials
     return request.cookies.get(AUTH_COOKIE_NAME)
 
@@ -432,7 +453,10 @@ async def register(request: Request, req: RegisterReq):
     }
     await db.users.insert_one(doc)
     token = _make_token(handle)
-    resp = JSONResponse({"token": token, "handle": handle, "wallet": wallet})
+    payload = {"handle": handle, "wallet": wallet}
+    if not BLACK_BOX_MODE:
+        payload["token"] = token
+    resp = JSONResponse(payload)
     _set_auth_cookie(resp, token)
     return resp
 
@@ -444,7 +468,10 @@ async def login(request: Request, req: LoginReq):
     if not user or not bcrypt.checkpw(req.password.encode(), user["password_hash"].encode()):
         raise HTTPException(401, "Invalid credentials.")
     token = _make_token(handle)
-    resp = JSONResponse({"token": token, "handle": handle, "wallet": user["wallet"]})
+    payload = {"handle": handle, "wallet": user["wallet"]}
+    if not BLACK_BOX_MODE:
+        payload["token"] = token
+    resp = JSONResponse(payload)
     _set_auth_cookie(resp, token)
     return resp
 
@@ -571,7 +598,10 @@ def _sanitize_track(t: dict) -> dict:
     out = {**t}
     out["biometrics"] = public_bio
     # NEVER expose LML, subtext internals, persona, swing/fry/crack raw numbers
-    for hidden in ("lml", "cultural_subtext"):
+    hidden_fields = ["lml", "cultural_subtext", "voice_meta", "synth_source_url"]
+    if BLACK_BOX_MODE:
+        hidden_fields.extend(["synth_provider", "voice_provider"])
+    for hidden in hidden_fields:
         out.pop(hidden, None)
     # sanitize stems — hide src if not needed for playback (keep for now, audio is public)
     return out
@@ -1181,8 +1211,10 @@ async def bloodlines(limit: int = 8):
 @app.websocket("/api/ws/royalties")
 async def ws_royalties(ws: WebSocket):
     await ws.accept()
-    # auth via query param ?token= (legacy) or secure cookie.
-    token = ws.query_params.get("token") or ws.cookies.get(AUTH_COOKIE_NAME)
+    # In black-box mode we only trust the httpOnly auth cookie.
+    token = ws.cookies.get(AUTH_COOKIE_NAME)
+    if not token and not BLACK_BOX_MODE:
+        token = ws.query_params.get("token")
     handle = None
     if token:
         try:
@@ -1243,8 +1275,8 @@ app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="
 
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=os.environ.get("ALLOW_CREDENTIALS", "true").lower() == "true",
-    allow_origins=[o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",") if o.strip()],
+    allow_credentials=ALLOW_CREDENTIALS,
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"], allow_headers=["*"],
 )
 

@@ -2,11 +2,12 @@ import React from "react";
 import { Music, Sparkles, Mic2 } from "lucide-react";
 
 /**
- * ProviderBadge — shows the immutable synth + voice provider for a track.
- * Reads directly from sanitized mint metadata (synth_provider / voice_provider).
- * Green = live Replicate MusicGen, Amber = fallback stems, Pink sub-badge = OpenAI TTS voice.
+ * ProviderBadge — black-box safe UI adapter.
+ * In black-box mode provider internals are hidden server-side, so this component
+ * gracefully renders nothing when metadata is absent.
  */
 export default function ProviderBadge({ synth, voice, size = "md" }) {
+  if (!synth && !voice) return null;
   const pad = size === "sm" ? "px-2 py-1 text-[9px]" : "px-2.5 py-1 text-[10px]";
   const icon = size === "sm" ? 10 : 11;
 
