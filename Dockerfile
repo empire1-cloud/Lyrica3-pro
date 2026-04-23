@@ -32,11 +32,7 @@ RUN pip install --extra-index-url https://download.pytorch.org/whl/cpu \
     pip install "demucs==4.0.1" "soundfile>=0.12.1"
 
 # Pre-download the htdemucs model weights so first request is fast
-RUN python - <<'PY'
-from demucs.pretrained import get_model
-m = get_model('htdemucs')
-print("demucs weights cached:", m.sources)
-PY
+RUN python -c "from demucs.pretrained import get_model; m = get_model('htdemucs'); print('demucs weights cached:', m.sources)"
 
 # ------------------------------------------------------------
 # Application code
