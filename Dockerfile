@@ -26,6 +26,12 @@ WORKDIR /app
 # isn't 5GB with CUDA. Swap to the CUDA wheel if your host has a GPU.
 # ------------------------------------------------------------
 COPY backend/requirements.txt /app/requirements.txt
+RUN python - <<'PY'
+from pathlib import Path
+req = Path("/app/requirements.txt")
+lines = req.read_text().splitlines()
+req.write_text("\n".join(l for l in lines if not l.startswith("emergentintegrations==")) + "\n")
+PY
 RUN pip install --extra-index-url https://download.pytorch.org/whl/cpu \
       "torch==2.3.1+cpu" "torchaudio==2.3.1+cpu" && \
     pip install -r /app/requirements.txt && \
