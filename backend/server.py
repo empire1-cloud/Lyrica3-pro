@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, status, UploadFile, File, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -20,6 +20,8 @@ import jwt
 import bcrypt
 
 ROOT_DIR = Path(__file__).parent
+# PWA manifest (same as frontend/public/manifest.json) for API-only deployments and integration tests
+MANIFEST_FILE = ROOT_DIR.parent / "frontend" / "public" / "manifest.json"
 load_dotenv(ROOT_DIR / '.env')
 
 MONGO_URL = os.environ['MONGO_URL']
@@ -1266,6 +1268,13 @@ async def ws_royalties(ws: WebSocket):
         except Exception: pass
 
 # ============================================================
+@app.get("/manifest.json")
+async def pwa_manifest():
+    """Serves the PWA web app manifest (matches Vercel/static frontend)."""
+    if not MANIFEST_FILE.is_file():
+        raise HTTPException(404, "manifest.json not found")
+    return FileResponse(MANIFEST_FILE, media_type="application/manifest+json")
+
 app.include_router(api_router)
 
 # Static mount for uploaded audio + Demucs stems + TTS voices

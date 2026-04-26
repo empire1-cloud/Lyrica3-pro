@@ -91,6 +91,8 @@ gcloud builds submit --config cloudbuild.yaml \
   --substitutions=_REGION=$REGION,_REPO=lyrica3,_API_URL=https://api.lyrica3.com
 ```
 
+The build tags images with `$BUILD_ID` (always set) so manual submits work. Git-triggered builds that set `$SHORT_SHA` are fine too; using only `$SHORT_SHA` breaks local/CLI submit because that variable can be empty.
+
 This produces (pushes to Artifact Registry):
 - `…/backend:latest`
 - `…/frontend:latest`      ← built with `REACT_APP_BACKEND_URL=https://api.lyrica3.com`
