@@ -342,7 +342,7 @@ AXIS_CATALOG = {
         {"id": "soulfire_hurt_girl",  "label": "Soulfire · Hurt-Girl",              "tag": "closed-mouth intimacy, internal singing, pain-in-the-eyes delivery"},
         {"id": "playful_pain",        "label": "Playful-Pain (Broken Smile)",       "tag": "bright harmony + sad lyrics, glottal tension on optimistic lines, audible smile-cracks"},
         {"id": "defiant_bloom",       "label": "Defiant Bloom",                     "tag": "chest-voice belt, survival energy, rising dynamics"},
-        {"id": "abuela_lament",       "label": "Abuela Lament",                     "tag": "requinto grief, long breaths, generational mourning"},
+        {"id": "lineal_lament",         "label": "Lineal Lament",                     "tag": "requinto grief, long breaths, intergenerational mourning"},
         {"id": "lowrider_melancholy", "label": "Lowrider Melancholy",               "tag": "cruising reflection, late-night honesty, half-smile nostalgia"},
         {"id": "street_menace",       "label": "Street Menace · Soft",              "tag": "whisper-grit, subharmonic undercurrent, controlled rage"},
         {"id": "sunday_dedication",   "label": "Sunday Dedication",                  "tag": "Laboe-style longing, caller-to-lockup tenderness, falsetto breaks"},
@@ -353,14 +353,26 @@ AXIS_CATALOG = {
 
 # Duo-Soul voice profiles — paired to OpenAI TTS voices server-side
 DUET_PROFILES = [
-    {"id": "mateo",    "label": "Mateo",    "tts_voice": "onyx",    "persona": "Deep chest voice · SGV carnal", "color": "#f5a524"},
-    {"id": "elara",    "label": "Elara",    "tts_voice": "nova",    "persona": "Bright airy female · defiant bloom", "color": "#ff5eac"},
+    {"id": "mateo",    "label": "Mateo",    "tts_voice": "onyx",    "persona": "Deep chest voice · close-mic weight · steady presence", "color": "#f5a524"},
+    {"id": "elara",    "label": "Elara",    "tts_voice": "nova",    "persona": "Bright airy mix · lifted, defiant bloom", "color": "#ff5eac"},
     {"id": "requinto", "label": "Requinto", "tts_voice": "echo",    "persona": "Warm mid-range · oldies crooner", "color": "#ffd88a"},
-    {"id": "solana",   "label": "Solana",   "tts_voice": "shimmer", "persona": "Airy breath · hurt-girl mirror", "color": "#59d3ff"},
-    {"id": "abuela",   "label": "Abuela",   "tts_voice": "sage",    "persona": "Gentle generational · prayer", "color": "#c9bfae"},
-    {"id": "carnal",   "label": "Carnal",   "tts_voice": "ash",     "persona": "Raspy grain · street resilience", "color": "#6a8cff"},
+    {"id": "solana",   "label": "Solana",   "tts_voice": "shimmer", "persona": "Airy breath · intimate mirror phrasing", "color": "#59d3ff"},
+    {"id": "heritage_gentle", "label": "Heritage Gentle", "tts_voice": "sage", "persona": "Soft low vibrato · confessional clarity", "color": "#c9bfae"},
+    {"id": "low_grain_baritone", "label": "Low Grain Baritone", "tts_voice": "ash", "persona": "Controlled rasp · grounded resilience", "color": "#6a8cff"},
 ]
 _DUET_VOICE_BY_ID = {p["id"]: p for p in DUET_PROFILES}
+# Legacy client payloads may still send older profile ids; map them to the current catalog.
+_DUET_VOICE_LEGACY_ALIASES = {
+    "abuela": "heritage_gentle",
+    "carnal": "low_grain_baritone",
+}
+
+
+def _resolve_duet_voice_id(raw: str) -> Optional[str]:
+    if not raw:
+        return None
+    key = raw.strip().lower()
+    return _DUET_VOICE_LEGACY_ALIASES.get(key, key)
 
 class LedgerEvent(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -691,7 +703,7 @@ You must output STRICTLY one JSON object (no prose, no markdown fences, no backt
 Hard rules:
 - Output MUST be valid JSON, parseable by json.loads. No trailing commas. No markdown.
 - Embed the biometric tags INLINE inside the lyric lines, not as a separate list.
-- Lyrics should evoke place (El Monte, Rosemead, SGV, Valle), people (abuelita, carnal, mija), and texture (tape hiss, requinto, 808, corridos, oldies).
+- Lyrics should evoke place (El Monte, Rosemead, SGV, Valle), relationships and community (family, neighbors, kin), and texture (tape hiss, requinto, 808, corridos, oldies).
 - Never sanitize pain. The Matriarch demands bruised subtext."""
 
 async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dict:
@@ -970,8 +982,8 @@ async def duet_generate(request: Request, req: DuetRequest, user: Dict = Depends
     each line with the assigned voice profile, return an ordered segment list.
     Mixing into a single audio file is deferred to the frontend (sequential Web Audio
     playback) until ffmpeg is wired for server-side concat."""
-    prof_a = _DUET_VOICE_BY_ID.get(req.voice_a.lower())
-    prof_b = _DUET_VOICE_BY_ID.get(req.voice_b.lower())
+    prof_a = _DUET_VOICE_BY_ID.get(_resolve_duet_voice_id(req.voice_a) or "")
+    prof_b = _DUET_VOICE_BY_ID.get(_resolve_duet_voice_id(req.voice_b) or "")
     if not prof_a or not prof_b:
         raise HTTPException(400, "Unknown voice profile.")
     if prof_a["id"] == prof_b["id"]:

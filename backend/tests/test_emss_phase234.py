@@ -45,7 +45,7 @@ class TestDuetProfiles:
         assert r.status_code == 200, r.text
         profs = r.json().get("profiles", [])
         ids = [p["id"] for p in profs]
-        assert set(ids) == {"mateo", "elara", "requinto", "solana", "abuela", "carnal"}
+        assert set(ids) == {"mateo", "elara", "requinto", "solana", "heritage_gentle", "low_grain_baritone"}
         for p in profs:
             for k in ("id", "label", "persona", "color"):
                 assert k in p, f"profile missing {k}"
