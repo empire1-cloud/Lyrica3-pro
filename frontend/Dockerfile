@@ -6,9 +6,9 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# dep manifest first → docker cache on yarn.lock hits
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --network-timeout 600000
+# dep manifest first → docker cache on package.json hits
+COPY package.json ./
+RUN npm install --legacy-peer-deps && npm install ajv ajv-keywords --legacy-peer-deps
 
 COPY . ./
 
@@ -22,7 +22,7 @@ ENV GENERATE_SOURCEMAP=false \
 ARG REACT_APP_BACKEND_URL
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
 
-RUN yarn build
+RUN npm run build
 
 # ------------------------------------------------------------
 FROM nginx:1.27-alpine AS serve

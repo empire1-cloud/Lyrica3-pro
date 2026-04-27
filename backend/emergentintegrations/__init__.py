@@ -1,0 +1,1 @@
+"""Local fallback package for environments without the emergentintegrations dependency."""
