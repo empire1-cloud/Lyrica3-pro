@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 /**
  * Odometer-style rolling number — smoothly animates between values digit-by-digit.
@@ -26,15 +26,16 @@ export default function Odometer({ value, decimals = 4, prefix = "", className =
     cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [value, display]);
+    // eslint-disable-next-line
+  }, [value]);
 
   const str = display.toFixed(decimals);
-  const chars = useMemo(() => (prefix + str).split(""), [prefix, str]);
+  const chars = (prefix + str).split("");
 
   return (
     <span className={`inline-flex tabular-nums overflow-hidden ${className}`} data-testid="odometer">
       {chars.map((c, i) => (
-        <span key={`char-${c}-${i}`} className="relative inline-block">
+        <span key={i} className="relative inline-block">
           {/[0-9]/.test(c) ? (
             <span className="inline-block transition-transform duration-200" style={{ transform: "translateY(0)" }}>
               {c}

@@ -10,22 +10,9 @@ Static mount `/static/` for user uploads. Demucs v4 pipeline prepared (`backend/
 
 ## Screens
 - `/deck`      — Sonance Pro Stem Deck (4-track mixer, qualitative biometrics, **HTDemucs upload**, DNA panel)
-- `/feed`      — Flip-It Economy (odometer wallet, live WS royalty ticker, cinematic MintingModal, **Bloodline Share Card** export)
-- `/universal` — **Bloodline Remix Leaderboard** (parent→flip chains, Network Gravity orbit SVG, immutable ledger, **Share Bloodline** PNG export)
-- `/ignite`    — **EMSS Mutation Engine** (genre+mood + **4 multi-axis pickers** + **8 Performer DNA sliders** with tooltips + **up to 4 Harmony Layers** + Broken-Smile Splicer + Instrumental Bridge)
-- `/duet`      — **Duo-Soul Engine** (pick 2 of 6 voice profiles, conversational A:/B: lyric parsing, alternating-line TTS, sequential playback)
-
-## Viral / Sharing
-**Bloodline Share Card** (`/components/BloodlineShareCard.jsx`) — html-to-image PNG exporter with SSL dark + pink/cyan haze + SynthID + royalty stats + ancestry chain, 4:5 portrait aspect for TikTok / IG Reels / Stories. Web Share API integration with download fallback.
-
-## EMSS (El Monte Soul-Somatic) Multi-Axis
-Four independent musical dimensions stacked on top of genre+mood:
-- **Rhythm/Structure** — 10 options (Lowrider Cruise · Trap Corrido · Late-Pocket SGV · Drill · G-Funk · Afrobeat · etc.)
-- **Melody/Phrasing** — 9 options (Ranchera Belt · Souldies 6/9 · Hurt-Girl Mirror · Corrido Narrative · etc.)
-- **Instrumentation** — 9 options (Warm Souldies Analog · 70s Motown Live · Lo-Fi Tape · Trap 808 · etc.)
-- **Emotional Delivery** — 9 options (Soulfire Hurt-Girl · Playful-Pain · Defiant Bloom · Abuela Lament · etc.)
-
-Each axis is woven into the Claude Sonnet 4.5 system prompt. `/api/vibes/axes` catalog. Backward compatible — old `{lyrics,genre,mood}` requests still work.
+- `/feed`      — Flip-It Economy (odometer wallet, live WS royalty ticker, cinematic MintingModal)
+- `/universal` — **Bloodline Remix Leaderboard** (parent→flip chains, Network Gravity orbit SVG, immutable ledger)
+- `/ignite`    — S2 Mutation Engine (**21 genres / 12 moods grouped**, ghost audio upload, IGNITE SOULFIRE)
 
 ## IP sanitization
 Backend strips `lml`, `cultural_subtext`, raw biometric decimals before any client response.

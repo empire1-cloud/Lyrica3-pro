@@ -34,25 +34,17 @@ export default function StemDeck() {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState("");
   const fileRef = useRef(null);
-  const dnaParam = searchParams.get("dna");
 
   useEffect(() => {
     getTracks().then((ts) => {
       setTracks(ts);
       // Deep-link support: /deck?dna=<id> arrives from Discord bot / share cards
-      const match = dnaParam ? ts.find((t) => t.dna_tag === dnaParam) : null;
+      const dna = searchParams.get("dna");
+      const match = dna ? ts.find((t) => t.dna_tag === dna) : null;
       setActive(match || ts[0]);
-    }).catch((ex) => {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("getTracks failed", ex);
-      }
     });
-    getWallet().then(setWallet).catch((ex) => {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("getWallet failed", ex);
-      }
-    });
-  }, [dnaParam]);
+    getWallet().then(setWallet).catch(() => {});
+  }, [searchParams]);
 
   const onPulse = () => {
     setPulse(true);
@@ -168,7 +160,7 @@ export default function StemDeck() {
                   {active.cultural_matrix} · <span className="text-[#f5a524]">{active.dna_tag}</span>
                 </div>
                 <div className="mt-2">
-                  <ProviderBadge synth={active.synth_provider || "blackbox"} voice={active.voice_provider || "blackbox"} />
+                  <ProviderBadge synth={active.synth_provider} voice={active.voice_provider}/>
                 </div>
               </div>
               <div className="text-right">

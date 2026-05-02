@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getBloodlines, getLedger, WS_URL } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { Globe, Radio, TrendingUp, Fingerprint, Zap, Repeat2, Crown, Share2 } from "lucide-react";
-import BloodlineShareCard from "../components/BloodlineShareCard";
+import { Globe, Radio, TrendingUp, Fingerprint, Zap, Repeat2, Crown } from "lucide-react";
 
 const COLOR_RING = ["#f5a524", "#ff5eac", "#59d3ff", "#6a8cff", "#ffd88a"];
 
-function BloodlineCard({ bl, rank, accent, onShare }) {
+function BloodlineCard({ bl, rank, accent }) {
   return (
     <div className="panel rounded-[6px] p-4 md:p-5 relative overflow-hidden" data-testid={`bloodline-${bl.root_dna}`}>
       <div className="absolute -top-16 -right-16 w-[200px] h-[200px] rounded-full blur-3xl pointer-events-none"
@@ -37,15 +36,6 @@ function BloodlineCard({ bl, rank, accent, onShare }) {
           <div className="text-[10px] font-mono text-[#6b6257] uppercase tracking-[0.16em]">
             {bl.total_streams.toLocaleString()} streams · {bl.total_flips} flips
           </div>
-          <button
-            onClick={() => onShare && onShare(bl)}
-            data-testid={`share-bloodline-btn-${bl.root_dna}`}
-            className="mt-2 px-2.5 py-1 rounded-[3px] border border-[#59d3ff]/50 bg-[#59d3ff]/10
-                       text-[#59d3ff] uppercase text-[9px] tracking-[0.2em] font-medium
-                       hover:bg-[#59d3ff]/20 transition-all inline-flex items-center gap-1.5">
-            <Share2 size={10}/>
-            Share Bloodline
-          </button>
         </div>
       </div>
 
@@ -108,8 +98,8 @@ function NetworkGravityOrbit({ bloodlines }) {
       <div className="relative w-full aspect-square max-w-[320px] mx-auto">
         <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
           {/* orbits */}
-          {[0.32, 0.56, 0.82].map((r) => (
-            <circle key={`orbit-${r}`} cx={cx} cy={cy} r={r * (size/2 - 8)}
+          {[0.32, 0.56, 0.82].map((r, i) => (
+            <circle key={i} cx={cx} cy={cy} r={r * (size/2 - 8)}
                     fill="none" stroke="#22222a" strokeDasharray="2 4"/>
           ))}
           {/* center star */}
@@ -143,55 +133,34 @@ function NetworkGravityOrbit({ bloodlines }) {
 }
 
 export default function UniversalStream() {
-  const { user } = useAuth();
+  const { token } = useAuth();
   const [bloodlines, setBloodlines] = useState([]);
   const [ledger, setLedger] = useState([]);
   const [live, setLive] = useState([]);
-  const [shareOpen, setShareOpen] = useState(null);
   const wsRef = useRef(null);
 
-  const refresh = useCallback(() => {
-    getBloodlines()
-      .then((d) => setBloodlines(d.bloodlines || []))
-      .catch((err) => {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("bloodline refresh failed", err);
-        }
-      });
-    getLedger(12)
-      .then(setLedger)
-      .catch((err) => {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("ledger refresh failed", err);
-        }
-      });
-  }, []);
+  const refresh = () => {
+    getBloodlines().then((d) => setBloodlines(d.bloodlines || [])).catch(() => {});
+    getLedger(12).then(setLedger).catch(() => {});
+  };
 
   useEffect(() => {
     refresh();
     const id = setInterval(refresh, 15000);
     return () => clearInterval(id);
-  }, [refresh]);
+  }, []);
 
   useEffect(() => {
-    if (!user) return;
-    const ws = new WebSocket(WS_URL);
+    if (!token) return;
+    const ws = new WebSocket(`${WS_URL}?token=${token}`);
     wsRef.current = ws;
     ws.onmessage = (m) => {
       const d = JSON.parse(m.data);
       setLive((prev) => [d, ...prev].slice(0, 20));
     };
     ws.onerror = () => {};
-    return () => {
-      try {
-        ws.close();
-      } catch (err) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("ws close failed", err);
-        }
-      }
-    };
-  }, [user]);
+    return () => { try { ws.close(); } catch {} };
+  }, [token]);
 
   return (
     <div className="min-h-screen p-4 md:p-8 lg:p-12">
@@ -223,8 +192,7 @@ export default function UniversalStream() {
             </div>
           )}
           {bloodlines.map((bl, i) => (
-            <BloodlineCard key={bl.root_dna} bl={bl} rank={i + 1} accent={COLOR_RING[i % COLOR_RING.length]}
-                           onShare={(b) => setShareOpen(b)}/>
+            <BloodlineCard key={bl.root_dna} bl={bl} rank={i + 1} accent={COLOR_RING[i % COLOR_RING.length]}/>
           ))}
         </div>
 
@@ -255,28 +223,6 @@ export default function UniversalStream() {
           </div>
         </div>
       </div>
-
-      {shareOpen && (
-        <BloodlineShareCard
-          track={{
-            dna_tag: shareOpen.root_dna,
-            title: shareOpen.root_title,
-            creator: shareOpen.root_creator,
-            cultural_matrix: shareOpen.root_matrix,
-            streams: shareOpen.total_streams,
-            earnings_usd: shareOpen.total_earnings_usd,
-            flips: shareOpen.total_flips,
-            parent_dna: null,
-          }}
-          chain={(shareOpen.chain || []).map((c, idx) => ({
-            dna_tag: c.dna_tag,
-            title: c.title,
-            creator: c.creator,
-            is_root: c.is_root || idx === 0,
-          }))}
-          onClose={() => setShareOpen(null)}
-        />
-      )}
     </div>
   );
 }
