@@ -22,8 +22,10 @@ import bcrypt
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-MONGO_URL = os.environ['MONGO_URL']
-DB_NAME   = os.environ['DB_NAME']
+MONGO_URL = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+if not MONGO_URL:
+    raise RuntimeError("MONGO_URL env var is required. Set it in .env or your deploy dashboard.")
+DB_NAME   = os.environ.get('DB_NAME', 'lyrica3_dev')
 JWT_SECRET = os.environ.get('JWT_SECRET', 'dev_secret_change_me')
 JWT_ALGO   = "HS256"
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
@@ -996,6 +998,13 @@ async def _ttl_sweep():
 
 @app.on_event("startup")
 async def _boot():
+    # Verify MongoDB is reachable before accepting traffic
+    try:
+        await client.admin.command("ping")
+        logger.info("MongoDB ping OK — connected to %s / %s", MONGO_URL.split("@")[-1], DB_NAME)
+    except Exception as e:
+        logger.error("MongoDB connection FAILED: %s — check MONGO_URL env var", e)
+        # Don't crash the process — health endpoint will report unhealthy
     await ensure_seed()
     asyncio.create_task(_ttl_sweep())
     logger.info("Empire 1 Ledger booted. Soulfire armed. TTL sweeper active.")
