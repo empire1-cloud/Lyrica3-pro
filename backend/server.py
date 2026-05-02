@@ -137,6 +137,79 @@ class RoyaltySplit(BaseModel):
     vocalist:   float = 0.30
     lyricist:   float = 0.20
 
+# ── Royalty Rules ────────────────────────────────────────────────────────────
+# RULE_001 — Original (no parent): 100% stays with creator.
+# RULE_002 — First flip (depth=1): 50% to original creator, 50% to remixer.
+# RULE_003 — Deeper chain (depth≥2): exponential decay.
+#   original_creator = BASE (75%), each ancestor layer decays by DECAY_FACTOR
+#   until the remixer at the tip receives the remainder.
+#   e.g. depth=2: root=75%, mid=20%, tip=5%
+#        depth=3: root=75%, mid1=14%, mid2=6%, tip=5%
+#   All allocations are stored as fractions (sum=1.0) keyed by creator handle.
+
+_RULE_BASE  = 0.75   # original creator floor for RULE_003
+_RULE_DECAY = 0.65   # each intermediate ancestor retains this fraction of remaining share
+_RULE_TIP   = 0.05   # minimum guaranteed to the current remixer
+
+async def _compute_royalty_chain(db, parent_dna: str, remixer: str) -> dict:
+    """Walk the ancestry chain and return a {handle: fraction} royalty map.
+
+    Rules applied:
+      depth=0 (original, no parent)   → RULE_001: {creator: 1.0}
+      depth=1 (one parent)             → RULE_002: {original: 0.50, remixer: 0.50}
+      depth≥2                          → RULE_003: exponential decay
+    """
+    # Build ancestry list from parent up to root
+    chain: list[dict] = []
+    cur_dna = parent_dna
+    seen: set[str] = set()
+    while cur_dna and cur_dna not in seen:
+        seen.add(cur_dna)
+        doc = await db.tracks.find_one({"dna_tag": cur_dna}, {"_id": 0, "creator": 1, "parent_dna": 1})
+        if not doc:
+            break
+        chain.append(doc)
+        cur_dna = doc.get("parent_dna")
+
+    depth = len(chain)  # number of ancestors
+
+    if depth == 0:
+        # Shouldn't happen (parent_dna was provided) but guard anyway → RULE_001
+        return {remixer: 1.0}
+
+    if depth == 1:
+        # RULE_002: 50 / 50
+        original = chain[0]["creator"]
+        alloc: dict[str, float] = {}
+        alloc[original] = alloc.get(original, 0.0) + 0.50
+        alloc[remixer]  = alloc.get(remixer,  0.0) + 0.50
+        return {k: round(v, 6) for k, v in alloc.items()}
+
+    # RULE_003: exponential decay across chain
+    # chain[0] = immediate parent (tip-1), chain[-1] = root
+    # root gets _RULE_BASE; intermediates share (1 - _RULE_BASE - _RULE_TIP) with decay
+    root_creator = chain[-1]["creator"]
+    intermediates = [c["creator"] for c in reversed(chain[:-1])]  # oldest-first after root
+
+    alloc: dict[str, float] = {}
+    alloc[root_creator] = alloc.get(root_creator, 0.0) + _RULE_BASE
+
+    # Distribute (1 - BASE - TIP) across intermediates with decay
+    pool = 1.0 - _RULE_BASE - _RULE_TIP
+    remaining = pool
+    for creator in intermediates:
+        share = round(remaining * (1.0 - _RULE_DECAY), 6)
+        remaining = round(remaining - share, 6)
+        alloc[creator] = alloc.get(creator, 0.0) + share
+
+    # Tip = remixer gets guaranteed minimum + any leftover from decay rounding
+    tip_share = round(_RULE_TIP + remaining, 6)
+    alloc[remixer] = alloc.get(remixer, 0.0) + tip_share
+
+    # Normalise to exactly 1.0 (guard against float drift)
+    total = sum(alloc.values())
+    return {k: round(v / total, 6) for k, v in alloc.items()}
+
 class Stem(BaseModel):
     name: Literal["Raw Human Pipes", "Late-Pocket Drums", "Sub Bass / Acoustic Requinto", "Analog Melody"]
     level: float = 0.78
@@ -167,6 +240,7 @@ class Track(BaseModel):
     earnings_usd: float = 0.0
     stream_rate_usd: float = 0.004
     parent_dna: Optional[str] = None
+    royalty_chain: Optional[Dict[str, float]] = None  # {handle: fraction} — RULE_001/002/003
     lml: Optional[str] = None
     cultural_subtext: Optional[str] = None
     created_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -446,6 +520,10 @@ async def flip_track(dna_tag: str, req: FlipRequest, user: Dict = Depends(curren
         raise HTTPException(404, "Parent DNA not found.")
     new_dna = f"flip_{uuid.uuid4().hex[:10]}"
     now = datetime.now(timezone.utc).isoformat()
+
+    # ── Compute royalty chain per RULE_001/002/003 ───────────────────────────
+    royalty_chain = await _compute_royalty_chain(db, dna_tag, user["handle"])
+
     child = {
         "id": str(uuid.uuid4()), "dna_tag": new_dna, "title": req.new_title,
         "creator": user["handle"], "cultural_matrix": req.new_genre,
@@ -453,16 +531,24 @@ async def flip_track(dna_tag: str, req: FlipRequest, user: Dict = Depends(curren
         "splits": parent["splits"], "streams": 0, "flips": 0,
         "earnings_usd": 0.0, "stream_rate_usd": 0.004,
         "parent_dna": dna_tag,
+        "royalty_chain": royalty_chain,
         "lml": parent.get("lml"),
         "cultural_subtext": f"Flipped from {parent['title']} → mutated into {req.new_genre}.",
         "created_at": now,
     }
     await db.tracks.insert_one(child)
     await db.tracks.update_one({"dna_tag": dna_tag}, {"$inc": {"flips": 1}})
+
+    # Determine which rule was applied for ledger note
+    chain_depth = len(royalty_chain)
+    rule_applied = "RULE_001" if chain_depth == 1 and user["handle"] in royalty_chain else \
+                   "RULE_002" if chain_depth == 2 else "RULE_003"
+    chain_summary = " | ".join(f"{h}={round(f*100,1)}%" for h, f in royalty_chain.items())
+
     await db.ledger.insert_one({
         "id": str(uuid.uuid4()), "kind": "flip", "dna_tag": new_dna,
         "actor": user["handle"], "amount_usd": 0.0,
-        "note": f"Flipped {dna_tag} → {req.new_genre}. Parent royalty route engaged.",
+        "note": f"Flipped {dna_tag} → {req.new_genre}. {rule_applied} active. Chain: {chain_summary}",
         "timestamp": now,
     })
     child.pop("_id", None)
@@ -820,11 +906,26 @@ async def ws_royalties(ws: WebSocket):
             rate = t.get("stream_rate_usd", 0.004)
             # split allocation
             splits = t.get("splits", {"beat_maker": 0.5, "vocalist": 0.3, "lyricist": 0.2})
-            parent_residual = 0.0
-            payable = rate
-            if t.get("parent_dna"):
-                parent_residual = round(rate * 0.35, 6)
-                payable = rate - parent_residual
+
+            # ── RULE_001/002/003 royalty chain payout ────────────────────────
+            royalty_chain: dict = t.get("royalty_chain") or {}
+            if royalty_chain:
+                # Multi-party payout: distribute `rate` across chain
+                chain_payouts = {h: round(rate * f, 6) for h, f in royalty_chain.items()}
+                creator_cut = chain_payouts.get(t["creator"], rate)
+                parent_residual = round(rate - creator_cut, 6)
+            elif t.get("parent_dna"):
+                # Legacy track without chain — fall back to RULE_002 flat 50/50
+                parent_residual = round(rate * 0.50, 6)
+                creator_cut = rate - parent_residual
+                chain_payouts = {t["creator"]: creator_cut}
+            else:
+                # RULE_001 — original, no parent
+                parent_residual = 0.0
+                creator_cut = rate
+                chain_payouts = {t["creator"]: rate}
+
+            payable = creator_cut
             payload = {
                 "kind": "stream",
                 "dna_tag": t["dna_tag"],
@@ -833,6 +934,7 @@ async def ws_royalties(ws: WebSocket):
                 "amount_usd": rate,
                 "parent_dna": t.get("parent_dna"),
                 "parent_residual_usd": parent_residual,
+                "royalty_chain_usd": chain_payouts,
                 "splits_usd": {
                     "beat_maker": round(payable * splits["beat_maker"], 6),
                     "vocalist":   round(payable * splits["vocalist"],   6),
