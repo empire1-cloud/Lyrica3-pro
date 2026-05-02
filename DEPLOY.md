@@ -1,138 +1,188 @@
-# Lyrica 3 Pro — Production Deploy Guide
-**Stack:** Render (backend Docker) + Vercel (frontend CRA) + MongoDB Atlas
+# Lyrica 3 Pro — Production Deploy Guide (GCP Cloud Run)
+**Stack:** GCP Cloud Run (backend + frontend + discord bot) · MongoDB Atlas · GCP Secret Manager
 
 ---
 
-## 1. MongoDB Atlas (free tier — do this first)
-
-1. Go to https://cloud.mongodb.com → create a free M0 cluster (any region)
-2. Database Access → Add user → username: `lyrica3`, password: generate one, save it
-3. Network Access → Allow from anywhere: `0.0.0.0/0` (Render IPs are dynamic)
-4. Connect → Drivers → copy the SRV string:
-   ```
-   mongodb+srv://lyrica3:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-   ```
-5. Replace `<password>` with your actual password. Save this — it's your `MONGO_URL`.
-
----
-
-## 2. Backend on Render
-
-1. Go to https://render.com → New → Web Service → Connect GitHub repo `shiestybizz113-cell/lyrica3-pro`
-2. Settings:
-   - **Name:** `lyrica3pro-backend`
-   - **Root Directory:** `.` (repo root)
-   - **Docker** runtime (Render auto-detects `Dockerfile` at root)
-   - **Plan:** Standard (2GB RAM — Starter OOMs on Demucs)
-   - **Region:** Oregon
-3. Environment Variables (set in Render dashboard → Environment tab):
-
-   | Key | Value |
-   |-----|-------|
-   | `MONGO_URL` | your Atlas SRV string from step 1 |
-   | `DB_NAME` | `lyrica3_prod` |
-   | `JWT_SECRET` | click "Generate" — Render creates a 32-char secret |
-   | `EMERGENT_LLM_KEY` | your Emergent/Claude API key |
-   | `CORS_ORIGINS` | `https://lyrica3.com,https://www.lyrica3.com` (update after Vercel deploy) |
-   | `PORT` | `8001` |
-   | `DEMUCS_ENABLED` | `false` (enable later with GPU plan) |
-
-4. Health Check Path: `/api/`
-5. Deploy → wait for build (~5 min for Docker + torch wheels)
-6. Copy the Render service URL: `https://lyrica3pro-backend.onrender.com`
-
----
-
-## 3. Frontend on Vercel
-
-1. Go to https://vercel.com → New Project → Import `shiestybizz113-cell/lyrica3-pro`
-2. Framework: **Create React App** (auto-detected)
-3. Build settings (auto from `vercel.json`):
-   - Build Command: `cd frontend && yarn install --frozen-lockfile && yarn build`
-   - Output Directory: `frontend/build`
-4. Environment Variables:
-
-   | Key | Value |
-   |-----|-------|
-   | `REACT_APP_BACKEND_URL` | `https://lyrica3pro-backend.onrender.com` |
-   | `GENERATE_SOURCEMAP` | `false` |
-
-5. Deploy → get your Vercel URL: `https://lyrica3-pro.vercel.app`
-6. **Go back to Render** → update `CORS_ORIGINS` to include this Vercel URL
-7. Custom domain: add `lyrica3.com` in Vercel → point DNS CNAME to `cname.vercel-dns.com`
-
----
-
-## 4. Discord Bot on Render (worker service)
-
-1. In Render → New → **Background Worker** → same repo
-2. Settings:
-   - **Name:** `lyrica3pro-discord-bot`
-   - **Root Directory:** `discord_bot`
-   - **Runtime:** Python 3
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `python bot.py`
-3. Environment Variables:
-
-   | Key | Value |
-   |-----|-------|
-   | `DISCORD_BOT_TOKEN` | from Discord Developer Portal |
-   | `DISCORD_GUILD_ID` | your server ID (for fast dev sync) |
-   | `EMPIRE1_API_URL` | `https://lyrica3pro-backend.onrender.com` |
-   | `EMPIRE1_PUBLIC_URL` | `https://lyrica3.com` |
-   | `EMPIRE1_BOT_HANDLE` | `discord.empire1` |
-   | `EMPIRE1_BOT_PASS` | generate a strong password |
-
----
-
-## 5. Post-Deploy Login Test
+## 0. Prerequisites
 
 ```bash
-# Test backend is up
-curl https://lyrica3pro-backend.onrender.com/api/
+gcloud auth login
+gcloud config set project <YOUR_PROJECT_ID>
+gcloud services enable run.googleapis.com secretmanager.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com
+```
 
-# Test register
-curl -X POST https://lyrica3pro-backend.onrender.com/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"handle":"testuser","password":"test123"}'
-
-# Test login
-curl -X POST https://lyrica3pro-backend.onrender.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"handle":"testuser","password":"test123"}'
-# → should return {"token":"...","handle":"testuser","wallet":{...}}
+Create Artifact Registry repo (once):
+```bash
+gcloud artifacts repositories create lyrica3 \
+  --repository-format=docker \
+  --location=us-central1
 ```
 
 ---
 
-## 6. Common Login Failures
+## 1. MongoDB Atlas
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| Frontend shows "Access denied" | Backend CORS blocking Vercel domain | Add Vercel URL to `CORS_ORIGINS` in Render |
-| Backend crashes on boot | `MONGO_URL` missing or wrong | Check Atlas connection string, whitelist `0.0.0.0/0` |
-| Login returns 401 immediately | Wrong handle/password | Use register first; handle is lowercase |
-| JWT errors after redeploy | `JWT_SECRET` changed | All existing tokens invalidated — users re-login |
-| "Network Error" on frontend | `REACT_APP_BACKEND_URL` wrong | Must match Render URL exactly, no trailing slash |
+1. https://cloud.mongodb.com → free M0 cluster
+2. Database Access → Add user: `lyrica3`, generate password
+3. Network Access → `0.0.0.0/0` (Cloud Run IPs are dynamic)
+4. Connect → Drivers → copy SRV string → this is your `MONGO_URL`
 
 ---
 
-## 7. Local Dev (quick start)
+## 2. GCP Secret Manager — store all secrets once
 
 ```bash
-# Terminal 1 — MongoDB (Docker)
+# MongoDB
+echo -n "mongodb+srv://lyrica3:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority" | \
+  gcloud secrets create lyrica3-mongo-url --data-file=- --replication-policy=automatic
+
+# JWT — MUST match sla113-jwt-secret (SLA113 is identity provider)
+# If sla113-jwt-secret already exists, reuse the same value:
+gcloud secrets versions access latest --secret=sla113-jwt-secret | \
+  gcloud secrets create lyrica3-jwt-secret --data-file=- --replication-policy=automatic
+# OR just mount sla113-jwt-secret directly (recommended — one secret, one value):
+
+# Discord bot token
+echo -n "<your-discord-token>" | \
+  gcloud secrets create lyrica3-discord-token --data-file=- --replication-policy=automatic
+
+# Emergent LLM key
+echo -n "<your-emergent-key>" | \
+  gcloud secrets create lyrica3-emergent-key --data-file=- --replication-policy=automatic
+```
+
+Grant Cloud Run SA access to secrets:
+```bash
+PROJECT_NUMBER=$(gcloud projects describe $GOOGLE_CLOUD_PROJECT --format="value(projectNumber)")
+SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+for secret in sla113-jwt-secret lyrica3-mongo-url lyrica3-discord-token lyrica3-emergent-key; do
+  gcloud secrets add-iam-policy-binding $secret \
+    --member="serviceAccount:$SA" \
+    --role="roles/secretmanager.secretAccessor"
+done
+```
+
+---
+
+## 3. Build images via Cloud Build
+
+```bash
+cd /path/to/Lyrica3-pro
+gcloud builds submit --config cloudbuild.yaml .
+```
+
+This builds and pushes 3 images (backend, frontend, discord-bot) tagged `$SHORT_SHA` + `latest`.
+
+---
+
+## 4. Deploy backend
+
+```bash
+REGION=us-central1
+PROJECT=$(gcloud config get-value project)
+REPO=us-central1-docker.pkg.dev/$PROJECT/lyrica3
+
+gcloud run deploy lyrica3-backend \
+  --image $REPO/backend:latest \
+  --region $REGION \
+  --platform managed \
+  --allow-unauthenticated \
+  --port 8001 \
+  --memory 2Gi \
+  --cpu 2 \
+  --set-secrets "MONGO_URL=lyrica3-mongo-url:latest,JWT_SECRET=sla113-jwt-secret:latest,EMERGENT_LLM_KEY=lyrica3-emergent-key:latest" \
+  --set-env-vars "DB_NAME=lyrica3_prod,CORS_ORIGINS=https://lyrica3.com,https://www.lyrica3.com,DEMUCS_ENABLED=false"
+```
+
+Copy the service URL: `https://lyrica3-backend-<hash>-uc.a.run.app`
+Point `api.lyrica3.com` at it via GCP URL map (`empire1-web-map`).
+
+---
+
+## 5. Deploy frontend
+
+```bash
+gcloud run deploy lyrica3-frontend \
+  --image $REPO/frontend:latest \
+  --region $REGION \
+  --platform managed \
+  --allow-unauthenticated \
+  --port 80 \
+  --set-env-vars "REACT_APP_BACKEND_URL=https://api.lyrica3.com"
+```
+
+`lyrica3.com` and `www.lyrica3.com` route to this service via `empire1-web-map`.
+
+---
+
+## 6. Deploy Discord bot
+
+```bash
+gcloud run deploy lyrica3-discord-bot \
+  --image $REPO/discord-bot:latest \
+  --region $REGION \
+  --platform managed \
+  --no-allow-unauthenticated \
+  --port 8080 \
+  --memory 512Mi \
+  --min-instances 1 \
+  --set-secrets "DISCORD_BOT_TOKEN=lyrica3-discord-token:latest,JWT_SECRET=sla113-jwt-secret:latest" \
+  --set-env-vars "EMPIRE1_API_URL=https://api.lyrica3.com,EMPIRE1_PUBLIC_URL=https://lyrica3.com,EMPIRE1_BOT_HANDLE=discord.empire1"
+```
+
+The bot is always-on (`--min-instances 1`). No HTTP traffic — Cloud Run keeps it alive as a worker.
+
+---
+
+## 7. Post-Deploy Login Test
+
+```bash
+# Health
+curl https://api.lyrica3.com/api/
+
+# Register via SLA113 Identity Firewall
+curl -X POST https://sla113.southernlifestyle.org/api/identity/register \
+  -H "Content-Type: application/json" \
+  -d '{"handle":"testuser","password":"test123"}'
+# → returns access_token + refresh_token
+
+# Use token on Lyrica3
+curl https://api.lyrica3.com/api/tracks?limit=5 \
+  -H "Authorization: Bearer <access_token>"
+```
+
+---
+
+## 8. Common Failures
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Backend 500 on startup | `MONGO_URL` secret missing or SA lacks access | Check `gcloud secrets add-iam-policy-binding` step |
+| 401 on all Lyrica3 routes | `JWT_SECRET` mismatch with SLA113 | Both services must use `sla113-jwt-secret:latest` |
+| CORS errors | Frontend domain not in `CORS_ORIGINS` | Update `--set-env-vars` on backend and redeploy |
+| Bot disconnects | `--min-instances 0` (default) | Set `--min-instances 1` |
+| Demucs OOM | Default 512Mi RAM | Use `--memory 4Gi --cpu 4` + `DEMUCS_ENABLED=true` |
+
+---
+
+## 9. Local Dev
+
+```bash
+# Terminal 1 — MongoDB
 docker run -d -p 27017:27017 --name mongo mongo:7
 
 # Terminal 2 — Backend
 cd Lyrica3-pro/backend
-cp ../.env.example .env   # already done — MONGO_URL=mongodb://localhost:27017
+cp ../.env.example .env   # set MONGO_URL=mongodb://localhost:27017, JWT_SECRET=dev-secret
 pip install -r requirements.txt
 uvicorn server:app --reload --port 8001
 
 # Terminal 3 — Frontend
 cd Lyrica3-pro/frontend
-# .env.local already has REACT_APP_BACKEND_URL=http://localhost:8001
-yarn install
-yarn start
-# → http://localhost:3000
+# .env.local: REACT_APP_BACKEND_URL=http://localhost:8001
+yarn install && yarn start
 ```
+
+> **Local JWT_SECRET note:** for local dev use any string. For staging/prod, always use
+> `sla113-jwt-secret` from GCP Secret Manager so tokens issued by SLA113 work on Lyrica3.

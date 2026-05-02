@@ -9,6 +9,13 @@ import FlipFeed from "./pages/FlipFeed";
 import MutationEngine from "./pages/MutationEngine";
 import UniversalStream from "./pages/UniversalStream";
 import DuetEngine from "./pages/DuetEngine";
+import LyricaLanding from "./LyricaLanding";
+// App.tsx is the AI Studio generative shell — imported lazily to keep bundle split
+const StudioApp = React.lazy(() => import("./App.tsx").catch(() => ({ default: () => <Navigate to="/deck" replace /> })));
+const SonanceProStudio = React.lazy(() => import("./pages/SonanceProStudio").catch(() => ({ default: () => <Navigate to="/" replace /> })));
+const SLUniversalApp = React.lazy(() => import("./pages/SLUniversalApp").catch(() => ({ default: () => <Navigate to="/" replace /> })));
+
+const LazyFallback = <div className="min-h-screen bg-neutral-950 flex items-center justify-center text-amber-400 font-mono text-sm">Initializing…</div>;
 
 function Protected({ children }) {
   const { user, loading, token } = useAuth();
@@ -23,14 +30,34 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* Public sovereign landing */}
+            <Route path="/"          element={<LyricaLanding/>}/>
+            {/* AI Studio generative shell (public — no auth required) */}
+            <Route path="/studio"    element={
+              <React.Suspense fallback={LazyFallback}>
+                <StudioApp />
+              </React.Suspense>
+            }/>
+            {/* Sonance Pro Studio (public) */}
+            <Route path="/sonance-studio" element={
+              <React.Suspense fallback={LazyFallback}>
+                <SonanceProStudio />
+              </React.Suspense>
+            }/>
+            {/* SL Universal Stream (public) */}
+            <Route path="/sl-universal" element={
+              <React.Suspense fallback={LazyFallback}>
+                <SLUniversalApp />
+              </React.Suspense>
+            }/>
+            {/* Protected app routes */}
             <Route path="/login"     element={<Login/>}/>
             <Route path="/deck"      element={<Protected><StemDeck/></Protected>}/>
             <Route path="/feed"      element={<Protected><FlipFeed/></Protected>}/>
             <Route path="/ignite"    element={<Protected><MutationEngine/></Protected>}/>
             <Route path="/universal" element={<Protected><UniversalStream/></Protected>}/>
             <Route path="/duet"      element={<Protected><DuetEngine/></Protected>}/>
-            <Route path="/"          element={<Navigate to="/deck" replace/>}/>
-            <Route path="*"          element={<Navigate to="/deck" replace/>}/>
+            <Route path="*"          element={<Navigate to="/" replace/>}/>
           </Routes>
         </BrowserRouter>
       </AuthProvider>

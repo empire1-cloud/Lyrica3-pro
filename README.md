@@ -2,147 +2,167 @@
 
 **Creator-Owned AI Music — Soulfire Ecosystem**
 
-Lyrica 3 Pro establishes the "Creator-Owned AI Music" category. Proprietary emotional intelligence + blockchain-backed creator equity. A professional alternative to generic AI music generators.
+Lyrica 3 Pro establishes the "Creator-Owned AI Music" category. A distributed infrastructure layer embedded where creators live — Discord, TikTok, and professional studios — backed by blockchain-verified creator equity and proprietary emotional intelligence.
 
 > SLA-113 Universe: **U1 — LYRICA3**  
-> Sonance Pro + SL Universal + Lyria 3 are **one business, one frontend shell, three modes.**
+> Sonance Pro + SL Universal + Discord Bot + TikTok Card are **one business, one stack.**
 
 ---
 
-## Product Ecosystem (3-Tier OS)
+## The Integrated Moat
 
-| Tier | Product | Price | Role |
-|---|---|---|---|
-| 1 | **Sonance Pro** | $99–$299/mo | Creator studio — 48kHz/24-bit, multi-agent vocal ensembles, Vulnerability Sliders |
-| 2 | **SL Universal** | $4.99/mo | Consumer streaming — Infinite Aura Streams, Vibe Bar natural language generation |
-| 3 | **Empire 1 LedgerNet** | Platform | Backend API + immutable royalty ledger, DNA Tagging, provenance tracking |
+Unlike monolithic competitors, Lyrica is not a single app. It is a distributed infrastructure layer that reaches creators wherever they already are:
 
-Frontend shell modes:
-- `/` → `sonance` — Sonance Pro studio (default)
-- `/universal` → `universal` — SL Universal Pulse Stream
-- `/orchestrator` → `orchestrator` — Lyria 3 Pro generative (Vertex AI)
+- **Sonance Pro** — professional studio (desktop/web)
+- **SL Universal** — consumer streaming app
+- **Discord Bot** — community engine (real-time collaboration)
+- **TikTok Card** — viral distribution engine
+
+All four surfaces share the same Soulfire engine, DNA tagging, and micro-royalty ledger.
 
 ---
 
-## The Soulfire Moat
+## Product Architecture
 
-### What it is
-A hybrid neural-symbolic engine that translates qualitative emotional directives into quantitative audio parameters.
+### Sonance Pro
+48kHz/24-bit professional AI studio. Granular emotional control — vocal fry, late-pocket drum timing, biometric realism, vulnerability sliders, multi-agent vocal ensembles.
 
-- **Late-pocket** drum timing
-- **Vocal fry** and breath intensity (Phonation & Fry Sub-Agent — PFA)
-- **Audibly cracking** emotional vocals
-- **Bruised subtext** melodic layers
-- **Tragic Grito**, **Begging Souldie** vocal archetypes
+**$99–$299/mo**
 
-This is not "pop-generic" AI generation. It is Chicano Soul, R&B, Funk — with cultural DNA protection built in at the engine level.
+### SL Universal
+Consumer streaming app. Infinite Aura Streams. Vibe Bar — natural language prompt → instant audio generation.
 
-### Soulfire Dataset
-Specialized Chicano Soul, R&B, and Souldies training data with deep emotional metadata — the core competitive moat that cannot be replicated by generic AI.
+**$4.99/mo or ad-supported**
 
----
+### Discord Bot
+Primary community engine for real-time collaboration.
 
-## Core Technical Architecture
-
-| Component | Description |
+| Command | Function |
 |---|---|
-| **Soulfire Engine** | Hybrid neural-symbolic — emotional directives → audio parameters |
-| **DNA Tagging** | Blockchain-verified cryptographic watermark in every audio file — ownership tracking + micro-royalty automation |
-| **Biometric Realism** | PFA (Phonation & Fry Sub-Agent) + MMA (Late-Pocket) — inject human artifacts, bridge the uncanny valley |
-| **Vibe Bar** | Natural language interface — converts user prompts to structured API payloads |
-| **Vulnerability Sliders** | Granular biometric controls in Sonance Pro |
-| **Flip It** | Fan remix button — every derivative generates instant micro-royalties to original producer |
-| **S2 Disruption Engine** | Genre cross-synthesis — mutation engine |
-| **Empire Ledger & Lungs** | Micro-royalties + breathing artifacts |
-| **Psychoacoustic Texture Modeler** | Room simulation |
-| **Ghost Audio Artifact Engine** | Archival audio transformation |
+| `/soulfire` | High-fidelity generation within Discord |
+| `/remix` | Social stem sharing with automatic DNA tagging |
+| `/listen_party` | Real-time AI performances based on community sentiment |
+| `/royalties` | Live dashboard — earnings from remix derivatives |
 
-Render tiers (MSGO Protocol): `Draft` → `Preview` → `Final`
+**$4.99–$19.99/mo (Discord Premium)**
 
-Stack: **Google Cloud / Vertex AI** — Cloud Run, FastAPI backend, React frontend.
+### TikTok Card
+Viral distribution engine. Embeds "Made with Lyrica" metadata and earnings data directly into TikTok captions — turns listeners into new creators. Every card is a micro-royalty activation event.
 
 ---
 
-## Creator Equity Model
+## The Soulfire Engine
 
-- Creators retain **100% IP ownership**
-- **70/30 revenue share** — creator keeps 70%
-- Platform takes **30% fee** on all remix and streaming activity
-- DNA Tagging ensures provenance is immutable — no exploitation, no royalty theft
+A hybrid neural-symbolic engine — translates qualitative emotional directives into quantitative audio parameters.
 
----
-
-## Business Model — Triple Revenue Moat
-
-| Pillar | Source | Details |
-|---|---|---|
-| 1 — SaaS | Sonance Pro subscriptions | $99–$299/mo per creator |
-| 2 — Streaming | SL Universal | $4.99/mo consumer + ad revenue |
-| 3 — Micro-Royalties | Platform fee on remixes/streams | 30% on all derivative activity |
-
-### Financial Projections
-
-| Metric | Year 1 | Year 2 | Year 3 |
-|---|---|---|---|
-| Total Revenue | $1.57M | $15.75M | $75M |
-| Gross Margin | 75% | 78% | 82% |
-| Users | 150k | 1M | 5M |
-| Creators | 5k | — | — |
-
-Seed ask: **$2M**
-- 40% product development
-- 25% go-to-market
-- 25% core team
-- 10% ops
-
----
-
-## 12-Month GTM Roadmap
-
-| Quarter | Phase | Milestones |
-|---|---|---|
-| Q1 | Foundation | Build Soulfire engine core, DNA Tagging infrastructure |
-| Q2 | Expansion | Sonance Pro closed beta — 500 elite producers from Empire1/Southern Lifestyle network |
-| Q3 | Consumer Launch | SL Universal public launch, viral `#SoulFire` TikTok challenge |
-| Q4 | Optimization | Full micro-royalty distribution system, live studio sessions |
-
-Year 1 target: **$5M revenue**, **100k MAU**, **5k creators**
-
-Go-to-market entry: **50 "Category Founder" producers** in closed alpha.
-
----
-
-## Immediate Priorities
-
-- [ ] Stress-test negative constraints (prevent "country twang" drift)
-- [ ] Finalize JSON schema for audio hand-offs
-- [ ] Onboard 100 "Category Founder" producers
-- [ ] Closed alpha with 50 producers
-- [ ] `#SoulFire` TikTok challenge prep
-
----
-
-## Competitive Moats Summary
-
-| Moat | Description |
+| Capability | Description |
 |---|---|
-| Soulfire Dataset | Chicano Soul, R&B, Souldies — deep emotional metadata, impossible to replicate |
-| DNA Tagging | Immutable cryptographic watermarks — 100% creator IP protection |
-| Biometric Realism | PFA + MMA sub-agents bridge the uncanny valley |
-| Creator Equity | 70/30 split + 100% IP ownership — no competitor offers this |
-| Cultural Authenticity | Vocal archetypes, dialect guardrails, Cultura Vibe Forge integration |
+| Soulfire Emotion Mapper | "Vibes" → musical parameters — late-pocket timing, bruised subtext, grito |
+| Biometric Realism | PFA (vocal fry, breath intensity, cracks) + MMA (late-pocket humanization) |
+| Vocal Archetypes | Tragic Grito, Begging Souldie, and more — Chicano Soul / R&B DNA |
+| Inference Cost | ~$0.0125 per song |
+| Uncanny Valley Bridge | Human artifacts injected at sub-agent level |
+
+Dataset: Chicano Soul, R&B, Souldies — deep emotional metadata. Cultural authenticity is a hard moat.
+
+---
+
+## Economic Infrastructure
+
+### DNA Tagging
+Blockchain-verified cryptographic watermark embedded in every audio file. Immutable provenance tracking — no exploitation, no royalty theft.
+
+### Remix Economics
+Every remix via **Flip It** earns the original producer a micro-royalty automatically. $0.025 per remix payout.
+
+### BigQuery Tracking
+Dedicated MVP infrastructure for real-time micro-royalty tracking and DNA tag performance monitoring.
+
+---
+
+## Financial Model
+
+**Blended gross margin: 88%**
+
+| Revenue Stream | Pricing | Year 1 Est. | Margin |
+|---|---|---|---|
+| Sonance Pro | $99–$299/mo | **$6.79M** | 90% |
+| Discord Premium | $4.99–$19.99/mo | $581k | 98% |
+| SL Universal | $4.99/mo or ad-supported | $374k | 86% |
+| Micro-Royalties | $0.025/remix | $180k | 80% |
+| **Total** | | **~$7.93M** | **88%** |
+
+Sonance Pro is the dominant revenue driver. Discord Premium is the highest margin stream.
+
+### Creator Equity
+- 100% IP ownership retained by creator
+- 70/30 revenue split — creator keeps 70%
+- Platform takes 30% fee on all remix and streaming activity
+- DNA Tagging ensures immutable provenance
+
+---
+
+## Technical Stack
+
+| Component | Technology |
+|---|---|
+| Generative Engine | Vertex AI (Google Cloud native) |
+| Multi-agent orchestration | Vertex Agent |
+| DNA Tagging | Blockchain-verified watermark |
+| Royalty tracking | BigQuery |
+| Frontend shell | React (App.tsx — sonance/universal/orchestrator modes) |
+| Backend | FastAPI, Cloud Run |
+| Voice synthesis | PFA + MMA sub-agents |
+
+---
+
+## Deployment Roadmap
+
+| Months | Milestone |
+|---|---|
+| 1–2 | Discord feature parity + Vertex latency optimization |
+| 3–4 | Sonance Pro beta — 500 elite producers |
+| 5–6 | Full monetization rollout + royalty payouts live |
+| 7–8 | SL Universal public launch + TikTok Card viral push |
+| 9–10 | `#SoulFire` TikTok challenge |
+| 11–12 | Full micro-royalty distribution + live studio sessions |
+
+**Year 1 target:** $5M+ revenue · 100k MAU · 5k creators  
+**Seed round:** $2M
+
+---
+
+## Go-To-Market
+
+- **Entry:** 50 "Category Founder" producers in closed alpha
+- **Expansion:** 500 elite producers from Empire1/Southern Lifestyle network
+- **Viral loop:** TikTok Card embeds → listeners become creators → new DNA tags → new royalty streams
+- **Community:** Discord as the primary activation surface
+
+---
+
+## Competitive Moats
+
+| Moat | Why It's Hard to Copy |
+|---|---|
+| Soulfire Dataset | Chicano Soul, R&B, Souldies — emotional metadata that doesn't exist elsewhere |
+| DNA Tagging | Immutable IP protection baked into every file at generation |
+| Biometric Realism | PFA + MMA sub-agents — vocal authenticity at inference time |
+| Creator Equity | 70/30 + 100% IP — no competitor offers this structure |
+| Distribution Layer | Discord + TikTok native — embedded where creators already are |
+| Cultural Authenticity | Vocal archetypes + Cultura Vibe Forge guardrails |
 
 ---
 
 ## Repo Structure
 
 ```
-frontend/          React app (App.tsx = Lyrica 3 Pro shell — sonance/universal/orchestrator modes)
+frontend/          React app — App.tsx (sonance/universal/orchestrator modes)
 backend/           FastAPI — Soulfire engine, DNA tagging, biometric agents, royalty ledger
+discord_bot/       Discord bot — /soulfire /remix /listen_party /royalties
 memory/            Session memory, agent state
 scripts/           Deploy, test, automation
 tests/             Test suites
-discord_bot/       Discord integration
 ```
 
 ## Quick Start
@@ -171,8 +191,8 @@ npm start
 ## Governance
 
 Part of the SLA-113 Multiverse — U1 (LYRICA3).  
-See [`SHARED/universe_registry.yaml`](../Empire-1/SHARED/universe_registry.yaml) in the Empire-1 repo.  
-All boundary changes require ADR. All track releases require a release receipt.
+All boundary changes require ADR. All track releases require a release receipt.  
+See `SHARED/universe_registry.yaml` in the Empire-1 repo.
 
 ## Legal
 
