@@ -6,6 +6,23 @@
 
 ---
 
+## Product principle — back what you promote
+
+**Founder intent:** Marketing and in-app copy must be **defensible**: every strong claim should map to something **stored, inspectable, or exportable** (manifest, ledger events, policy decision, charter version), not vibes.
+
+| If we say… | We should be able to show… |
+|------------|----------------------------|
+| Creator-owned | Splits + ledger + charter acceptance on the manifest; who minted what |
+| Provenance / DNA | `dna_tag`, manifest hashes, bloodline/parent links |
+| Cultural care (CCNA) | Policy outcome + version + optional rationale (sanitized for UX) |
+| No mimicry / safe use | Classifier decision logged; blocked/rewrite before expensive synth |
+| Transparent money | Idempotent events + export (CSV/JSON) that reconciles |
+| Soul / intentionality | SoulComposer plan (EPD/MMA) persisted and chainable to the final generate |
+
+**Rule of thumb:** If we cannot attach **evidence** (artifact or export) to a claim within one release cycle, soften the claim or ship the evidence first.
+
+---
+
 ## A — Attribution
 
 **Goal:** Answer *who contributed what, when, with which tools?*

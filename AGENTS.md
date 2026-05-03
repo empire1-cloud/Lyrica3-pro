@@ -4,6 +4,8 @@
 
 Full playbook + copy-paste GitHub issues: [`docs/CREATOR_OWNED_AZ.md`](docs/CREATOR_OWNED_AZ.md) (attribution, manifest, ledger idempotency, charter, governance packs, VICS).
 
+**Product principle:** *Back what you promote* — strong claims (ownership, provenance, cultural care, economics) must map to **manifest + ledger + policy logs + exports** where applicable. See the “backable claims” table at the top of that doc.
+
 ## SoulComposer (orchestrator)
 
 The **SoulComposer** is a plan-only orchestration layer that sits **above** the existing S2 `POST /api/generate` pipeline. It does not mint tracks or call external TTS/MusicGen by itself.
