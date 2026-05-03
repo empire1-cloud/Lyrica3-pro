@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Mic2, Activity, Fingerprint, Users, Box, Settings2, Terminal, Cpu, ShieldCheck, Layers } from 'lucide-react';
-import { Track } from '../../App';
+import { Track } from '../../types';
 import QuickStartGenerator from '../studio/QuickStartGenerator';
 import VoiceAuditionGallery from '../studio/VoiceAuditionGallery';
 import AssetLibrary from '../studio/AssetLibrary';

@@ -87,3 +87,21 @@ export interface SoulfirePayload {
   groove_pattern?: unknown;
   mastering_bus?: Record<string, unknown>;
 }
+
+export interface Track {
+  trackMetadata: {
+    title: string;
+    core_genre?: string;
+    s2_mutation?: string;
+    dna_tag_preview?: string;
+    [key: string]: unknown;
+  };
+  acousticPrimitives?: {
+    groove?: string;
+    texture?: string;
+    [key: string]: unknown;
+  };
+  vocalPipelines?: Array<{ id: string; active: boolean; intensity: number }>;
+  audioUrl?: string;
+  [key: string]: unknown;
+}

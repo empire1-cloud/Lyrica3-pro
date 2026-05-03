@@ -6,7 +6,7 @@ import { GoogleGenAI, Modality } from '@google/genai';
 import { VOCAL_PROFILES } from './VoiceAuditionGallery';
 import { pcmToWav } from '../../lib/audioUtils';
 import { useBarrioVault } from '../../lib/useBarrioVault';
-import { Track } from '../../App';
+import { Track } from '../../types';
 import BiometricVocalStrip from './BiometricVocalStrip';
 
 interface LogEntry {
