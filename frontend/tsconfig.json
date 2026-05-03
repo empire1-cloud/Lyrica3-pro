@@ -14,8 +14,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": "src"
   },
   "include": ["src"],
-  "exclude": ["src/components/App6_reference.tsx"]
+  "exclude": ["src/components/App6_reference.tsx", "node_modules"]
 }
