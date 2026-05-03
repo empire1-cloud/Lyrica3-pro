@@ -254,6 +254,22 @@ class DuetRequest(BaseModel):
     axes: Optional[AxisSelection] = None
     performer_dna: Optional[PerformerDNA] = None
 
+
+class SoulComposeRequest(BaseModel):
+    """SoulComposer — orchestrates CCNA (stub) + EPD vocal blueprint + MMA heartbeat pocket,
+    and returns a ready-to-post body for `POST /api/generate`. Does not mint audio."""
+    narrative: str
+    genre: str = "SGV Oldies"
+    mood: str = "Late-Night Honesty"
+    title: Optional[str] = None
+    emotional_arc: Literal["grief", "defiance", "intimacy", "neutral"] = "neutral"
+    axes: Optional[AxisSelection] = None
+    performer_dna: Optional[PerformerDNA] = None
+    harmony_layers: List[HarmonyLayer] = Field(default_factory=list)
+    subtextual_splicer: bool = False
+    bridge_enabled: bool = False
+    apply_arc_mood_hint: bool = True
+
 # Internal genre/mood → secret recipe mapping (NEVER sent to client)
 _GENRE_MAP = {
     # LA / SGV / Chicano spine
@@ -1061,6 +1077,40 @@ async def duet_generate(request: Request, req: DuetRequest, user: Dict = Depends
         "segments": segments,
         "created_at": now,
     }
+
+
+@api_router.post("/soul/compose")
+@limiter.limit("20/minute")
+async def soul_compose(request: Request, req: SoulComposeRequest, user: Dict = Depends(current_user)):
+    """SoulComposer orchestrator — plan-only. Chain with `POST /api/generate` using `generate_request`."""
+    from soul_composer import compose as soul_compose_run
+
+    axes_dict: Optional[Dict[str, Optional[str]]] = None
+    if req.axes:
+        axes_dict = {
+            "rhythm": req.axes.rhythm,
+            "melody": req.axes.melody,
+            "instrumentation": req.axes.instrumentation,
+            "emotion": req.axes.emotion,
+        }
+    dna_payload = req.performer_dna.model_dump() if req.performer_dna else None
+    harmony_payload = [h.model_dump() for h in req.harmony_layers]
+    out = soul_compose_run(
+        narrative=req.narrative,
+        genre=req.genre,
+        mood=req.mood,
+        title=req.title,
+        emotional_arc=req.emotional_arc,
+        axes=axes_dict,
+        performer_dna=dna_payload,
+        harmony_layers=harmony_payload,
+        subtextual_splicer=req.subtextual_splicer,
+        bridge_enabled=req.bridge_enabled,
+        apply_arc_mood_hint=req.apply_arc_mood_hint,
+    )
+    out["requested_by"] = user.get("handle")
+    return out
+
 
 @api_router.get("/vibes")
 async def vibes_catalog():

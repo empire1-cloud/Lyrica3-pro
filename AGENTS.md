@@ -1,0 +1,21 @@
+# Agent notes — Lyrica 3 Pro / Empire 1 Ledger
+
+## SoulComposer (orchestrator)
+
+The **SoulComposer** is a plan-only orchestration layer that sits **above** the existing S2 `POST /api/generate` pipeline. It does not mint tracks or call external TTS/MusicGen by itself.
+
+- **Module:** `backend/soul_composer.py` — CCNA validation stub, EPD vocal blueprint (line → biometric LML tag suggestions), MMA “heartbeat” rhythm profile (BPM center, swing delay, default rhythm axis id).
+- **API:** `POST /api/soul/compose` (auth required) — accepts `SoulComposeRequest`; returns JSON including `ccna`, `epd`, `mma`, `resolved_emotional_arc`, and `generate_request` (a body you can pass to `POST /api/generate`).
+- **Tests:** `backend/tests/test_soul_composer.py` — run from repo: `cd backend && python3 -m pytest tests/test_soul_composer.py -v`
+
+**Workflow:** Call `/api/soul/compose` → take `generate_request` from the response → `POST /api/generate` with the same session/cookie to produce stems, vocal, and ledger mint.
+
+## Standard dev commands
+
+See `README.md` / `memory/PRD.md` and `frontend/package.json` for frontend (`yarn install`, `yarn start`). Backend: `uvicorn server:app` from `backend/` with `.env` set (`MONGO_URL`, `DB_NAME`, etc.).
+
+## Cursor Cloud specific instructions
+
+- **SoulComposer** is intentionally **non-destructive**: it only returns a plan and a `generate_request` blob; all audio and DNA tags still flow through existing `/api/generate` logic.
+- When `emotional_arc` is `grief` or `intimacy`, the composer may inject a default **rhythm** axis (`laboe_sunday_68` or `lowrider_cruise_76`) unless the client already set `axes.rhythm`.
+- With `apply_arc_mood_hint: true` (default), `grief` / `defiance` / `intimacy` may override the request `mood` string to align with `_MOOD_RECIPE` keys used by the generator — set `apply_arc_mood_hint: false` to keep the client’s mood verbatim.
