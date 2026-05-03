@@ -23,6 +23,25 @@
 
 ---
 
+## Next priority — economics (“everyone eats”)
+
+**Founder intent:** After provability (*back what you promote*), **fair money** is the spine. Nobody should feel ripped off; the goal is **broad participation**, not “rich get richer” off opaque black boxes.
+
+**Design commitments (product + engineering):**
+
+| Principle | What it means in practice |
+|-----------|---------------------------|
+| **Transparency** | Splits are visible **at mint** and stored on the **manifest** snapshot; ledger events are **exportable** (CSV/JSON) so any creator can reconcile. |
+| **No mystery math** | Document the formula for streams, flips, and parent residuals in plain language; version it (`economics_rules_version`). |
+| **Anti-ripoff mechanics** | **Idempotent** events so retries don’t double-charge or double-credit; immutable append-only ledger; audit who changed splits (if ever). |
+| **Remix fairness** | Bloodline / flip rules reward **upstream creators** without trapping new artists in zero-sum games — tune parent residual % with real data and clear caps if needed. |
+| **Platform share** | If Lyrica / Empire takes a fee, it must be **named, capped, and disclosed** (charter + manifest); avoid hidden skims in “adjustments.” |
+| **Access** | Small payouts matter: design for **low minimum friction** (within legal/payment rails) so emerging artists aren’t excluded. |
+
+**Marketing alignment:** Do not claim “creator-owned” or “fair” until **export + split snapshot + written rules** ship — that *is* backing the promise.
+
+---
+
 ## A — Attribution
 
 **Goal:** Answer *who contributed what, when, with which tools?*
@@ -318,11 +337,11 @@
 
 ## Recommended build order
 
-1. **Manifest v1** — write on mint; store beside track; sanitize for public API.
-2. **UI: SoulComposer → Generate** — preview plan, then call `/api/generate`.
-3. **Ledger idempotency + export** — keys + CSV/PDF or JSON export.
-4. **Creator Charter + mimicry UX** — trust layer surfaced in product.
-5. **Governance packs** — per-universe policy version.
+1. **Manifest v1** — write on mint; store beside track; sanitize for public API (include **split snapshot** + `economics_rules_version` when ready).
+2. **Economics core** — ledger **idempotency**, **creator export**, documented **stream/flip/residual** rules; optional: named **platform fee** fields on manifest.
+3. **UI: SoulComposer → Generate** — preview plan, then call `/api/generate`.
+4. **Creator Charter + mimicry UX** — trust layer; charter must include **money rules** in plain language.
+5. **Governance packs** — per-universe policy version (economics pack may differ per universe).
 6. **VICS bundle** — hashes + verification story.
 
 ---
@@ -428,6 +447,19 @@ Use these as draft issues; adjust labels (`backend`, `frontend`, `docs`, `legal`
 - [ ] Charter markdown or CMS page linked from app footer and mint confirmation.
 - [ ] Manifest stores `charter_version` user accepted.
 - [ ] Legal review tracked (outside repo if needed).
+
+---
+
+### Issue 9 — Economics fairness spec (“everyone eats”)
+
+**Summary:** Document and implement **transparent, defensible economics**: split snapshot on manifest, `economics_rules_version`, optional disclosed **platform_fee_bps** / cap, flip/parent residual formula in plain language + code.
+
+**Acceptance criteria**
+
+- [ ] Single source of truth doc (this file + `docs/ECONOMICS.md` or charter section) describes stream/flip/payout math.
+- [ ] Mint persists **exact splits** and rules version on manifest or track doc.
+- [ ] Creator can **export** ledger + per-track earnings (ties to Issue 4).
+- [ ] No marketing claim of “fair” / “creator-owned money” until export + rules version ship.
 
 ---
 

@@ -6,6 +6,8 @@ Full playbook + copy-paste GitHub issues: [`docs/CREATOR_OWNED_AZ.md`](docs/CREA
 
 **Product principle:** *Back what you promote* — strong claims (ownership, provenance, cultural care, economics) must map to **manifest + ledger + policy logs + exports** where applicable. See the “backable claims” table at the top of that doc.
 
+**Founder priority after that:** **Fair economics** — transparent splits, exportable ledger, documented rules, idempotent events, no hidden skims; goal is *everyone eats*, not opaque winner-take-all. See **“Next priority — economics”** in the same doc (Issue 9 template).
+
 ## SoulComposer (orchestrator)
 
 The **SoulComposer** is a plan-only orchestration layer that sits **above** the existing S2 `POST /api/generate` pipeline. It does not mint tracks or call external TTS/MusicGen by itself.
