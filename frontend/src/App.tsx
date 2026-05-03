@@ -9,7 +9,7 @@ import { GoogleGenAI } from '@google/genai';
 
 declare global {
   interface Window {
-    aistudio: {
+    aistudio?: {
       hasSelectedApiKey: () => Promise<boolean>;
       openSelectKey: () => Promise<void>;
     };
