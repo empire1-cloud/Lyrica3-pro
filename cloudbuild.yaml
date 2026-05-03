@@ -35,6 +35,7 @@ steps:
     name: gcr.io/cloud-builders/docker
     args:
       - build
+      - --no-cache
       - --build-arg
       - REACT_APP_BACKEND_URL=${_API_URL}
       - -t
