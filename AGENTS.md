@@ -1,5 +1,9 @@
 # Agent notes — Lyrica 3 Pro / Empire 1 Ledger
 
+## Creator-owned roadmap (A–Z)
+
+Full playbook + copy-paste GitHub issues: [`docs/CREATOR_OWNED_AZ.md`](docs/CREATOR_OWNED_AZ.md) (attribution, manifest, ledger idempotency, charter, governance packs, VICS).
+
 ## SoulComposer (orchestrator)
 
 The **SoulComposer** is a plan-only orchestration layer that sits **above** the existing S2 `POST /api/generate` pipeline. It does not mint tracks or call external TTS/MusicGen by itself.
