@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
   Send, 
@@ -10,9 +10,7 @@ import {
   Flame, 
   Mic2, 
   Zap,
-  Heart,
-  CloudRain,
-  Plus
+  Heart
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -30,31 +28,12 @@ interface Persona {
   name: string;
   vocalStyle: string;
   color: string;
-  description: string;
 }
 
 const PERSONAS: Persona[] = [
-  { 
-    id: 'shadyboy', 
-    name: 'ShadyBoy', 
-    vocalStyle: 'Grit Soul', 
-    color: 'from-orange-500 to-red-600', 
-    description: 'Authentic Chicano grit with deep emotional resonance. Ideal for street-soul narratives and raw, heartfelt storytelling.' 
-  },
-  { 
-    id: 'auraveda', 
-    name: 'AuraVeda', 
-    vocalStyle: 'Ethereal Soprano', 
-    color: 'from-blue-400 to-purple-600', 
-    description: 'Celestial harmonies and atmospheric vocal textures. Perfect for cinematic soundscapes and transcendent emotional journeys.' 
-  },
-  { 
-    id: 'neonpulse', 
-    name: 'NeonPulse', 
-    vocalStyle: 'Glitch Baritone', 
-    color: 'from-green-400 to-cyan-600', 
-    description: 'Cybernetic cadences and synthetic rhythmic flows. Designed for futuristic club anthems and high-energy electronic fusion.' 
-  },
+  { id: 'shadyboy', name: 'ShadyBoy', vocalStyle: 'Grit Soul', color: 'from-orange-500 to-red-600' },
+  { id: 'auraveda', name: 'AuraVeda', vocalStyle: 'Ethereal Soprano', color: 'from-blue-400 to-purple-600' },
+  { id: 'neonpulse', name: 'NeonPulse', vocalStyle: 'Glitch Baritone', color: 'from-green-400 to-cyan-600' },
 ];
 
 const COLORS = ['text-orange-500', 'text-red-500', 'text-blue-500', 'text-purple-500', 'text-green-500'];
@@ -237,13 +216,7 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
           <div>
             <h2 className="text-xl font-bold tracking-tighter uppercase">Live Studio Session: {currentPersona.name}</h2>
             <div className="flex items-center gap-4 text-[10px] font-mono text-white/40">
-              <span className={cn("flex items-center gap-1 transition-colors duration-500", currentPersona.color.split(' ')[0].replace('from-', 'text-'))}>{currentPersona.description}</span>
-              <div className="flex items-center gap-2 px-2 py-1 bg-white/5 rounded-full border border-white/10">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                <span className={cn("flex items-center gap-1 font-bold transition-colors duration-500", currentPersona.color.split(' ')[0].replace('from-', 'text-'))}>
-                  <Users className="w-3 h-3" /> {listeners.toLocaleString()}
-                </span>
-              </div>
+              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {listeners.toLocaleString()} LISTENING</span>
               <span className="flex items-center gap-1"><Activity className="w-3 h-3" /> SONANCE PRO v4.2 LIVE</span>
             </div>
           </div>
@@ -285,14 +258,10 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
             <motion.div 
               animate={{ 
                 background: crowdEmotion > 0.7 
-                  ? `radial-gradient(circle at 50% 50%, var(--persona-primary), transparent 70%)`
-                  : `radial-gradient(circle at 50% 50%, var(--persona-secondary), transparent 70%)`,
+                  ? `radial-gradient(circle at 50% 50%, rgba(249, 115, 22, ${crowdEmotion * 0.2}), transparent 70%)`
+                  : `radial-gradient(circle at 50% 50%, rgba(59, 130, 246, ${crowdEmotion * 0.2}), transparent 70%)`,
                 scale: [1, 1.1, 1],
               }}
-              style={{ 
-                '--persona-primary': currentPersona.id === 'shadyboy' ? 'rgba(249, 115, 22, 0.2)' : currentPersona.id === 'auraveda' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                '--persona-secondary': currentPersona.id === 'shadyboy' ? 'rgba(220, 38, 38, 0.1)' : currentPersona.id === 'auraveda' ? 'rgba(147, 51, 234, 0.1)' : 'rgba(6, 182, 212, 0.1)'
-              } as any}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               className="absolute inset-0"
             />
@@ -355,12 +324,12 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
                   className={cn(
                     "px-6 py-2.5 rounded-full border flex items-center gap-3 backdrop-blur-xl transition-all duration-500",
                     i === 0 
-                      ? `bg-gradient-to-r ${currentPersona.color} text-white border-white/20 shadow-lg` 
+                      ? "bg-orange-500 text-black border-orange-400 shadow-[0_0_30px_rgba(249,115,22,0.4)]" 
                       : "bg-white/5 border-white/10 text-white/40"
                   )}
                 >
                   <TrendingUp className={cn("w-4 h-4", i === 0 ? "text-black" : "text-white/40")} />
-                  <span className={cn("text-xs font-black tracking-[0.2em] uppercase", i === 0 ? "text-white" : "text-white/40")}>
+                  <span className={cn("text-xs font-black tracking-[0.2em] uppercase", i === 0 ? "text-black" : "text-white/40")}>
                     {theme}
                   </span>
                   {i === 0 && (
@@ -368,7 +337,7 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
                       animate={{ scale: [1, 1.2, 1] }}
                       transition={{ duration: 1, repeat: Infinity }}
                     >
-                      <Flame className="w-4 h-4 text-white" />
+                      <Flame className="w-4 h-4 text-black" />
                     </motion.div>
                   )}
                 </motion.div>
@@ -438,7 +407,7 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
               </p>
             </div>
 
-            <div className="flex items-center justify-center gap-8">
+            <div className="flex items-center justify-center gap-12">
               <div className="text-center">
                 <p className="text-[10px] font-mono text-white/20 uppercase mb-2">Current Key</p>
                 <p className="text-xl font-bold">{liveParams.key}</p>
@@ -447,43 +416,17 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
                 <p className="text-[10px] font-mono text-white/20 uppercase mb-2">BPM</p>
                 <p className="text-xl font-bold">{liveParams.bpm}</p>
               </div>
-              <div className="text-center space-y-1">
-                <div className="flex items-center justify-center gap-1 text-white/20">
-                  <Zap className="w-3 h-3" />
-                  <p className="text-[10px] font-mono uppercase">Energy</p>
-                </div>
-                <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden mx-auto">
-                  <motion.div 
-                    animate={{ width: `${liveParams.energy * 100}%` }}
-                    className="h-full bg-orange-500"
-                  />
-                </div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <Zap className="w-3 h-3 text-orange-500" />
-                  <div className="w-1 h-3 bg-orange-500 rounded-full" />
-                  <p className="text-xs font-bold">{(liveParams.energy * 100).toFixed(0)}%</p>
-                </div>
-              </div>
-              <div className="text-center space-y-1">
-                <div className="flex items-center justify-center gap-1 text-white/20">
-                  <CloudRain className="w-3 h-3" />
-                  <p className="text-[10px] font-mono uppercase">Sadness</p>
-                </div>
-                <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden mx-auto">
-                  <motion.div 
-                    animate={{ width: `${liveParams.sadness * 100}%` }}
-                    className="h-full bg-blue-500"
-                  />
-                </div>
-                <div className="flex items-center justify-center gap-1.5">
-                  <CloudRain className="w-3 h-3 text-blue-500" />
-                  <div className="w-1 h-3 bg-blue-500 rounded-full" />
-                  <p className="text-xs font-bold">{(liveParams.sadness * 100).toFixed(0)}%</p>
-                </div>
+              <div className="text-center">
+                <p className="text-[10px] font-mono text-white/20 uppercase mb-2">Vocal Style</p>
+                <p className="text-xl font-bold">{currentPersona.vocalStyle}</p>
               </div>
               <div className="text-center">
                 <p className="text-[10px] font-mono text-white/20 uppercase mb-2">Genre Blend</p>
                 <p className="text-xl font-bold">{liveParams.genre}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] font-mono text-white/20 uppercase mb-2">Vocal Crackle</p>
+                <p className="text-xl font-bold">{(liveParams.vocalCrackle * 100).toFixed(0)}%</p>
               </div>
             </div>
           </div>
@@ -548,52 +491,15 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
                   </div>
                   
                   {msg.type === 'theme' && msg.themeValue && (
-                    <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.8 }}
+                    <button 
                       onClick={() => handleVote(msg.themeValue!)}
-                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 transition-colors relative overflow-hidden group/vote"
+                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
                     >
-                      <motion.div
-                        animate={{ scale: [1, 1.6, 1], rotate: [0, 15, -15, 0] }}
-                        key={themeVotes[msg.themeValue]}
-                        transition={{ duration: 0.4 }}
-                      >
-                        <Heart className="w-2.5 h-2.5 text-red-500 fill-red-500/20 group-hover/vote:fill-red-500 transition-colors" />
-                      </motion.div>
-                      <motion.span 
-                        key={themeVotes[msg.themeValue]}
-                        initial={{ y: -15, opacity: 0, scale: 2 }}
-                        animate={{ y: 0, opacity: 1, scale: 1 }}
-                        className="text-[8px] font-mono text-white/60 font-bold relative"
-                      >
+                      <Heart className="w-2.5 h-2.5 text-red-500" />
+                      <span className="text-[8px] font-mono text-white/60">
                         {themeVotes[msg.themeValue]?.toLocaleString() || 0}
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                          key={`ripple-${themeVotes[msg.themeValue]}`}
-                          className="absolute inset-0 bg-white/20 rounded-full"
-                        />
-                      </motion.span>
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0 }}
-                        whileTap={{ opacity: 1, scale: 4 }}
-                        className="absolute inset-0 bg-red-500/40 rounded-full pointer-events-none"
-                      />
-                      {/* Floating Heart Effect */}
-                      <AnimatePresence>
-                        {themeVotes[msg.themeValue] % 10 === 0 && (
-                          <motion.div
-                            initial={{ y: 0, opacity: 1 }}
-                            animate={{ y: -20, opacity: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
-                          >
-                            <Heart className="w-2 h-2 text-red-500 fill-red-500" />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
+                      </span>
+                    </button>
                   )}
                 </div>
                 <p className={cn(
@@ -607,45 +513,7 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
             <div ref={chatEndRef} />
           </div>
 
-          <div className="p-4 border-t border-white/10 space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <div className="relative group/suggest">
-                <button
-                  onClick={() => {
-                    setInputText("Theme: ");
-                  }}
-                  className="px-2 py-1 bg-orange-500/20 border border-orange-500/30 rounded-md text-[8px] font-bold tracking-widest uppercase hover:bg-orange-500/30 transition-colors text-orange-500 flex items-center gap-1"
-                >
-                  <Plus className="w-2 h-2" /> Suggest Theme
-                </button>
-                {/* Interactive Suggestion Tooltip */}
-                <div className="absolute bottom-full left-0 mb-2 w-48 bg-black/90 border border-white/10 rounded-xl p-2 opacity-0 group-hover/suggest:opacity-100 pointer-events-none group-hover/suggest:pointer-events-auto transition-all transform translate-y-2 group-hover/suggest:translate-y-0 z-50">
-                  <p className="text-[8px] font-bold text-white/40 uppercase mb-2 px-1">Trending Suggestions</p>
-                  <div className="grid grid-cols-1 gap-1">
-                    {["Vaporwave Soul", "Industrial Phonk", "Lo-fi Chicano"].map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setInputText(`Theme: ${s}`)}
-                        className="text-left px-2 py-1.5 rounded hover:bg-white/5 text-[9px] text-white/60 hover:text-white transition-colors"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              {["Cyberpunk", "Soul", "Dark", "Ethereal", "Trap"].map(theme => (
-                <button
-                  key={theme}
-                  onClick={() => {
-                    setInputText(`Theme: ${theme}`);
-                  }}
-                  className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[8px] font-bold tracking-widest uppercase hover:bg-white/10 transition-colors text-white/40 hover:text-white"
-                >
-                  + {theme}
-                </button>
-              ))}
-            </div>
+          <div className="p-4 border-t border-white/10">
             <form onSubmit={handleSendMessage} className="relative">
               <input 
                 type="text"
@@ -661,7 +529,7 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
                 <Send className="w-5 h-5" />
               </button>
             </form>
-            <p className="text-[8px] font-mono text-white/20 uppercase text-center">
+            <p className="mt-2 text-[8px] font-mono text-white/20 uppercase text-center">
               Your input influences the live Sonance Pro performance
             </p>
           </div>

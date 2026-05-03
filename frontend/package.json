@@ -58,7 +58,11 @@
     "vaul": "^1.1.2",
     "zod": "^3.24.4",
     "jszip": "^3.10.1",
-    "file-saver": "^2.0.5"
+    "file-saver": "^2.0.5",
+    "zustand": "^4.5.2",
+    "tone": "^15.0.4",
+    "motion": "^11.2.10",
+    "firebase": "^10.12.0"
   },
   "scripts": {
     "start": "craco start",
