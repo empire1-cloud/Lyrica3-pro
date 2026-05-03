@@ -238,6 +238,9 @@ class GenerateRequest(BaseModel):
     mood: str = "Late-Night Honesty"
     title: Optional[str] = None
     ghost_audio_name: Optional[str] = None
+    # Target wall-clock length for instrumental (Lyria: stitched segments; Replicate: duration cap).
+    # Typical: 150–360. Omitted → Lyria uses LYRIA_SEGMENTS env; Replicate uses REPLICATE_DURATION.
+    target_duration_seconds: Optional[int] = Field(default=None, ge=30, le=900)
     axes:            Optional[AxisSelection] = None
     performer_dna:   Optional[PerformerDNA]  = None
     harmony_layers:  List[HarmonyLayer]      = Field(default_factory=list)
@@ -262,6 +265,8 @@ class SoulComposeRequest(BaseModel):
     genre: str = "SGV Oldies"
     mood: str = "Late-Night Honesty"
     title: Optional[str] = None
+    ghost_audio_name: Optional[str] = None
+    target_duration_seconds: Optional[int] = Field(default=None, ge=30, le=900)
     emotional_arc: Literal["grief", "defiance", "intimacy", "neutral"] = "neutral"
     axes: Optional[AxisSelection] = None
     performer_dna: Optional[PerformerDNA] = None
@@ -720,9 +725,27 @@ Hard rules:
 - Lyrics should evoke place (El Monte, Rosemead, SGV, Valle), relationships and community (family, neighbors, kin), and texture (tape hiss, requinto, 808, corridos, oldies).
 - Never sanitize pain. The Matriarch demands bruised subtext."""
 
+def _lml_line_cap_for_duration(seconds: Optional[int]) -> int:
+    """More lyrics for longer instrumentals (TTS still clamps at 4000 chars)."""
+    if not seconds:
+        return 16
+    if seconds <= 150:
+        return 16
+    if seconds <= 240:
+        return 24
+    if seconds <= 360:
+        return 32
+    return min(40, 32 + (seconds - 360) // 120 * 4)
+
+
 async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dict:
     """Call Claude Sonnet 4.5 via EMERGENT_LLM_KEY. Internal prompt-engineering — never exposed."""
     lung, throat, fry, crack = recipe
+    line_cap = _lml_line_cap_for_duration(req.target_duration_seconds)
+    lml_system = LML_SYSTEM.replace(
+        "Keep lyrics ≤ 16 lines.",
+        f"Keep lyrics ≤ {line_cap} lines (scale sections for a longer song).",
+    )
 
     # --- EMSS multi-axis overlay --------------------------------------
     axes = req.axes
@@ -773,12 +796,20 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         )
         harmony_rule = f"\n- Harmony layers planned externally: [{lyr}]. Keep lead vocal arrangement clean to accommodate stacking."
 
+    dur_rule = ""
+    if req.target_duration_seconds:
+        m, s = divmod(int(req.target_duration_seconds), 60)
+        dur_rule = (
+            f"\n- TARGET LENGTH: Instrumental target ~{m}m {s}s. Add enough sections "
+            f"([intro]/[verse]/[hook]/[bridge]/[outro], repeats OK) to fill that arc; stay within ≤{line_cap} lines."
+        )
+
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         chat = LlmChat(
             api_key=EMERGENT_LLM_KEY,
             session_id=f"s2_{uuid.uuid4().hex[:8]}",
-            system_message=LML_SYSTEM,
+            system_message=lml_system,
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
         user_text = (
             f"Cultural Matrix: {matrix}\n"
@@ -786,7 +817,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
             f"vocal_fry={fry:.2f}, emotional_cracks={crack:.2f}\n"
             f"EMSS Multi-Axis Overlay:\n{axis_block}\n"
             f"Performer DNA: {dna_block}"
-            f"{splicer_rule}{bridge_rule}{harmony_rule}\n"
+            f"{splicer_rule}{bridge_rule}{harmony_rule}{dur_rule}\n"
             f"Ghost audio artifact: {req.ghost_audio_name or 'none'}\n"
             f"Raw lyric seed:\n{req.lyrics}\n\n"
             f"Compose the Soulfire. Return JSON only."
@@ -834,7 +865,8 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         vocal_performance, REPLICATE_API_KEY,
     )
     from vertex_ai import (
-        vertex_lyria_full_song, vertex_chirp_tts, _available as vertex_available,
+        vertex_lyria_full_song, vertex_chirp_tts, lyria_segments_for_target_seconds,
+        _available as vertex_available,
     )
     stems: list = []
     synth_source_url: Optional[str] = None
@@ -843,9 +875,11 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     # ---- Instrumental ------------------------------------------------
     if vertex_available():
         lyria_prompt = build_synth_prompt(matrix, recipe, data["lml"])
+        lyria_n = lyria_segments_for_target_seconds(int(req.target_duration_seconds)) if req.target_duration_seconds else None
         lyria_path = await vertex_lyria_full_song(
             lyria_prompt, matrix, recipe,
             out_dir=str(ROOT_DIR / "static" / "stems"),
+            segments=lyria_n,
         )
         if lyria_path:
             public_url = f"/api/static/stems/{Path(lyria_path).name}"
@@ -855,7 +889,10 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                                      out_dir=str(ROOT_DIR / "static" / "stems"))
     if not stems and REPLICATE_API_KEY:
         synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
-        synth_source_url = await audio_synth(synth_prompt)
+        synth_source_url = await audio_synth(
+            synth_prompt,
+            duration=req.target_duration_seconds,
+        )
         if synth_source_url:
             synth_provider = "replicate:musicgen"
             stems = await auto_split(synth_source_url,
@@ -875,6 +912,15 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                                      out_dir=str(ROOT_DIR / "static" / "voices"))
         if vp:
             voice_provider = "vertex:chirp-3-hd"
+            voice_meta = vp
+    if not voice_meta:
+        from vocal_v2 import vocal_performance_v2
+        vp = await vocal_performance_v2(
+            lml=data["lml"], mood=req.mood,
+            out_dir=str(ROOT_DIR / "static" / "voices"),
+        )
+        if vp:
+            voice_provider = "openai:tts-1-hd+v2"
             voice_meta = vp
     if not voice_meta:
         vp = await vocal_performance(
@@ -1100,6 +1146,8 @@ async def soul_compose(request: Request, req: SoulComposeRequest, user: Dict = D
         genre=req.genre,
         mood=req.mood,
         title=req.title,
+        ghost_audio_name=req.ghost_audio_name,
+        target_duration_seconds=req.target_duration_seconds,
         emotional_arc=req.emotional_arc,
         axes=axes_dict,
         performer_dna=dna_payload,

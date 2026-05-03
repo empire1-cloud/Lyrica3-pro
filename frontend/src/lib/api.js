@@ -18,6 +18,8 @@ export const getTracks  = () => apiGet("/tracks");
 export const getTrack   = (dna) => apiGet(`/tracks/${dna}`);
 export const flipTrack  = (dna, body) => apiPost(`/tracks/${dna}/flip`, body);
 export const generate   = (body) => apiPost("/generate", body);
+/** SoulComposer — plan only; use `response.generate_request` with `generate()`. */
+export const soulCompose = (body) => apiPost("/soul/compose", body);
 export const getLedger  = (limit = 40) => apiGet(`/ledger?limit=${limit}`);
 export const getWallet  = () => apiGet("/wallet");
 export const getVibes   = () => apiGet("/vibes");

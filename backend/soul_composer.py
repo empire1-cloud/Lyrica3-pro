@@ -207,6 +207,8 @@ def build_generate_payload(
     subtextual_splicer: bool,
     bridge_enabled: bool,
     apply_arc_mood_hint: bool,
+    ghost_audio_name: Optional[str] = None,
+    target_duration_seconds: Optional[int] = None,
 ) -> Tuple[Dict[str, Any], EmotionalArc]:
     """
     Returns (generate_request_dict, resolved_arc).
@@ -236,6 +238,10 @@ def build_generate_payload(
         "subtextual_splicer": subtextual_splicer,
         "bridge_enabled": bridge_enabled,
     }
+    if ghost_audio_name:
+        gen["ghost_audio_name"] = ghost_audio_name
+    if target_duration_seconds is not None:
+        gen["target_duration_seconds"] = int(target_duration_seconds)
     # Drop empty axes key for cleaner JSON
     if not gen["axes"]:
         gen.pop("axes")
@@ -256,6 +262,8 @@ def compose(
     subtextual_splicer: bool = False,
     bridge_enabled: bool = False,
     apply_arc_mood_hint: bool = True,
+    ghost_audio_name: Optional[str] = None,
+    target_duration_seconds: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Full SoulComposer output: CCNA + EPD + MMA + ready-to-post /api/generate body."""
     ccna = ccna_validate(narrative)
@@ -271,6 +279,8 @@ def compose(
         subtextual_splicer=subtextual_splicer,
         bridge_enabled=bridge_enabled,
         apply_arc_mood_hint=apply_arc_mood_hint,
+        ghost_audio_name=ghost_audio_name,
+        target_duration_seconds=target_duration_seconds,
     )
     lines = _lines_from_seed(narrative)
     epd = epd_build_vocal_blueprint(narrative, resolved_arc, lines_for_triggers=lines)

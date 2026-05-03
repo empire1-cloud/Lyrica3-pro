@@ -35,6 +35,7 @@ Access caveats
 from __future__ import annotations
 import os
 import base64
+import math
 import uuid
 import logging
 import asyncio
@@ -55,12 +56,30 @@ VERTEX_CHIRP_VOICE  = os.environ.get("VERTEX_CHIRP_VOICE",  "en-US-Chirp3-HD-Oru
 
 # Full-song composition knobs
 LYRIA_SEGMENT_SECONDS = int(os.environ.get("LYRIA_SEGMENT_SECONDS", "30"))  # per-call max
-LYRIA_SEGMENTS        = int(os.environ.get("LYRIA_SEGMENTS", "6"))           # 6×30 = 3 min
+# Default 9×30s segments with crossfades ≈ >4 min wall-clock — override via LYRIA_SEGMENTS or target_duration on generate
+LYRIA_SEGMENTS        = int(os.environ.get("LYRIA_SEGMENTS", "9"))
 LYRIA_CROSSFADE_MS    = int(os.environ.get("LYRIA_CROSSFADE_MS", "1500"))
+LYRIA_SEGMENTS_MAX    = int(os.environ.get("LYRIA_SEGMENTS_MAX", "24"))  # safety cap (~12+ min raw audio)
 
 
 def _available() -> bool:
     return VERTEX_AI_ENABLED and bool(VERTEX_PROJECT_ID)
+
+
+def lyria_segments_for_target_seconds(total_seconds: int) -> int:
+    """How many Lyria segments to stitch to reach ~total_seconds (accounting for crossfades)."""
+    if total_seconds <= 0:
+        return LYRIA_SEGMENTS
+    seg = max(1, LYRIA_SEGMENT_SECONDS)
+    cf_s = max(0.0, LYRIA_CROSSFADE_MS / 1000.0)
+    if total_seconds <= seg:
+        return 1
+    denom = seg - cf_s
+    if denom <= 0:
+        n = int(math.ceil(total_seconds / seg))
+    else:
+        n = int(math.ceil((total_seconds + cf_s) / denom))
+    return max(1, min(n, LYRIA_SEGMENTS_MAX))
 
 
 # ============================================================
@@ -166,22 +185,31 @@ async def vertex_lyria_full_song(base_prompt: str, matrix: str, mood_recipe: tup
     a single MP3.
 
     Returns the local .mp3 path or None on failure.
-    A 6-segment song at 30s each with 1.5s crossfade = ~168s (~2:48).
+    Segment count × 30s with crossfades scales past 4+ minutes when `segments` is increased
+    (see `lyria_segments_for_target_seconds`).
     """
     if not _available():
         return None
     n = segments or LYRIA_SEGMENTS
     lung, throat, fry, crack = mood_recipe
 
-    # section-aware prompt variants — keeps the song from sounding like a loop
-    sections = [
+    # section-aware prompt variants — cycle for long songs (4+ min need >6 segments)
+    section_cycle = [
         ("intro",   "tape hiss intro, ambient room tone, soft arrival"),
         ("verse",   "full arrangement, steady groove, late-pocket drums"),
         ("prechorus","building tension, ride cymbal, rising bass"),
         ("chorus",  "climactic hook, layered vocals, wide stereo"),
         ("verse2",  "stripped verse, minimal, intimate close-mic"),
+        ("bridge",  "harmonic contrast, space, return energy building"),
         ("outro",   "fade out, tape slow, final vinyl crackle"),
-    ][:n]
+    ]
+    sections: list = []
+    for i in range(n):
+        label, flavor = section_cycle[i % len(section_cycle)]
+        if i >= len(section_cycle):
+            label = f"{label}_cont"
+            flavor = f"{flavor}; part {i // len(section_cycle) + 1}, evolve arrangement subtly"
+        sections.append((label, flavor))
 
     prompts = [
         f"{base_prompt}. Section: {label}. {flavor}."

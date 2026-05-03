@@ -86,7 +86,24 @@ def test_compose_end_to_end_keys():
     assert len(triggers) >= 1
     assert any("emotional_crack" in " ".join(t["suggested_tags"]) for t in triggers)
 
-
 def test_epd_empty_lines():
     bp = epd_build_vocal_blueprint("", "neutral", lines_for_triggers=[])
     assert bp["line_triggers"] == []
+
+
+def test_generate_payload_includes_ghost_audio():
+    body, _ = build_generate_payload(
+        narrative="Test line for the valley",
+        genre="SGV Oldies",
+        mood="Late-Night Honesty",
+        title=None,
+        emotional_arc="neutral",
+        axes=None,
+        performer_dna=None,
+        harmony_layers=[],
+        subtextual_splicer=False,
+        bridge_enabled=False,
+        apply_arc_mood_hint=False,
+        ghost_audio_name="voicemail_take1.mp3",
+    )
+    assert body.get("ghost_audio_name") == "voicemail_take1.mp3"

@@ -29,6 +29,7 @@ REPLICATE_MODEL    = os.environ.get(
     "meta/musicgen:b05b1dff1d8c6dc63d14b0cdb42135378dcb87f6373b0d3d341ede46e59e2b38",
 )
 REPLICATE_DURATION = int(os.environ.get("REPLICATE_DURATION", "20"))
+REPLICATE_DURATION_MAX = int(os.environ.get("REPLICATE_DURATION_MAX", "30"))  # MusicGen-style cap; use Lyria for 4+ min
 DEMUCS_ENABLED     = os.environ.get("DEMUCS_ENABLED", "false").lower() == "true"
 DEMUCS_DEVICE      = os.environ.get("DEMUCS_DEVICE", "cpu")
 EMERGENT_LLM_KEY   = os.environ.get("EMERGENT_LLM_KEY", "").strip()
@@ -122,11 +123,13 @@ async def audio_synth(prompt: str, duration: Optional[int] = None) -> Optional[s
     """
     if not REPLICATE_API_KEY:
         return None
+    dur = duration if duration is not None else REPLICATE_DURATION
+    dur = max(1, min(int(dur), REPLICATE_DURATION_MAX))
     payload = {
         "version": REPLICATE_MODEL.split(":")[-1] if ":" in REPLICATE_MODEL else REPLICATE_MODEL,
         "input": {
             "prompt": prompt,
-            "duration": duration or REPLICATE_DURATION,
+            "duration": dur,
             "temperature": 1.0,
             "top_k": 250,
             "top_p": 0.0,

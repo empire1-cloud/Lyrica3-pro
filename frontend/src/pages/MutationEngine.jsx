@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { generate, getVibes, getAxes } from "../lib/api";
+import { generate, soulCompose, getVibes, getAxes } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import {
   Flame, UploadCloud, Sparkles, Volume2, Check, ChevronDown, ChevronUp,
@@ -239,6 +239,14 @@ const DEFAULT_DNA = {
   breathiness: 0.5, clarity: 0.7, resonance: 0.65, glottal_tension: 0.4,
 };
 
+/** SoulComposer emotional arc — drives MMA heartbeat + optional mood hint server-side */
+const EMOTIONAL_ARCS = [
+  { id: "neutral", label: "Neutral", sub: "You steer mood & axes" },
+  { id: "grief", label: "Grief", sub: "Heavy pocket · slower heart" },
+  { id: "intimacy", label: "Intimacy", sub: "Close mic · breath" },
+  { id: "defiance", label: "Defiance", sub: "Forward lean · harder kick" },
+];
+
 export default function MutationEngine() {
   const nav = useNavigate();
   const [lyrics, setLyrics] = useState("");
@@ -262,9 +270,15 @@ export default function MutationEngine() {
   const [splicer, setSplicer] = useState(false);
   const [bridge, setBridge] = useState(false);
 
+  /** SoulComposer emotional arc → MMA heartbeat + optional mood alignment */
+  const [emotionalArc, setEmotionalArc] = useState("neutral");
+  /** Instrumental target length (seconds). Lyria stitches 30s segments; Replicate caps ~30s. */
+  const [targetDurationSec, setTargetDurationSec] = useState(240);
+
   const [igniting, setIgniting] = useState(false);
   const [stage, setStage] = useState("");
   const [result, setResult] = useState(null);
+  const [soulPlan, setSoulPlan] = useState(null);
   const [err, setErr] = useState("");
 
   const loadCatalogs = useCallback(() => {
@@ -289,7 +303,8 @@ export default function MutationEngine() {
     loadCatalogs();
   }, [loadCatalogs]);
 
-  const stages = [
+  const pipelineStages = [
+    "SoulComposer · CCNA / EPD / MMA",
     "Routing vibe matrix",
     "Fusing multi-axis recipe",
     "Tuning performer DNA",
@@ -307,35 +322,52 @@ export default function MutationEngine() {
   const removeHarmony = (i) =>
     setHarmonyLayers((h) => h.filter((_, idx) => idx !== i));
 
+  const buildSoulComposeBody = useCallback(() => ({
+    narrative: lyrics.trim(),
+    genre,
+    mood,
+    title: title || null,
+    ghost_audio_name: ghost || null,
+    emotional_arc: emotionalArc,
+    axes: {
+      rhythm: axes.rhythm || null,
+      melody: axes.melody || null,
+      instrumentation: axes.instrumentation || null,
+      emotion: axes.emotion || null,
+    },
+    performer_dna: performerDna,
+    harmony_layers: harmonyLayers,
+    subtextual_splicer: splicer,
+    bridge_enabled: bridge,
+    apply_arc_mood_hint: true,
+    target_duration_seconds: targetDurationSec,
+  }), [lyrics, genre, mood, title, ghost, emotionalArc, targetDurationSec, axes, performerDna, harmonyLayers, splicer, bridge]);
+
   const ignite = async () => {
     if (!lyrics.trim()) { setErr("Raw lyric seed required for ignition."); return; }
-    setErr(""); setIgniting(true); setResult(null);
-    let alive = true;
-    (async () => {
-      for (const s of stages) { if (!alive) break; setStage(s); await new Promise((r) => setTimeout(r, 900)); }
-    })();
+    setErr(""); setIgniting(true); setResult(null); setSoulPlan(null);
+    let interval = null;
     try {
-      const body = {
-        lyrics, genre, mood,
-        title: title || null,
-        ghost_audio_name: ghost || null,
-        axes: {
-          rhythm: axes.rhythm || null,
-          melody: axes.melody || null,
-          instrumentation: axes.instrumentation || null,
-          emotion: axes.emotion || null,
-        },
-        performer_dna: performerDna,
-        harmony_layers: harmonyLayers,
-        subtextual_splicer: splicer,
-        bridge_enabled: bridge,
+      setStage(pipelineStages[0]);
+      const plan = await soulCompose(buildSoulComposeBody());
+      setSoulPlan(plan);
+
+      let idx = 1;
+      const advance = () => {
+        if (idx < pipelineStages.length) setStage(pipelineStages[idx++]);
       };
-      const t = await generate(body);
-      alive = false; setResult(t);
+      advance();
+      interval = setInterval(advance, 900);
+
+      const t = await generate(plan.generate_request);
+      setResult(t);
     } catch (e) {
-      alive = false;
       setErr(e?.response?.data?.detail || "Soulfire misfired.");
-    } finally { setIgniting(false); setStage(""); }
+    } finally {
+      if (interval) clearInterval(interval);
+      setIgniting(false);
+      setStage("");
+    }
   };
 
   const axisActiveCount = Object.values(axes).filter(Boolean).length;
@@ -502,6 +534,66 @@ export default function MutationEngine() {
             <ChipGroupGrid groups={moodGroups} value={mood} onChange={setMood} color="#ff5eac" testId="mood-chips"/>
           </div>
 
+          <div className="panel rounded-[6px] p-4 md:p-6" data-testid="soul-arc-panel">
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles size={14} className="text-[#ffd88a]"/>
+              <span className="etched text-[#ffd88a]">SoulComposer · Emotional Arc</span>
+            </div>
+            <div className="font-mono text-[10px] text-[#6b6257] uppercase tracking-[0.18em] mb-3">
+              Sets MMA heartbeat pocket before S2 · optional mood alignment
+            </div>
+            <div className="mb-4 pb-4 border-b border-[#1c1c22]" data-testid="target-duration-panel">
+              <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-[#6b6257] mb-2">
+                Target length (instrumental)
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { sec: 150, label: "~2:30" },
+                  { sec: 240, label: "~4:00" },
+                  { sec: 300, label: "~5:00" },
+                  { sec: 360, label: "~6:00" },
+                ].map(({ sec, label }) => {
+                  const on = targetDurationSec === sec;
+                  return (
+                    <button
+                      key={sec}
+                      type="button"
+                      data-testid={`duration-${sec}`}
+                      onClick={() => setTargetDurationSec(sec)}
+                      className={`px-3 py-1.5 rounded-full border font-mono text-[10px] uppercase tracking-[0.12em]
+                        ${on ? "border-[#59d3ff] bg-[#59d3ff]/15 text-[#59d3ff]" : "border-[#22222a] text-[#8a8278] hover:border-[#59d3ff]/40"}`}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="font-mono text-[9px] text-[#6b6257] mt-2 leading-relaxed">
+                Vertex Lyria stitches segments for long form. Replicate MusicGen is capped (~30s) — use Lyria on GCP for full songs.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {EMOTIONAL_ARCS.map((a) => {
+                const on = emotionalArc === a.id;
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    data-testid={`soul-arc-${a.id}`}
+                    onClick={() => setEmotionalArc(a.id)}
+                    className={`text-left rounded-[3px] border px-3 py-2.5 transition-all
+                      ${on
+                        ? "border-[#ffd88a]/80 bg-[#ffd88a]/10"
+                        : "border-[#22222a] hover:border-[#ffd88a]/40"}`}>
+                    <div className={`font-mono text-[10.5px] uppercase tracking-[0.14em] ${on ? "text-[#ffd88a]" : "text-[#c9bfae]"}`}>
+                      {a.label}
+                    </div>
+                    <div className="font-mono text-[9px] text-[#6b6257] mt-0.5 leading-snug">{a.sub}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Subtextual + bridge toggles */}
           <div className="panel rounded-[6px] p-4 md:p-5 space-y-3" data-testid="emss-toggles">
             <button type="button" onClick={() => setSplicer((s) => !s)}
@@ -554,10 +646,10 @@ export default function MutationEngine() {
             {err && <div className="mt-3 text-[12px] text-[#ff5eac] font-mono text-center" data-testid="ignite-err">{err}</div>}
             {igniting && (
               <div className="mt-4 space-y-1.5" data-testid="ignite-pipeline">
-                {stages.map((s) => (
+                {pipelineStages.map((s) => (
                   <div key={s} className="flex items-center gap-2 font-mono text-[11px]">
-                    <span className={stage === s ? "text-[#ffd88a]" : stages.indexOf(stage) > stages.indexOf(s) ? "text-[#59d3ff]" : "text-[#6b6257]"}>
-                      {stages.indexOf(stage) > stages.indexOf(s) ? "✓" : stage === s ? "◉" : "◇"}
+                    <span className={stage === s ? "text-[#ffd88a]" : pipelineStages.indexOf(stage) > pipelineStages.indexOf(s) ? "text-[#59d3ff]" : "text-[#6b6257]"}>
+                      {pipelineStages.indexOf(stage) > pipelineStages.indexOf(s) ? "✓" : stage === s ? "◉" : "◇"}
                     </span>
                     <span className={stage === s ? "text-[#f3ece1]" : "text-[#6b6257]"}>{s}</span>
                   </div>
@@ -576,7 +668,13 @@ export default function MutationEngine() {
               <h3 className="font-display text-[22px] md:text-[28px] text-[#f3ece1] mt-1 tracking-tight">{result.title}</h3>
               <div className="text-[12px] font-mono text-[#ffd88a] mt-1">{result.dna_tag}</div>
               <div className="text-[11px] md:text-[12px] text-[#8a8278] mt-1">
-                {genre} · <span className="text-[#ff5eac]">{mood}</span>
+                {genre} ·{" "}
+                <span className="text-[#ff5eac]">
+                  {soulPlan?.generate_request?.mood ?? mood}
+                </span>
+                {soulPlan && (
+                  <> · <span className="text-[#ffd88a]">arc {soulPlan.resolved_emotional_arc}</span></>
+                )}
                 {axisActiveCount > 0 && <> · <span className="text-[#59d3ff]">{axisActiveCount} axis overlay</span></>}
                 {harmonyLayers.length > 0 && <> · <span className="text-[#ffd88a]">{harmonyLayers.length} harmony stack</span></>}
               </div>
@@ -592,6 +690,40 @@ export default function MutationEngine() {
               </button>
             </div>
           </div>
+          {soulPlan && (
+            <div className="mt-4 p-3 md:p-4 rounded-[4px] border border-[#ffd88a]/25 bg-[#ffd88a]/5" data-testid="soul-plan-summary">
+              <div className="etched text-[#ffd88a] text-[10px] mb-2">SoulComposer plan (CCNA · EPD · MMA)</div>
+              <div className="font-mono text-[10px] md:text-[11px] text-[#c9bfae] space-y-1">
+                <div>
+                  CCNA: <span className="text-[#59d3ff]">{soulPlan.ccna?.validation_status ?? "—"}</span>
+                  {Array.isArray(soulPlan.ccna?.issues) && soulPlan.ccna.issues.length > 0 && (
+                    <span className="text-[#ff5eac]"> · flags: {soulPlan.ccna.issues.join(", ")}</span>
+                  )}
+                </div>
+                {soulPlan.generate_request?.target_duration_seconds != null && (
+                  <div>
+                    Target: <span className="text-[#59d3ff]">
+                      {Math.floor(soulPlan.generate_request.target_duration_seconds / 60)}:
+                      {String(soulPlan.generate_request.target_duration_seconds % 60).padStart(2, "0")}
+                    </span> instrumental
+                  </div>
+                )}
+                {soulPlan.mma?.bpm_center != null && (
+                  <div>
+                    MMA pocket: ~<span className="text-[#ffd88a]">{soulPlan.mma.bpm_center}</span> BPM
+                    {soulPlan.mma.swing_delay_ms != null && (
+                      <> · swing <span className="text-[#ffd88a]">{soulPlan.mma.swing_delay_ms} ms</span></>
+                    )}
+                  </div>
+                )}
+                {soulPlan.epd?.poetic_divergence_hint && (
+                  <div className="text-[#8a8278] font-serif italic leading-snug pt-1 border-t border-[#22222a] mt-2">
+                    {soulPlan.epd.poetic_divergence_hint}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
             {["Vocal Resonance", "Expressive Range", "Vulnerability", "Breath Profile"].map((k, i) => {
               const v = [result.biometrics?.resonance_quality, result.biometrics?.expressive_range,

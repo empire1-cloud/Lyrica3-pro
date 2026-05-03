@@ -18,6 +18,10 @@ The **SoulComposer** is a plan-only orchestration layer that sits **above** the 
 
 **Workflow:** Call `/api/soul/compose` → take `generate_request` from the response → `POST /api/generate` with the same session/cookie to produce stems, vocal, and ledger mint.
 
+**Product:** **Mutation Engine** (`frontend/src/pages/MutationEngine.jsx`) runs this chain on **Ignite Soulfire**: `soulCompose` then `generate(plan.generate_request)`; users pick **Emotional Arc** (grief / intimacy / defiance / neutral) and see a short CCNA · MMA · EPD summary after mint.
+
+**Vocal v2:** `backend/vocal_v2.py` — parses LML into spans with active tag stack, maps tags to **performance directives + TTS speed**, renders **one TTS call per span**, stitches MP3 with pydub. Used in `/api/generate` when Vertex Chirp is unavailable (before legacy single-pass `vocal_performance`). Env: same `EMERGENT_LLM_KEY` as TTS.
+
 ## Standard dev commands
 
 See `README.md` / `memory/PRD.md` and `frontend/package.json` for frontend (`yarn install`, `yarn start`). Backend: `uvicorn server:app` from `backend/` with `.env` set (`MONGO_URL`, `DB_NAME`, etc.).
