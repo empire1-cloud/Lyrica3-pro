@@ -49,7 +49,7 @@ VERTEX_LOCATION   = os.environ.get("VERTEX_LOCATION",   "us-central1").strip()
 
 # Model IDs — override in env to pin a specific version
 VERTEX_GEMINI_MODEL = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-2.5-pro")
-VERTEX_LYRIA_MODEL  = os.environ.get("VERTEX_LYRIA_MODEL",  "lyria-002")
+VERTEX_LYRIA_MODEL  = os.environ.get("VERTEX_LYRIA_MODEL",  "lyria-003")
 VERTEX_CHIRP_VOICE  = os.environ.get("VERTEX_CHIRP_VOICE",  "en-US-Chirp3-HD-Orus")
 
 
@@ -265,3 +265,4 @@ async def vertex_chirp_tts(text: str, voice_name: Optional[str] = None,
     except Exception as e:
         logger.warning("vertex_chirp_tts error: %s", e)
         return None
+
