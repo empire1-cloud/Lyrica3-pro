@@ -27,27 +27,63 @@ export interface MusicAsset {
   renderTier: 'DRAFT' | 'PREVIEW' | 'FINAL';
   createdAt: Date | null;
   tags: string[];
+  category?: string;
+  meta?: {
+    genre?: string;
+    bpm?: number;
+    key?: string;
+    [key: string]: unknown;
+  };
+  urls?: {
+    drums?: string;
+    bass?: string;
+    melody?: string;
+    atmosphere?: string;
+    processed?: string;
+    dry?: string;
+    main?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 export interface VocalAsset {
   id: string;
   projectId: string;
   ownerId: string;
+  authorUid?: string;
   prompt: string;
   audioUrl: string;
   duration: number;
+  type?: string;
   vocalistProfile?: string;
   biometricTags?: string[];
   vulnerabilityScore?: number;
+  performerDNA?: string;
+  sections?: unknown[];
   renderTier: 'DRAFT' | 'PREVIEW' | 'FINAL';
   createdAt: Date | null;
   tags: string[];
+  category?: string;
+  meta?: {
+    emotionProfile?: string;
+    language?: string;
+    performerDNA?: string;
+    sections?: unknown[];
+    [key: string]: unknown;
+  };
+  urls?: {
+    processed?: string;
+    dry?: string;
+    main?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 export interface SfxAsset {
   id: string;
   projectId: string;
   ownerId: string;
+  authorUid?: string;
   prompt: string;
   audioUrl: string;
   duration: number;
@@ -56,6 +92,21 @@ export interface SfxAsset {
   renderTier: 'DRAFT' | 'PREVIEW' | 'FINAL';
   createdAt: Date | null;
   tags: string[];
+  category?: string;
+  meta?: {
+    material?: string;
+    environment?: string;
+    mass?: string;
+    frequency?: string;
+    type?: string;
+    [key: string]: unknown;
+  };
+  urls?: {
+    main?: string;
+    processed?: string;
+    dry?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 export interface AmbientAsset {
@@ -69,6 +120,18 @@ export interface AmbientAsset {
   renderTier: 'DRAFT' | 'PREVIEW' | 'FINAL';
   createdAt: Date | null;
   tags: string[];
+  category?: string;
+  meta?: {
+    elements?: string;
+    duration?: number;
+    loopable?: boolean;
+    [key: string]: unknown;
+  };
+  urls?: {
+    main?: string;
+    processed?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 export interface SoulfirePayload {
