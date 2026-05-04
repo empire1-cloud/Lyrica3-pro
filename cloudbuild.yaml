@@ -7,7 +7,8 @@
 substitutions:
   _REGION: us-central1
   _REPO:   lyrica3
-  _API_URL: https://api.lyrica3.com   # baked into the frontend bundle
+  _API_URL: https://api.lyrica3.com
+  _CULTURA_API_URL: https://cultura-backend-339698334666.us-central1.run.app
 
 options:
   machineType: E2_HIGHCPU_8
@@ -59,6 +60,35 @@ steps:
       - discord_bot/Dockerfile
       - discord_bot
 
+  # ------ Cultura Vibe Forge — frontend ------
+  - id: build-cultura-frontend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --no-cache
+      - --build-arg
+      - REACT_APP_BACKEND_URL=${_CULTURA_API_URL}
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-frontend:$BUILD_ID
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-frontend:latest
+      - -f
+      - cultura/frontend/Dockerfile
+      - cultura/frontend
+
+  # ------ Cultura Vibe Forge — backend ------
+  - id: build-cultura-backend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-backend:$BUILD_ID
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-backend:latest
+      - -f
+      - cultura/backend/Dockerfile
+      - cultura/backend
+
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$BUILD_ID
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:latest
@@ -66,3 +96,7 @@ images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:latest
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:$BUILD_ID
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-frontend:$BUILD_ID
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-frontend:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-backend:$BUILD_ID
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-backend:latest
