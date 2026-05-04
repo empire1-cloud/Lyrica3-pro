@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
+import BillingPage from './Billing';
+
 declare global {
   interface Window {
     aistudio?: {
@@ -16,7 +18,7 @@ declare global {
   }
 }
 
-type AppMode = 'sonance' | 'universal' | 'orchestrator';
+type AppMode = 'sonance' | 'universal' | 'orchestrator' | 'billing';
 
 const PROJECTS = {
   smile: {
@@ -191,6 +193,17 @@ function StudioApp() {
               <Activity className="w-4 h-4" />
               Orchestrator
             </button>
+            <button
+              onClick={() => setMode('billing')}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                mode === 'billing' 
+                  ? 'bg-neutral-800 text-amber-400 shadow-sm' 
+                  : 'text-neutral-400 hover:text-neutral-200'
+              }`}
+            >
+              <Flame className="w-4 h-4" />
+              Plans
+            </button>
           </div>
         </div>
       </nav>
@@ -202,6 +215,8 @@ function StudioApp() {
             <SonancePro key="sonance" />
           ) : mode === 'universal' ? (
             <SLUniversal key="universal" />
+          ) : mode === 'billing' ? (
+            <BillingPage key="billing" />
           ) : (
             <GenerativeAudioSuite key="orchestrator" />
           )}
