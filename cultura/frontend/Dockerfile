@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package.json ./
 # ajv fix for webpack 5 schema validation; legacy-peer-deps for craco+react-scripts compat
 RUN npm install --legacy-peer-deps && \
-    npm install ajv ajv-keywords --legacy-peer-deps
+    npm install ajv ajv-keywords eslint-webpack-plugin --legacy-peer-deps
 
 COPY . ./
 
