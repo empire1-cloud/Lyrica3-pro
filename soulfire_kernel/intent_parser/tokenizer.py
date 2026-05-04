@@ -1,5 +1,5 @@
 """
-Intent Tokenizer — Phase 1
+Intent Tokenizer — Phase 2
 Converts a Soulfire Schema dict into a flat conditioning vector
 suitable for ACE-Step 1.5 XL / AudioLDM2 / MusicGen2.
 
@@ -8,15 +8,44 @@ Conditioning dimensions:
   - timbre_tokens:   8-D  (genre_id, subgenre_id, era, instrumentation_mask)
   - groove_tokens:   4-D  (bpm_norm, swing, pocket_offset, density)
   - vocal_tokens:    8-D  (voice_type, language, artifact_mask, vulnerability)
-  - lyric_embedding: 768-D (sentence-transformer of lyrics_payload.body)
+  - lyric_embedding: 768-D (all-MiniLM-L6-v2 sentence-transformer of lyrics_payload.body)
 
 Total: 804-D conditioning vector per render call.
+
+Phase 2 changes:
+  - lyric_embedding now uses sentence-transformers all-MiniLM-L6-v2 (384-D → padded to 768-D)
+  - Model is loaded lazily on first call and cached on the instance
+  - Falls back gracefully to the Phase 1 hash-stub if the library is unavailable
 """
 
 from __future__ import annotations
-import hashlib, json
+import hashlib, json, logging
 from dataclasses import dataclass, field
 from typing import Any
+
+log = logging.getLogger(__name__)
+
+# Lazy-loaded model singleton — shared across all tokenizer instances
+_ST_MODEL = None
+_ST_MODEL_LOADED = False
+ST_MODEL_NAME = "all-MiniLM-L6-v2"   # 384-D output, padded to 768-D
+ST_DIM = 384                           # native output dimension
+EMBED_DIM = 768                        # target conditioning dimension
+
+
+def _load_st_model():
+    global _ST_MODEL, _ST_MODEL_LOADED
+    if _ST_MODEL_LOADED:
+        return _ST_MODEL
+    try:
+        from sentence_transformers import SentenceTransformer
+        _ST_MODEL = SentenceTransformer(ST_MODEL_NAME)
+        log.info("SoulfireTokenizer: loaded %s for lyric embeddings", ST_MODEL_NAME)
+    except Exception as e:
+        log.warning("SoulfireTokenizer: sentence-transformers unavailable (%s) — using stub", e)
+        _ST_MODEL = None
+    _ST_MODEL_LOADED = True
+    return _ST_MODEL
 
 
 # ---------------------------------------------------------------------------
@@ -72,8 +101,9 @@ class ConditioningVector:
 
 class SoulfireIntentTokenizer:
     """
-    Phase 1: symbolic rule-based tokenizer.
-    Phase 2: swap lyric_embedding with a real sentence-transformer call.
+    Phase 2: symbolic rule-based tokenizer with real sentence-transformer lyric embeddings.
+    all-MiniLM-L6-v2 is loaded lazily on first tokenize() call and cached.
+    Falls back to hash-stub if library unavailable (CI / edge environments).
     """
 
     def tokenize(self, schema: dict[str, Any]) -> ConditioningVector:
@@ -116,12 +146,28 @@ class SoulfireIntentTokenizer:
         vec.vocal_tokens[2] = float(evb.get("artifact_intensity", 0.0))
         vec.vocal_tokens[3] = float(evb.get("vulnerability_level", vuln))
 
-        # --- lyric_embedding: Phase 1 = TF-IDF bag-of-words stub ---
-        # Phase 2: replace with all-MiniLM-L6-v2 sentence embedding
+        # --- lyric_embedding: Phase 2 = all-MiniLM-L6-v2 sentence embedding ---
         lyrics_body = schema.get("lyrics_payload", {}).get("body", "")
-        vec.lyric_embedding = self._bag_of_words_stub(lyrics_body)
+        vec.lyric_embedding = self._embed_lyrics(lyrics_body)
 
         return vec
+
+    # ------------------------------------------------------------------
+    def _embed_lyrics(self, text: str) -> list[float]:
+        """
+        Encode lyrics with all-MiniLM-L6-v2 (384-D) then zero-pad to 768-D.
+        Falls back to hash-stub if sentence-transformers is unavailable.
+        """
+        model = _load_st_model()
+        if model is not None and text.strip():
+            try:
+                import numpy as np
+                emb = model.encode(text, normalize_embeddings=True)   # np.ndarray (384,)
+                padded = [float(x) for x in emb] + [0.0] * (EMBED_DIM - ST_DIM)
+                return padded
+            except Exception as e:
+                log.warning("SoulfireTokenizer: embedding failed (%s), using stub", e)
+        return self._bag_of_words_stub(text)
 
     # ------------------------------------------------------------------
     def _hash(self, schema: dict[str, Any]) -> str:
