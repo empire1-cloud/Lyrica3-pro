@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND = process.env.REACT_APP_BACKEND_URL || "https://api.lyrica3.com";
+const BACKEND = process.env.REACT_APP_BACKEND_URL || "https://lyrica3-pro-backend-e2q5oemapa-uc.a.run.app";
 
 export const API = `${BACKEND}/api`;
 export const WS_URL = `${BACKEND.replace(/^http/, "ws")}/api/ws/royalties`;
