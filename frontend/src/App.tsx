@@ -8,6 +8,7 @@ import {
 import { GoogleGenAI } from '@google/genai';
 
 import BillingPage from './Billing';
+import LyricaPublicLanding from './LyricaPublicLanding';
 
 declare global {
   interface Window {
@@ -2182,6 +2183,12 @@ function SLUniversal() {
 }
 
 export default function App() {
+  const [enteredStudio, setEnteredStudio] = useState(false);
+
+  if (!enteredStudio) {
+    return <LyricaPublicLanding onEnterStudio={() => setEnteredStudio(true)} />;
+  }
+
   return (
     <LoginGate>
       <StudioApp />
