@@ -1019,12 +1019,11 @@ async def billing_packages():
     return {"packages": BILLING_PACKAGES}
 
 @api_router.get("/billing/me")
-async def billing_me(user=Depends(require_auth)):
-    rec = await db.users.find_one({"_id": user["_id"]}, {"billing": 1, "credits": 1, "tier": 1})
+async def billing_me(user=Depends(current_user)):
     return {
-        "tier": rec.get("tier", "free"),
-        "credits": rec.get("credits", 0),
-        "billing": rec.get("billing", {}),
+        "tier": user.get("tier", "free"),
+        "credits": user.get("credits", 0),
+        "billing": user.get("billing", {}),
     }
 
 class CheckoutRequest(BaseModel):
@@ -1033,7 +1032,7 @@ class CheckoutRequest(BaseModel):
     cancel_url: str
 
 @api_router.post("/billing/checkout")
-async def billing_checkout(body: CheckoutRequest, user=Depends(require_auth)):
+async def billing_checkout(body: CheckoutRequest, user=Depends(current_user)):
     if not stripe or not STRIPE_SECRET_KEY:
         raise HTTPException(503, "Billing not configured")
     pkg = BILLING_PACKAGES.get(body.package_id)
@@ -1044,8 +1043,8 @@ async def billing_checkout(body: CheckoutRequest, user=Depends(require_auth)):
         "mode": pkg["mode"],
         "success_url": body.success_url + "?session_id={CHECKOUT_SESSION_ID}",
         "cancel_url": body.cancel_url,
-        "client_reference_id": str(user["_id"]),
-        "metadata": {"user_id": str(user["_id"]), "package_id": body.package_id},
+        "client_reference_id": user.get("handle", ""),
+        "metadata": {"user_id": user.get("handle", ""), "package_id": body.package_id},
         "line_items": [{
             "price_data": {
                 "currency": pkg["currency"],
@@ -1064,7 +1063,7 @@ async def billing_checkout(body: CheckoutRequest, user=Depends(require_auth)):
     return {"checkout_url": session.url, "session_id": session.id}
 
 @api_router.get("/billing/status")
-async def billing_status(session_id: str, user=Depends(require_auth)):
+async def billing_status(session_id: str, user=Depends(current_user)):
     if not stripe or not STRIPE_SECRET_KEY:
         raise HTTPException(503, "Billing not configured")
     stripe.api_key = STRIPE_SECRET_KEY
@@ -1084,11 +1083,12 @@ async def billing_status(session_id: str, user=Depends(require_auth)):
         elif pkg.get("credits"):
             update["$inc"] = {"credits": pkg["credits"]}
         if update:
+            handle = user.get("handle")
             if "$inc" in update:
                 inc = update.pop("$inc")
-                await db.users.update_one({"_id": user["_id"]}, {"$set": update, "$inc": inc})
+                await db.users.update_one({"handle": handle}, {"$set": update, "$inc": inc})
             else:
-                await db.users.update_one({"_id": user["_id"]}, {"$set": update})
+                await db.users.update_one({"handle": handle}, {"$set": update})
     return {"status": session.status, "payment_status": session.payment_status}
 
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET_LYRICA3", "")
