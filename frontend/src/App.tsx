@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Mic2, Radio, Sliders, Sparkles, Play, Share2, Layers, 
@@ -63,7 +63,84 @@ I know the sound of a heart that’s beating in fear.`,
   }
 };
 
-export default function App() {
+const BACKEND = process.env.REACT_APP_BACKEND_URL || '';
+
+function LoginGate({ children }: { children: React.ReactNode }) {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('e1_token'));
+  const [handle, setHandle] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const login = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const r = await fetch(`${BACKEND}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle, password }),
+      });
+      const data = await r.json();
+      if (data.token) {
+        localStorage.setItem('e1_token', data.token);
+        setToken(data.token);
+      } else {
+        setError(data.detail || 'Invalid credentials');
+      }
+    } catch {
+      setError('Connection error — try again');
+    }
+    setLoading(false);
+  };
+
+  if (token) return <>{children}</>;
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#030303', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'ui-monospace, monospace' }}>
+      <div style={{ width: 360, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 16, padding: 40 }}>
+        <div style={{ marginBottom: 32, textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: '#D4AF37', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 8 }}>Lyrica 3 Pro</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>EMPIRE 1</div>
+          <div style={{ fontSize: 10, color: '#444', marginTop: 4, letterSpacing: '0.2em' }}>SOVEREIGN STUDIO ACCESS</div>
+        </div>
+        <form onSubmit={login}>
+          <div style={{ marginBottom: 12 }}>
+            <input
+              type="text"
+              placeholder="Handle"
+              value={handle}
+              onChange={e => setHandle(e.target.value)}
+              required
+              style={{ width: '100%', background: '#000', border: '1px solid #222', color: '#fff', padding: '12px 14px', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', outline: 'none' }}
+            />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{ width: '100%', background: '#000', border: '1px solid #222', color: '#fff', padding: '12px 14px', borderRadius: 8, fontSize: 13, boxSizing: 'border-box', outline: 'none' }}
+            />
+          </div>
+          {error && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 14, textAlign: 'center' }}>{error}</div>}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{ width: '100%', background: '#D4AF37', color: '#000', border: 'none', borderRadius: 8, padding: '13px 0', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
+          >
+            {loading ? 'Authenticating...' : 'Enter Studio'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function StudioApp() {
   const [mode, setMode] = useState<AppMode>('sonance');
 
   return (
@@ -2086,5 +2163,13 @@ function SLUniversal() {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+export default function App() {
+  return (
+    <LoginGate>
+      <StudioApp />
+    </LoginGate>
   );
 }
