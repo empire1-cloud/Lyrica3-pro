@@ -1,0 +1,116 @@
+# Universe Manifests — API contracts and canon ruleset references
+# Each universe declares its engines, version, interface endpoint, and policy ref.
+# SLA-113 Routing Engine reads these at boot to build the orchestration fabric.
+# Schema: sla113/universe-manifest@1.0.0
+
+universes:
+
+  - id: U0
+    name: SLA-113
+    role: governance          # NEVER executes creative workloads
+    version: "1.0.0"
+    engines:
+      - id: CanonEnforcer
+        version: "1.0.0"
+        endpoint: "grpc://sla113-canon:50051"
+        canon_ruleset: "opa://canon/soulfire@1.0.0"
+        methods: [Init, Invoke, Observe, Terminate]
+      - id: RoutingEngine
+        version: "1.0.0"
+        endpoint: "grpc://sla113-router:50052"
+        methods: [Init, Invoke, Observe, Terminate]
+      - id: PipelineCompiler
+        version: "1.0.0"
+        endpoint: "grpc://sla113-pipeline:50053"
+        methods: [Init, Invoke, Terminate]
+    policy_store: "registry://black-box/u0-policies@latest"
+
+  - id: U1
+    name: Lyrica3
+    role: creative_audio
+    version: "3.4.0"
+    engines:
+      - id: ArtDirectionEngine
+        version: "3.4.0"
+        endpoint: "grpc://lyrica3-artdir:50051"
+        canon_ruleset: "opa://canon/soulfire@1.0.0"
+        methods: [Init, Invoke, Observe, Terminate]
+      - id: SoulfireKernel
+        version: "1.0.0"
+        endpoint: "grpc://lyrica3-kernel:50054"
+        methods: [Init, Invoke, Observe, Terminate]
+      - id: SonanceSentinel
+        version: "1.0.0"
+        endpoint: "grpc://lyrica3-mastering:50055"
+        methods: [Init, Invoke, Terminate]
+    dependencies:
+      - "U0.CanonEnforcer@>=1.0.0"
+      - "U4.EmpireOne@>=2.0.0"
+
+  - id: U2
+    name: CulturaVibeForge
+    role: creative_cultural
+    version: "1.0.0"
+    engines:
+      - id: CulturaEngine
+        version: "1.0.0"
+        endpoint: "grpc://cultura-engine:50051"
+        methods: [Init, Invoke, Observe, Terminate]
+    dependencies:
+      - "U0.CanonEnforcer@>=1.0.0"
+      - "U4.EmpireOne@>=2.0.0"
+
+  - id: U3
+    name: Southern
+    role: experience_ui
+    version: "1.0.0"
+    engines:
+      - id: UIOrchestrator
+        version: "1.0.0"
+        endpoint: "grpc://southern-ui:50051"
+        methods: [Init, Invoke, Terminate]
+    note: "All experience-facing UIs live here. Creative engineers do not touch U3."
+
+  - id: U4
+    name: EmpireOne
+    role: economy_rights
+    version: "2.1.7"
+    engines:
+      - id: StrategyEngine
+        version: "2.1.7"
+        endpoint: "grpc://empire1-strategy:50051"
+        methods: [Init, Invoke, Observe, Terminate]
+      - id: WalletAPI
+        version: "2.1.7"
+        endpoint: "https://api.empire1.cloud/wallet/v2"
+        protocol: REST
+        auth: JWT
+      - id: MicroRoyaltyLedger
+        version: "2.1.7"
+        endpoint: "grpc://empire1-ledger:50052"
+        methods: [Init, Invoke, Observe, Terminate]
+    note: "Monetization APIs exposed directly to Empire1 Wallet. No finance code in U1/U2/U3."
+
+  - id: U5
+    name: OmniAgent
+    role: orchestration_meta
+    version: "1.0.0"
+    engines:
+      - id: NexusOrchestrator
+        version: "1.0.0"
+        endpoint: "grpc://omni-nexus:50051"
+        methods: [Init, Invoke, Observe, Terminate]
+    dependencies:
+      - "U0.RoutingEngine@>=1.0.0"
+
+  - id: U10
+    name: BlackBoxRegistry
+    role: registry_versioning
+    version: "1.0.0"
+    engines:
+      - id: RegistryAPI
+        version: "1.0.0"
+        endpoint: "https://registry.empire1.cloud/v1"
+        protocol: REST
+        auth: mTLS
+    note: "Signed containers + checksum verification enforced before any deployment."
