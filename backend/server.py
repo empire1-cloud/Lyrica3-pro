@@ -29,6 +29,7 @@ DB_NAME   = os.environ.get('DB_NAME', 'lyrica3_dev')
 JWT_SECRET = os.environ.get('JWT_SECRET', 'dev_secret_change_me')
 JWT_ALGO   = "HS256"
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
@@ -957,6 +958,167 @@ async def ws_royalties(ws: WebSocket):
         except Exception: pass
 
 # ============================================================
+
+# ============================================================
+# BILLING — Stripe subscriptions + credit packs
+# ============================================================
+
+BILLING_PACKAGES = {
+    "soulfire": {
+        "amount": 19.00, "currency": "usd",
+        "label": "Soulfire", "tier": "soulfire",
+        "tagline": "$19/mo · unlimited stems · AI mastering · distribution",
+        "mode": "subscription", "interval": "month",
+        "lookup_key": "lyrica3_soulfire_v1",
+        "product_name": "Lyrica3 — Soulfire",
+    },
+    "maestro": {
+        "amount": 49.00, "currency": "usd",
+        "label": "Maestro", "tier": "maestro",
+        "tagline": "$49/mo · everything in Soulfire · video sync · collab rooms · analytics",
+        "mode": "subscription", "interval": "month",
+        "lookup_key": "lyrica3_maestro_v1",
+        "product_name": "Lyrica3 — Maestro",
+    },
+    "label": {
+        "amount": 149.00, "currency": "usd",
+        "label": "Label", "tier": "label",
+        "tagline": "$149/mo · everything + white-label · unlimited seats · priority support",
+        "mode": "subscription", "interval": "month",
+        "lookup_key": "lyrica3_label_v1",
+        "product_name": "Lyrica3 — Label",
+    },
+    "credits_spark": {
+        "amount": 9.00, "currency": "usd",
+        "label": "Spark Pack", "credits": 10,
+        "tagline": "10 AI credits — stems, masters, mixes",
+        "mode": "payment",
+    },
+    "credits_session": {
+        "amount": 24.00, "currency": "usd",
+        "label": "Session Pack", "credits": 30,
+        "tagline": "30 AI credits",
+        "mode": "payment",
+    },
+    "credits_studio": {
+        "amount": 59.00, "currency": "usd",
+        "label": "Studio Pack", "credits": 100,
+        "tagline": "100 AI credits",
+        "mode": "payment",
+    },
+    "credits_label_drop": {
+        "amount": 149.00, "currency": "usd",
+        "label": "Label Drop Pack", "credits": 350,
+        "tagline": "350 AI credits — best value",
+        "mode": "payment",
+    },
+}
+
+@api_router.get("/billing/packages")
+async def billing_packages():
+    return {"packages": BILLING_PACKAGES}
+
+@api_router.get("/billing/me")
+async def billing_me(user=Depends(require_auth)):
+    rec = await db.users.find_one({"_id": user["_id"]}, {"billing": 1, "credits": 1, "tier": 1})
+    return {
+        "tier": rec.get("tier", "free"),
+        "credits": rec.get("credits", 0),
+        "billing": rec.get("billing", {}),
+    }
+
+class CheckoutRequest(BaseModel):
+    package_id: str
+    success_url: str
+    cancel_url: str
+
+@api_router.post("/billing/checkout")
+async def billing_checkout(body: CheckoutRequest, user=Depends(require_auth)):
+    if not stripe or not STRIPE_SECRET_KEY:
+        raise HTTPException(503, "Billing not configured")
+    pkg = BILLING_PACKAGES.get(body.package_id)
+    if not pkg:
+        raise HTTPException(404, "Unknown package")
+    stripe.api_key = STRIPE_SECRET_KEY
+    params = {
+        "mode": pkg["mode"],
+        "success_url": body.success_url + "?session_id={CHECKOUT_SESSION_ID}",
+        "cancel_url": body.cancel_url,
+        "client_reference_id": str(user["_id"]),
+        "metadata": {"user_id": str(user["_id"]), "package_id": body.package_id},
+        "line_items": [{
+            "price_data": {
+                "currency": pkg["currency"],
+                "unit_amount": int(pkg["amount"] * 100),
+                "product_data": {"name": pkg.get("product_name", pkg["label"])},
+                **({"recurring": {"interval": pkg["interval"]}} if pkg["mode"] == "subscription" else {}),
+            },
+            "quantity": 1,
+        }],
+    }
+    if pkg["mode"] == "subscription":
+        customer_email = user.get("email")
+        if customer_email:
+            params["customer_email"] = customer_email
+    session = stripe.checkout.Session.create(**params)
+    return {"checkout_url": session.url, "session_id": session.id}
+
+@api_router.get("/billing/status")
+async def billing_status(session_id: str, user=Depends(require_auth)):
+    if not stripe or not STRIPE_SECRET_KEY:
+        raise HTTPException(503, "Billing not configured")
+    stripe.api_key = STRIPE_SECRET_KEY
+    session = stripe.checkout.Session.retrieve(session_id)
+    if session.payment_status in ("paid", "complete") or session.status == "complete":
+        pkg_id = session.metadata.get("package_id", "")
+        pkg = BILLING_PACKAGES.get(pkg_id, {})
+        update: dict = {}
+        if pkg.get("mode") == "subscription":
+            update["tier"] = pkg.get("tier", "soulfire")
+            update["billing"] = {
+                "stripe_customer_id": session.customer,
+                "stripe_subscription_id": session.subscription,
+                "package_id": pkg_id,
+                "activated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        elif pkg.get("credits"):
+            update["$inc"] = {"credits": pkg["credits"]}
+        if update:
+            if "$inc" in update:
+                inc = update.pop("$inc")
+                await db.users.update_one({"_id": user["_id"]}, {"$set": update, "$inc": inc})
+            else:
+                await db.users.update_one({"_id": user["_id"]}, {"$set": update})
+    return {"status": session.status, "payment_status": session.payment_status}
+
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET_LYRICA3", "")
+
+@api_router.post("/billing/webhook")
+async def billing_webhook(request: Request):
+    if not stripe or not STRIPE_SECRET_KEY:
+        raise HTTPException(503, "Billing not configured")
+    payload = await request.body()
+    sig = request.headers.get("stripe-signature", "")
+    try:
+        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET) if STRIPE_WEBHOOK_SECRET else stripe.Event.construct_from(json.loads(payload), stripe.api_key)
+    except Exception as e:
+        raise HTTPException(400, f"Webhook error: {e}")
+    stripe.api_key = STRIPE_SECRET_KEY
+    if event["type"] == "customer.subscription.deleted":
+        sub = event["data"]["object"]
+        await db.users.update_one(
+            {"billing.stripe_subscription_id": sub["id"]},
+            {"$set": {"tier": "free", "billing.cancelled_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    elif event["type"] == "invoice.payment_failed":
+        inv = event["data"]["object"]
+        await db.users.update_one(
+            {"billing.stripe_customer_id": inv["customer"]},
+            {"$set": {"billing.payment_failed_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    return {"received": True}
+
+
 app.include_router(api_router)
 
 # Static mount for uploaded audio + Demucs stems + TTS voices
