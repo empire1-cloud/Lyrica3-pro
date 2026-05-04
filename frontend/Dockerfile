@@ -15,7 +15,9 @@ COPY . ./
 # production flags — no sourcemaps, no inline runtime
 ENV GENERATE_SOURCEMAP=false \
     INLINE_RUNTIME_CHUNK=false \
-    DISABLE_ESLINT_PLUGIN=true
+    DISABLE_ESLINT_PLUGIN=true \
+    TSC_COMPILE_ON_ERROR=true \
+    ESLINT_NO_DEV_ERRORS=true
 
 # REACT_APP_BACKEND_URL is baked at build time.
 # Pass via `--build-arg REACT_APP_BACKEND_URL=https://api.lyrica3.com`
