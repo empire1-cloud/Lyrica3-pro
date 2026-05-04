@@ -1,5 +1,5 @@
 /* Lyrica 3 Pro — Empire 1 service worker (offline shell cache) */
-const CACHE = "empire1-shell-v1";
+const CACHE = "lyrica3-shell-v2";
 const SHELL = ["/", "/deck", "/feed", "/ignite", "/login", "/manifest.json"];
 
 self.addEventListener("install", (e) => {

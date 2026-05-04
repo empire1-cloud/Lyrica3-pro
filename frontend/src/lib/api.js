@@ -1,6 +1,9 @@
 import axios from "axios";
-export const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
-export const WS_URL = `${process.env.REACT_APP_BACKEND_URL.replace(/^http/, "ws")}/api/ws/royalties`;
+
+const BACKEND = process.env.REACT_APP_BACKEND_URL || "https://api.lyrica3.com";
+
+export const API = `${BACKEND}/api`;
+export const WS_URL = `${BACKEND.replace(/^http/, "ws")}/api/ws/royalties`;
 
 const authHeader = () => {
   const t = localStorage.getItem("e1_token");
@@ -36,5 +39,5 @@ export const uploadForDemucs = (file) => {
 export const resolveAudioUrl = (src) => {
   if (!src) return "";
   if (src.startsWith("http") || src.startsWith("blob:")) return src;
-  return `${process.env.REACT_APP_BACKEND_URL}${src}`;
+  return `${BACKEND}${src}`;
 };

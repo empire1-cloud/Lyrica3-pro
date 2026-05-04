@@ -28,7 +28,7 @@ type VibesResponse = {
   moods: string[];
 };
 
-const BACKEND = process.env.REACT_APP_BACKEND_URL || '';
+const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://api.lyrica3.com';
 
 function authHeaders() {
   const token = localStorage.getItem('e1_token');
