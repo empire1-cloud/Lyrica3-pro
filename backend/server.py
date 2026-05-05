@@ -258,6 +258,25 @@ class DuetRequest(BaseModel):
     performer_dna: Optional[PerformerDNA] = None
 
 
+class SongPlanRequest(BaseModel):
+    """SongComposer Phase 1 — LLM structure planner (Layer 5) + SoulComposer + generate_request.
+    Treats narrative as soul fragment; emotion_weight biases planner toward vulnerability."""
+    narrative: str
+    genre: str = "SGV Oldies"
+    mood: str = "Late-Night Honesty"
+    title: Optional[str] = None
+    ghost_audio_name: Optional[str] = None
+    target_duration_seconds: int = Field(default=240, ge=60, le=900)
+    emotional_arc: Literal["grief", "defiance", "intimacy", "neutral"] = "neutral"
+    emotion_weight: float = Field(default=0.75, ge=0.0, le=1.0)
+    axes: Optional[AxisSelection] = None
+    performer_dna: Optional[PerformerDNA] = None
+    harmony_layers: List[HarmonyLayer] = Field(default_factory=list)
+    subtextual_splicer: bool = False
+    bridge_enabled: bool = False
+    apply_arc_mood_hint: bool = True
+
+
 class SoulComposeRequest(BaseModel):
     """SoulComposer — orchestrates CCNA (stub) + EPD vocal blueprint + MMA heartbeat pocket,
     and returns a ready-to-post body for `POST /api/generate`. Does not mint audio."""
@@ -804,6 +823,14 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
             f"([intro]/[verse]/[hook]/[bridge]/[outro], repeats OK) to fill that arc; stay within ≤{line_cap} lines."
         )
 
+    arrangement_rule = ""
+    if "ARRANGEMENT_MAP" in (req.lyrics or ""):
+        arrangement_rule = (
+            "\n- ARRANGEMENT_MAP PRESENT: Honor the JSON section plan in your LML — use matching "
+            "[intro]/[verse]/[hook]/[bridge]/[outro] markers; where rhyme_fracture is true in a section, "
+            "allow broken couplets and raw line rhythm on purpose (grief / psychological break), not sloppy AI."
+        )
+
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         chat = LlmChat(
@@ -817,7 +844,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
             f"vocal_fry={fry:.2f}, emotional_cracks={crack:.2f}\n"
             f"EMSS Multi-Axis Overlay:\n{axis_block}\n"
             f"Performer DNA: {dna_block}"
-            f"{splicer_rule}{bridge_rule}{harmony_rule}{dur_rule}\n"
+            f"{splicer_rule}{bridge_rule}{harmony_rule}{dur_rule}{arrangement_rule}\n"
             f"Ghost audio artifact: {req.ghost_audio_name or 'none'}\n"
             f"Raw lyric seed:\n{req.lyrics}\n\n"
             f"Compose the Soulfire. Return JSON only."
@@ -1155,6 +1182,42 @@ async def soul_compose(request: Request, req: SoulComposeRequest, user: Dict = D
         subtextual_splicer=req.subtextual_splicer,
         bridge_enabled=req.bridge_enabled,
         apply_arc_mood_hint=req.apply_arc_mood_hint,
+    )
+    out["requested_by"] = user.get("handle")
+    return out
+
+
+@api_router.post("/song/plan")
+@limiter.limit("8/minute")
+async def song_plan(request: Request, req: SongPlanRequest, user: Dict = Depends(current_user)):
+    """SongComposer Phase 1: hierarchical arrangement JSON → lyrics bundle → SoulComposer → generate_request."""
+    from song_planner import compose_song_phase1
+
+    ar = req.axes.rhythm if req.axes else ""
+    am = req.axes.melody if req.axes else ""
+    ai = req.axes.instrumentation if req.axes else ""
+    ae = req.axes.emotion if req.axes else ""
+    dna_payload = req.performer_dna.model_dump() if req.performer_dna else None
+    harmony_payload = [h.model_dump() for h in req.harmony_layers]
+    out = await compose_song_phase1(
+        narrative=req.narrative,
+        genre=req.genre,
+        mood=req.mood,
+        title=req.title,
+        ghost_audio_name=req.ghost_audio_name,
+        emotional_arc=req.emotional_arc,
+        target_duration_seconds=req.target_duration_seconds,
+        emotion_weight=req.emotion_weight,
+        axes_rhythm=ar or "",
+        axes_melody=am or "",
+        axes_inst=ai or "",
+        axes_emotion=ae or "",
+        performer_dna=dna_payload,
+        harmony_layers=harmony_payload,
+        subtextual_splicer=req.subtextual_splicer,
+        bridge_enabled=req.bridge_enabled,
+        apply_arc_mood_hint=req.apply_arc_mood_hint,
+        emergent_key=EMERGENT_LLM_KEY,
     )
     out["requested_by"] = user.get("handle")
     return out

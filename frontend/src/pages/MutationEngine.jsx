@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { generate, soulCompose, getVibes, getAxes } from "../lib/api";
+import { generate, soulCompose, songPlan, getVibes, getAxes } from "../lib/api";
 import { useNavigate } from "react-router-dom";
 import {
   Flame, UploadCloud, Sparkles, Volume2, Check, ChevronDown, ChevronUp,
@@ -274,6 +274,9 @@ export default function MutationEngine() {
   const [emotionalArc, setEmotionalArc] = useState("neutral");
   /** Instrumental target length (seconds). Lyria stitches 30s segments; Replicate caps ~30s. */
   const [targetDurationSec, setTargetDurationSec] = useState(240);
+  /** Layer 5: LLM song structure map → arrangement in lyric seed (4+ min coherence). */
+  const [useLongSong, setUseLongSong] = useState(false);
+  const [emotionWeight, setEmotionWeight] = useState(0.78);
 
   const [igniting, setIgniting] = useState(false);
   const [stage, setStage] = useState("");
@@ -303,13 +306,17 @@ export default function MutationEngine() {
     loadCatalogs();
   }, [loadCatalogs]);
 
-  const pipelineStages = [
+  const pipelineStagesShort = [
     "SoulComposer · CCNA / EPD / MMA",
     "Routing vibe matrix",
     "Fusing multi-axis recipe",
     "Tuning performer DNA",
     "Stacking harmony layers",
     "Minting DNA on Empire 1",
+  ];
+  const pipelineStagesLong = [
+    "SongComposer · Layer 5 structure map",
+    ...pipelineStagesShort,
   ];
 
   const onFile = (e) => { const f = e.target.files?.[0]; if (f) setGhost(f.name); };
@@ -343,18 +350,26 @@ export default function MutationEngine() {
     target_duration_seconds: targetDurationSec,
   }), [lyrics, genre, mood, title, ghost, emotionalArc, targetDurationSec, axes, performerDna, harmonyLayers, splicer, bridge]);
 
+  const buildSongPlanBody = useCallback(() => ({
+    ...buildSoulComposeBody(),
+    emotion_weight: emotionWeight,
+  }), [buildSoulComposeBody, emotionWeight]);
+
   const ignite = async () => {
     if (!lyrics.trim()) { setErr("Raw lyric seed required for ignition."); return; }
     setErr(""); setIgniting(true); setResult(null); setSoulPlan(null);
     let interval = null;
+    const stages = useLongSong ? pipelineStagesLong : pipelineStagesShort;
     try {
-      setStage(pipelineStages[0]);
-      const plan = await soulCompose(buildSoulComposeBody());
+      setStage(stages[0]);
+      const plan = useLongSong
+        ? await songPlan(buildSongPlanBody())
+        : await soulCompose(buildSoulComposeBody());
       setSoulPlan(plan);
 
       let idx = 1;
       const advance = () => {
-        if (idx < pipelineStages.length) setStage(pipelineStages[idx++]);
+        if (idx < stages.length) setStage(stages[idx++]);
       };
       advance();
       interval = setInterval(advance, 900);
@@ -592,6 +607,38 @@ export default function MutationEngine() {
                 );
               })}
             </div>
+            <div className="mt-4 pt-4 border-t border-[#1c1c22] space-y-3" data-testid="song-composer-panel">
+              <button
+                type="button"
+                data-testid="toggle-long-song"
+                onClick={() => setUseLongSong((v) => !v)}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-[3px] border transition-all
+                  ${useLongSong ? "border-[#ffd88a]/70 bg-[#ffd88a]/10" : "border-[#22222a] hover:border-[#ffd88a]/40"}`}>
+                <div className="text-left">
+                  <div className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-[#c9bfae]">SongComposer · Layer 5 map</div>
+                  <div className="font-mono text-[9px] text-[#6b6257]">LLM arrangement JSON → 4+ min coherence → then SoulComposer + mint</div>
+                </div>
+                <span className={`font-mono text-[10px] uppercase tracking-[0.2em] ${useLongSong ? "text-[#ffd88a]" : "text-[#6b6257]"}`}>
+                  {useLongSong ? "ON" : "OFF"}
+                </span>
+              </button>
+              {useLongSong && (
+                <div data-testid="emotion-weight-slider">
+                  <div className="flex justify-between font-mono text-[9px] uppercase tracking-[0.18em] text-[#6b6257] mb-1">
+                    <span>Emotion training weight</span>
+                    <span className="text-[#ffd88a]">{Math.round(emotionWeight * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={Math.round(emotionWeight * 100)}
+                    onChange={(e) => setEmotionWeight(Number(e.target.value) / 100)}
+                    className="w-full h-[3px] rounded-full appearance-none cursor-pointer bg-[#1c1c22]"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Subtextual + bridge toggles */}
@@ -646,14 +693,17 @@ export default function MutationEngine() {
             {err && <div className="mt-3 text-[12px] text-[#ff5eac] font-mono text-center" data-testid="ignite-err">{err}</div>}
             {igniting && (
               <div className="mt-4 space-y-1.5" data-testid="ignite-pipeline">
-                {pipelineStages.map((s) => (
+                {(useLongSong ? pipelineStagesLong : pipelineStagesShort).map((s) => {
+                  const list = useLongSong ? pipelineStagesLong : pipelineStagesShort;
+                  return (
                   <div key={s} className="flex items-center gap-2 font-mono text-[11px]">
-                    <span className={stage === s ? "text-[#ffd88a]" : pipelineStages.indexOf(stage) > pipelineStages.indexOf(s) ? "text-[#59d3ff]" : "text-[#6b6257]"}>
-                      {pipelineStages.indexOf(stage) > pipelineStages.indexOf(s) ? "✓" : stage === s ? "◉" : "◇"}
+                    <span className={stage === s ? "text-[#ffd88a]" : list.indexOf(stage) > list.indexOf(s) ? "text-[#59d3ff]" : "text-[#6b6257]"}>
+                      {list.indexOf(stage) > list.indexOf(s) ? "✓" : stage === s ? "◉" : "◇"}
                     </span>
                     <span className={stage === s ? "text-[#f3ece1]" : "text-[#6b6257]"}>{s}</span>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -690,6 +740,15 @@ export default function MutationEngine() {
               </button>
             </div>
           </div>
+          {soulPlan?.song_plan && (
+            <div className="mt-4 p-3 md:p-4 rounded-[4px] border border-[#59d3ff]/25 bg-[#59d3ff]/5" data-testid="song-plan-summary">
+              <div className="etched text-[#59d3ff] text-[10px] mb-1">SongComposer · {soulPlan.song_plan.sections?.length ?? 0} sections · ~{soulPlan.estimated_duration_seconds ?? "?"}s</div>
+              <div className="font-mono text-[9px] text-[#8a8278]">
+                {soulPlan.song_plan.creative_intent_one_liner?.slice(0, 160)}
+                {(soulPlan.song_plan.creative_intent_one_liner?.length || 0) > 160 ? "…" : ""}
+              </div>
+            </div>
+          )}
           {soulPlan && (
             <div className="mt-4 p-3 md:p-4 rounded-[4px] border border-[#ffd88a]/25 bg-[#ffd88a]/5" data-testid="soul-plan-summary">
               <div className="etched text-[#ffd88a] text-[10px] mb-2">SoulComposer plan (CCNA · EPD · MMA)</div>

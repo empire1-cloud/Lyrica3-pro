@@ -22,6 +22,8 @@ The **SoulComposer** is a plan-only orchestration layer that sits **above** the 
 
 **Vocal v2:** `backend/vocal_v2.py` — parses LML into spans with active tag stack, maps tags to **performance directives + TTS speed**, renders **one TTS call per span**, stitches MP3 with pydub. Used in `/api/generate` when Vertex Chirp is unavailable (before legacy single-pass `vocal_performance`). Env: same `EMERGENT_LLM_KEY` as TTS.
 
+**SongComposer Phase 1:** `POST /api/song/plan` — `backend/song_planner.py`: Claude **Layer 5** arrangement JSON (sections, bars, BPM, energy, `rhyme_fracture`, EMSS axis ids) + `EMOTION_TRAINING_WEIGHT`; appends `ARRANGEMENT_MAP` to the lyric seed, then runs SoulComposer → `generate_request`. Falls back to deterministic long-form map if LLM fails. UI: Mutation Engine **SongComposer · Layer 5 map** toggle + emotion weight slider.
+
 ## Standard dev commands
 
 See `README.md` / `memory/PRD.md` and `frontend/package.json` for frontend (`yarn install`, `yarn start`). Backend: `uvicorn server:app` from `backend/` with `.env` set (`MONGO_URL`, `DB_NAME`, etc.).
