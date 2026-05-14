@@ -33,7 +33,7 @@ Optional services (not required for core dev):
 
 - **No lockfile committed.** The repo has no `yarn.lock` or `package-lock.json`; `yarn install` generates a fresh lockfile each time.
 - **TypeScript version mismatch.** The frontend pins `typescript@^4.9.5` but some dependencies (e.g. `react-hook-form@^7.56`) require TS 5+. Running `tsc --noEmit` fails on `node_modules` types. The CRA/CRACO build uses Babel and works fine regardless.
-- **Frontend compilation warnings.** Some source files have incorrect relative import paths (e.g. `../lib/utils` instead of `../../lib/utils`). These are pre-existing issues and cause build warnings but do not block the dev server.
+- **Frontend build fails (`yarn build`).** Some source files have incorrect relative import paths (e.g. `../lib/utils` instead of `../../lib/utils`). These are pre-existing issues. `yarn build` (production) fails with TS2307, but `yarn start` (dev server) compiles and serves fine.
 - **Two pre-existing test failures** in `backend_test.py`: `TestVibes.test_vibes` (expects 7 genres, API returns 21) and `TestManifest.test_manifest` (404 — endpoint not implemented). The `test_emss_phase234.py` tests target endpoints not yet implemented (duet features).
 - **System dependencies**: `ffmpeg` and `libsndfile1` are required by the backend for audio processing (Demucs/PyDub).
 - **Redis is optional.** The backend falls back to in-memory rate limiting if `REDIS_URL` is not set.
