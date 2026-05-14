@@ -1,13 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "framework": "create-react-app",
   "buildCommand": "cd frontend && yarn install --frozen-lockfile && yarn build",
   "outputDirectory": "frontend/build",
   "installCommand": "cd frontend && yarn install --frozen-lockfile",
+  "cleanUrls": true,
   "env": {
     "GENERATE_SOURCEMAP": "false",
     "INLINE_RUNTIME_CHUNK": "false",
+    "DISABLE_ESLINT_PLUGIN": "true",
+    "TSC_COMPILE_ON_ERROR": "true",
     "REACT_APP_BACKEND_URL": "@lyrica3pro_backend_url"
   },
   "headers": [
@@ -19,13 +21,20 @@
       ]
     },
     {
+      "source": "/static/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "microphone=(self), camera=()" },
-        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "X-DNS-Prefetch-Control", "value": "on" }
       ]
     }
   ],
