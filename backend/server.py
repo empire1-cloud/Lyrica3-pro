@@ -509,7 +509,8 @@ async def health():
     try:
         await client.admin.command("ping")
         return {"status": "ok", "service": "empire1-ledger"}
-    except Exception:
+    except Exception as e:
+        logger.warning("health check failed: mongodb ping error: %s", e)
         return JSONResponse(
             status_code=503,
             content={"status": "unhealthy", "service": "empire1-ledger", "detail": "mongodb_unreachable"},
