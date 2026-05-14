@@ -23,7 +23,7 @@ services:
         sync: false
       - key: PORT
         value: "8001"
-    healthCheckPath: /api/
+    healthCheckPath: /health
     autoDeploy: true
 
 # Notes
