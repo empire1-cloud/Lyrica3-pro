@@ -503,6 +503,11 @@ def _sanitize_track(t: dict) -> dict:
 async def root():
     return {"message": "Empire 1 Ledger online. Soulfire armed.", "version": "SLA-113"}
 
+@app.get("/health")
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "service": "empire1-ledger"}
+
 @api_router.get("/tracks")
 async def list_tracks():
     await ensure_seed()
