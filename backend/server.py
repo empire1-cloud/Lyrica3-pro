@@ -506,7 +506,14 @@ async def root():
 @app.get("/health")
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "empire1-ledger"}
+    try:
+        await client.admin.command("ping")
+        return {"status": "ok", "service": "empire1-ledger"}
+    except Exception:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy", "service": "empire1-ledger", "detail": "mongodb_unreachable"},
+        )
 
 @api_router.get("/tracks")
 async def list_tracks():
