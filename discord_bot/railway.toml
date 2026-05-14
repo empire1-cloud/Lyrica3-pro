@@ -1,0 +1,31 @@
+# ============================================================
+# Lyrica 3 Pro · Empire 1 — Railway deploy spec (Discord Bot)
+# discord.py gateway worker  ·  /discord_bot service
+# ============================================================
+# In the Railway dashboard set Root Directory to "discord_bot".
+# This service must NEVER scale to zero — the Discord gateway
+# WebSocket drops if the process dies.
+# Required env vars (set in Railway → Variables):
+#   DISCORD_BOT_TOKEN
+#   DISCORD_APP_ID
+#   DISCORD_PUBLIC_KEY
+#   EMPIRE1_BOT_PASS
+# ============================================================
+
+[build]
+builder        = "DOCKERFILE"
+dockerfilePath = "./Dockerfile"
+dockerContext  = "."
+
+[deploy]
+# Cloud Run / Railway health-check: bot.py opens a small HTTP listener on $PORT
+healthcheckPath    = "/health"
+healthcheckTimeout = 60
+restartPolicyType  = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[deploy.variables]
+PORT                  = "8080"
+EMPIRE1_API_URL       = "https://lyrica3-backend.up.railway.app"
+EMPIRE1_PUBLIC_URL    = "https://lyrica3pro.com"
+EMPIRE1_BOT_HANDLE    = "discord.empire1"
