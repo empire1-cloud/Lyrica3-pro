@@ -12,7 +12,7 @@ import {
   Waves,
   Zap
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn } from 'lib/utils';
 import * as Tone from 'tone';
 import { useStudioStore } from '../store/useStudioStore';
 

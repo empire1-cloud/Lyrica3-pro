@@ -1,0 +1,17 @@
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'react-router-dom@7.15.0',
+npm warn EBADENGINE   required: { node: '>=20.0.0' },
+npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm warn EBADENGINE Unsupported engine {
+npm warn EBADENGINE   package: 'react-router@7.15.0',
+npm warn EBADENGINE   required: { node: '>=20.0.0' },
+npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+npm warn EBADENGINE }
+npm error code ENOTEMPTY
+npm error syscall rename
+npm error path /home/shiestybizz/Lyrica3-pro/frontend/node_modules/es-toolkit
+npm error dest /home/shiestybizz/Lyrica3-pro/frontend/node_modules/.es-toolkit-ENazVGS9
+npm error errno -39
+npm error ENOTEMPTY: directory not empty, rename '/home/shiestybizz/Lyrica3-pro/frontend/node_modules/es-toolkit' -> '/home/shiestybizz/Lyrica3-pro/frontend/node_modules/.es-toolkit-ENazVGS9'
+npm error A complete log of this run can be found in: /home/shiestybizz/.npm/_logs/2026-05-10T07_54_30_754Z-debug-0.log

@@ -14,7 +14,7 @@ import {
   Zap,
   Waves
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn } from 'lib/utils';
 import { useStudioStore } from '../store/useStudioStore';
 import { MusicAsset, VocalAsset, SfxAsset, AmbientAsset } from '../types';
 import * as Tone from 'tone';

@@ -13,7 +13,7 @@ import {
   Layers,
   RefreshCw
 } from 'lucide-react';
-import { cn, withRetry } from '../lib/utils';
+import { cn, withRetry } from 'lib/utils';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { useStudioStore } from '../store/useStudioStore';

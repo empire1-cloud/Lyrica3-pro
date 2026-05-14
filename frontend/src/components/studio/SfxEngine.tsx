@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Play, Square, Settings2, Loader2, Download, Zap } from 'lucide-react';
 import { useStudioStore } from '../store/useStudioStore';
 import { SfxAsset } from '../types';
-import { cn } from '../lib/utils';
+import { cn } from 'lib/utils';
 import { GoogleGenAI, Modality } from '@google/genai';
 import { db, auth } from '../lib/firebase';
 import { collection, addDoc, query, where, orderBy, onSnapshot } from 'firebase/firestore';
