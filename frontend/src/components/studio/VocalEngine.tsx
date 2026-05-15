@@ -21,7 +21,7 @@ import {
   Gauge,
   Activity
 } from 'lucide-react';
-import { cn } from 'lib/utils';
+import { cn } from '@/lib/utils';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, orderBy, deleteDoc, doc, Timestamp } from 'firebase/firestore';
 import { User as FirebaseUser } from 'firebase/auth';
