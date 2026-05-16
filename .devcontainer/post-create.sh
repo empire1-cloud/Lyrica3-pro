@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="/workspaces/Lyrica3-pro"
 BACKEND_ENV="$ROOT_DIR/backend/.env"
 BACKEND_VENV="$ROOT_DIR/backend/.venv"
+export ROOT_DIR
 
 cd "$ROOT_DIR"
 
@@ -12,9 +13,11 @@ if [ ! -f "$BACKEND_ENV" ]; then
 fi
 
 python3 - <<'PY'
+import os
 from pathlib import Path
 
-backend_env = Path("/workspaces/Lyrica3-pro/backend/.env")
+root_dir = Path(os.environ["ROOT_DIR"])
+backend_env = root_dir / "backend/.env"
 backend_text = backend_env.read_text()
 backend_text = backend_text.replace(
     "MONGO_URL=mongodb://localhost:27017",
@@ -22,7 +25,7 @@ backend_text = backend_text.replace(
 )
 backend_env.write_text(backend_text)
 
-frontend_env = Path("/workspaces/Lyrica3-pro/frontend/.env.local")
+frontend_env = root_dir / "frontend/.env.local"
 if not frontend_env.exists():
     frontend_env.write_text("REACT_APP_BACKEND_URL=http://localhost:8001\n")
 PY
@@ -36,4 +39,5 @@ pip install --upgrade pip
 pip install -r "$ROOT_DIR/backend/requirements.txt"
 
 cd "$ROOT_DIR/frontend"
+# The repo currently has a known dependency engine mismatch in frontend deps; keep install aligned with existing local workflow.
 yarn install --ignore-engines
