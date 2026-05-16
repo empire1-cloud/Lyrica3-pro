@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="/workspaces/Lyrica3-pro"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_ENV="$ROOT_DIR/backend/.env"
 BACKEND_VENV="$ROOT_DIR/backend/.venv"
 export ROOT_DIR
@@ -39,5 +39,5 @@ pip install --upgrade pip
 pip install -r "$ROOT_DIR/backend/requirements.txt"
 
 cd "$ROOT_DIR/frontend"
-# The repo currently has a known dependency engine mismatch in frontend deps; keep install aligned with existing local workflow.
+# The repo currently pins typescript@^4.9.5 while deps like react-hook-form@^7.56 expect TS 5+, so keep install aligned with the existing local workflow.
 yarn install --ignore-engines
