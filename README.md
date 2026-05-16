@@ -198,7 +198,7 @@ This repo can run in a standard CPU-only GitHub Codespace with the checked-in `.
    ```
 
 The Codespace config provisions:
-- a 4 CPUs / 8 GB RAM / 32 GB storage host recommendation
+- a host recommendation with 4 CPUs, 8 GB RAM, and 32 GB storage
 - a MongoDB service container available at `mongodb://mongo:27017`
 - forwarded ports for the frontend (`3000`), backend (`8001`), and MongoDB (`27017`)
 - automatic creation of `backend/.env` and `frontend/.env.local` for local development

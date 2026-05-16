@@ -39,5 +39,5 @@ pip install --upgrade pip
 pip install -r "$ROOT_DIR/backend/requirements.txt"
 
 cd "$ROOT_DIR/frontend"
-# The repo currently pins typescript@^4.9.5 while deps like react-hook-form@^7.56 expect TS 5+, so keep install aligned with the existing local workflow.
+# The repo currently pins typescript@^4.9.5 while dependencies like react-hook-form@^7.56 expect TS 5+, so keep install aligned with the existing local workflow.
 yarn install --ignore-engines
