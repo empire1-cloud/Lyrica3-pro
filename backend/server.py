@@ -662,18 +662,55 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     data = await _generate_lml(req, matrix, recipe)
 
     # ============================================================
-    # LIVE AUDIO PIPELINE — Replicate (MusicGen) → Demucs auto-split,
-    # with AI VOCAL PERFORMANCE (OpenAI TTS via Universal Key) overlaid
-    # on the "Raw Human Pipes" stem. Falls back to CORS-safe placeholders.
+    # THE BEAST — Primary music generation via Vertex AI Reasoning Engine
+    # Falls back to Replicate (MusicGen) → Demucs if Beast unavailable
     # ============================================================
     from integrations import (
         audio_synth, auto_split, fallback_stems, build_synth_prompt,
         vocal_performance, REPLICATE_API_KEY,
     )
+    
     stems: list = []
     synth_source_url: Optional[str] = None
     synth_provider = "fallback"
-    if REPLICATE_API_KEY:
+    
+    # TRY THE BEAST FIRST
+    try:
+        from vertex_agents_config import generate_music_with_beast
+        beast_result = await generate_music_with_beast(
+            lyrics=req.lyrics,
+            genre=req.genre,
+            mood=req.mood,
+            title=req.title,
+            cultural_matrix=matrix,
+            mood_recipe=recipe,
+        )
+        if beast_result:
+            logger.info("🎯 The Beast generated music successfully")
+            synth_provider = "vertex:beast"
+            # Parse Beast's response and extract stems/audio
+            # TODO: Map Beast's output structure to stems format
+            # For now, if Beast returns data, mark it as successful
+            if isinstance(beast_result, dict):
+                # Check if Beast returned stems directly
+                if "stems" in beast_result:
+                    stems = beast_result["stems"]
+                # Or if it returned a single audio URL
+                elif "audio_url" in beast_result or "instrumental_url" in beast_result:
+                    synth_source_url = beast_result.get("audio_url") or beast_result.get("instrumental_url")
+                    # Try to split into stems
+                    stems = await auto_split(
+                        synth_source_url,
+                        out_dir=str(ROOT_DIR / "static" / "stems"),
+                    )
+    except ImportError:
+        logger.warning("Beast agent module not found, falling back to Replicate")
+    except Exception as e:
+        logger.warning(f"Beast generation failed: {e}, falling back to Replicate")
+    
+    # FALLBACK TO REPLICATE IF BEAST DIDN'T PRODUCE STEMS
+    if not stems and REPLICATE_API_KEY:
+        logger.info("Falling back to Replicate MusicGen")
         synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
         synth_source_url = await audio_synth(synth_prompt)
         if synth_source_url:
@@ -682,9 +719,11 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 synth_source_url,
                 out_dir=str(ROOT_DIR / "static" / "stems"),
             )
+    
+    # FINAL FALLBACK TO PLACEHOLDER STEMS
     if not stems:
         stems = fallback_stems()
-        synth_provider = "fallback" if not REPLICATE_API_KEY else "fallback:replicate_error"
+        synth_provider = "fallback:no_audio_engine"
 
     # AI Vocal Performance (OpenAI TTS) — overrides the vocal stem when successful
     voice_provider = "none"
