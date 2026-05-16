@@ -38,7 +38,7 @@ import {
   X,
   Sparkles
 } from 'lucide-react';
-import { cn } from '../lib/utils';
+import { cn } from '@/lib/utils';
 import { translateVibeToParams, generateMusicStream, VibeParams } from '../lib/gemini';
 import { LiveSession } from '../components/LiveSession';
 

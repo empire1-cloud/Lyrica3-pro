@@ -1,16 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "cd frontend && yarn install --frozen-lockfile && yarn build",
+  "buildCommand": "cd frontend && yarn install && yarn build",
   "outputDirectory": "frontend/build",
-  "installCommand": "cd frontend && yarn install --frozen-lockfile",
+  "installCommand": "cd frontend && yarn install",
   "cleanUrls": true,
   "env": {
     "GENERATE_SOURCEMAP": "false",
     "INLINE_RUNTIME_CHUNK": "false",
     "DISABLE_ESLINT_PLUGIN": "true",
-    "TSC_COMPILE_ON_ERROR": "true",
-    "REACT_APP_BACKEND_URL": "@lyrica3pro_backend_url"
+    "TSC_COMPILE_ON_ERROR": "true"
   },
   "headers": [
     {
