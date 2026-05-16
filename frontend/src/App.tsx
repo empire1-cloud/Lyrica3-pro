@@ -278,8 +278,6 @@ export default function App() {
   }
 
   return (
-    <LoginGate>
-      <StudioBlackBox />
-    </LoginGate>
+    <StudioBlackBox />
   );
 }
