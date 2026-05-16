@@ -45,6 +45,11 @@ function absolutize(src?: string | null) {
 }
 
 function LoginGate({ children }: { children: React.ReactNode }) {
+  // TEMPORARY: Auto-bypass login for sovereign operator testing
+  // Remove this and restore auth logic when public access is restricted
+  return <>{children}</>;
+  
+  /* Original auth logic - commented out for testing
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('e1_token'));
   const [handle, setHandle] = useState('');
   const [password, setPassword] = useState('');
@@ -117,6 +122,7 @@ function LoginGate({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
+  */
 }
 
 function StudioBlackBox() {
