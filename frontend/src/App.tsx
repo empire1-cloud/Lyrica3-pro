@@ -270,6 +270,11 @@ function StudioBlackBox() {
   );
 }
 
+/**
+ * Lyrica 3 Pro - Sovereign Studio
+ * NO LOGIN GATE - Direct access to studio after landing page
+ * Sovereign operator mode only
+ */
 export default function App() {
   const [enteredStudio, setEnteredStudio] = useState(false);
 
