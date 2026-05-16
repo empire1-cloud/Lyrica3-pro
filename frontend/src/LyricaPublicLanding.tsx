@@ -33,9 +33,18 @@ export default function LyricaPublicLanding({ onEnterStudio }: Props) {
   ];
 
   const scenes = [
-    "Whittier Narrows carnival lights over summer fog",
-    "Backyard party energy with polished vintage soul",
-    "El Monte lowrider night show, chrome and velvet sound",
+    {
+      title: "Whittier Narrows carnival lights over summer fog",
+      image: "/scenes/whittier-narrows-carnival.png",
+    },
+    {
+      title: "Backyard party energy with polished vintage soul",
+      image: "/scenes/backyard-party-soul.png",
+    },
+    {
+      title: "El Monte lowrider night show, chrome and velvet sound",
+      image: "/scenes/el-monte-lowrider.png",
+    },
   ];
 
   return (
@@ -117,10 +126,25 @@ export default function LyricaPublicLanding({ onEnterStudio }: Props) {
       <section className="px-6 md:px-12 py-14 border-b border-neutral-200/80">
         <div className="max-w-6xl mx-auto">
           <p className="text-[11px] uppercase tracking-[0.25em] text-rose-700 mb-3">Cultural Scenes</p>
-          <div className="grid md:grid-cols-3 gap-4">
+          <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-10">SGV heartbeat captured</h2>
+          <div className="grid md:grid-cols-3 gap-6">
             {scenes.map((s) => (
-              <div key={s} className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
-                <p className="text-sm text-neutral-700 leading-relaxed">{s}</p>
+              <div key={s.title} className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm group hover:shadow-md transition-shadow">
+                <div className="h-56 bg-gradient-to-br from-neutral-100 to-neutral-200 overflow-hidden relative">
+                  <img 
+                    src={s.image} 
+                    alt={s.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      // Fallback gradient if image doesn't exist
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                </div>
+                <div className="p-5">
+                  <p className="text-sm text-neutral-700 leading-relaxed">{s.title}</p>
+                </div>
               </div>
             ))}
           </div>
