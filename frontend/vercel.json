@@ -3,5 +3,13 @@
   "framework": "create-react-app",
   "buildCommand": "yarn build",
   "installCommand": "yarn install",
-  "outputDirectory": "build"
+  "outputDirectory": "build",
+  "build": {
+    "env": {
+      "GENERATE_SOURCEMAP": "false",
+      "INLINE_RUNTIME_CHUNK": "false",
+      "DISABLE_ESLINT_PLUGIN": "true",
+      "TSC_COMPILE_ON_ERROR": "true"
+    }
+  }
 }
