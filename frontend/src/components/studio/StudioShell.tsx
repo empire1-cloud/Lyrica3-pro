@@ -14,7 +14,7 @@ import {
   Waves,
   Users
 } from 'lucide-react';
-import { useStudioStore } from '../store/useStudioStore';
+import { useStudioStore } from '@/store/useStudioStore';
 import MusicEngine from './MusicEngine';
 import VocalEngine from './VocalEngine';
 import MixerEngine from './MixerEngine';
