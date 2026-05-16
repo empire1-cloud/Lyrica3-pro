@@ -171,20 +171,44 @@ tests/             Test suites
 # Backend
 cd backend
 pip install -r requirements.txt
-uvicorn server:app --reload
+uvicorn server:app --reload --port 8001
 
 # Frontend
 cd frontend
-npm install
-npm start
+yarn install
+yarn start
 ```
+
+## GitHub Codespaces (CPU)
+
+This repo can run in a standard CPU-only GitHub Codespace with the checked-in `.devcontainer/` setup.
+
+1. Create a new Codespace from this repository.
+2. Wait for the post-create step to finish installing backend and frontend dependencies.
+3. In the Codespace terminal, start the backend:
+   ```bash
+   cd backend
+   source .venv/bin/activate
+   uvicorn server:app --reload --port 8001
+   ```
+4. In a second terminal, start the frontend:
+   ```bash
+   cd frontend
+   yarn start
+   ```
+
+The Codespace config provisions:
+- a 4 CPU / 8 GB / 32 GB host recommendation
+- a MongoDB service container available at `mongodb://mongo:27017`
+- forwarded ports for the frontend (`3000`), backend (`8001`), and MongoDB (`27017`)
+- automatic creation of `backend/.env` and `frontend/.env.local` for local development
 
 ### Environment Variables
 
 | Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_BACKEND_URL` | Lyrica3 API base |
-| `NEXT_PUBLIC_GEMINI_API_KEY` | Google GenAI / Vertex AI key |
+| `REACT_APP_BACKEND_URL` | Lyrica3 API base |
+| `REACT_APP_GEMINI_API_KEY` | Google GenAI / Vertex AI key |
 
 ---
 
