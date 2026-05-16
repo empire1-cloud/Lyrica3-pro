@@ -3,7 +3,8 @@
   "version": 2,
   "buildCommand": "cd frontend && yarn install && yarn build",
   "outputDirectory": "frontend/build",
-  "installCommand": "cd frontend && yarn install",
+  "installCommand": "echo 'Skipping root install'",
+  "framework": null,
   "cleanUrls": true,
   "env": {
     "GENERATE_SOURCEMAP": "false",
