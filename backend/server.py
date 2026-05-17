@@ -34,6 +34,7 @@ DEMO_MODE = os.environ.get('DEMO_MODE', 'true').lower() == 'true'
 DEMO_HANDLE = os.environ.get('DEMO_HANDLE', 'demo.operator').strip().lower() or 'demo.operator'
 APP_ENV = os.environ.get('ENVIRONMENT', os.environ.get('NODE_ENV', '')).strip().lower()
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+DEMO_AUTH_ENABLED = DEMO_MODE
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
@@ -119,9 +120,9 @@ app.add_middleware(SlowAPIMiddleware)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("empire1")
 
-if DEMO_MODE and APP_ENV in {"production", "prod"}:
+if DEMO_AUTH_ENABLED and APP_ENV in {"production", "prod"}:
     logger.warning("DEMO_MODE requested in a production-like environment; disabling demo auth.")
-    DEMO_MODE = False
+    DEMO_AUTH_ENABLED = False
 
 @app.exception_handler(Exception)
 async def unhandled_errors(request: Request, exc: Exception):
@@ -409,7 +410,7 @@ async def login(request: Request, req: LoginReq):
 
 @api_router.post("/auth/demo")
 async def demo_login():
-    if not DEMO_MODE:
+    if not DEMO_AUTH_ENABLED:
         raise HTTPException(404, "Demo mode disabled.")
     user = await _ensure_demo_user()
     token = _make_token(user["handle"])
@@ -545,7 +546,7 @@ async def root():
 async def health():
     payload = {
         "service": "empire1-ledger",
-        "demo_mode": DEMO_MODE,
+        "demo_mode": DEMO_AUTH_ENABLED,
         "providers": {
             "llm": bool(EMERGENT_LLM_KEY),
             "music": bool(REPLICATE_API_KEY),

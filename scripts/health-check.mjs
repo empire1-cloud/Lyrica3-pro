@@ -5,11 +5,12 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const backendUrl = process.env.LYRICA_BACKEND_URL || 'http://127.0.0.1:8001';
 const frontendUrl = process.env.LYRICA_FRONTEND_URL || 'http://127.0.0.1:3000';
+const HEALTH_CHECK_TIMEOUT_MS = 5000;
 
 async function check(url) {
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
+    const timer = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
     const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
     const data = await response.json().catch(() => null);

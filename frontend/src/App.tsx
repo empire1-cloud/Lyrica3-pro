@@ -252,7 +252,7 @@ function StudioBlackBox() {
     try {
       const hasToken = await ensureDemoToken();
       if (!hasToken) {
-        throw new Error('Demo login unavailable — open System Status to check backend readiness.');
+        throw new Error('Demo login unavailable — open system status to check backend readiness.');
       }
       const response = await fetch(`${BACKEND}/api/generate`, {
         method: 'POST',
@@ -263,7 +263,9 @@ function StudioBlackBox() {
       if (!response.ok) throw new Error(data?.detail || 'Generation failed');
       setTracks((prev) => [data, ...prev.filter((track) => track.dna_tag !== data.dna_tag)]);
       setTitle('');
-      void refreshStatus();
+      refreshStatus().catch(() => {
+        console.warn('Status refresh failed after generation.');
+      });
     } catch (generationError: any) {
       setError(generationError?.message || 'Generation failed.');
     } finally {
@@ -411,7 +413,7 @@ function StudioBlackBox() {
                 Refresh tracks
               </button>
               <button onClick={() => setMode('status')} className="min-h-14 rounded-2xl border border-neutral-700 px-6 text-sm font-bold uppercase tracking-[0.2em] text-neutral-200">
-                Open system status
+                Open System Status
               </button>
             </div>
             {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
