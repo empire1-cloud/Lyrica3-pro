@@ -1,0 +1,10 @@
+{
+  "name": "lyrica3-pro-dev-shell",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "node scripts/dev.mjs",
+    "health": "node scripts/health-check.mjs"
+  }
+}

@@ -29,6 +29,9 @@ DB_NAME   = os.environ.get('DB_NAME', 'lyrica3_dev')
 JWT_SECRET = os.environ.get('JWT_SECRET', 'dev_secret_change_me')
 JWT_ALGO   = "HS256"
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+REPLICATE_API_KEY = os.environ.get('REPLICATE_API_KEY', '').strip()
+DEMO_MODE = os.environ.get('DEMO_MODE', 'true').lower() == 'true'
+DEMO_HANDLE = os.environ.get('DEMO_HANDLE', 'demo.operator').strip().lower() or 'demo.operator'
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 
 client = AsyncIOMotorClient(MONGO_URL)
@@ -332,6 +335,26 @@ def _make_token(handle: str) -> str:
     payload = {"handle": handle, "exp": datetime.now(timezone.utc) + timedelta(days=14)}
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
 
+
+async def _ensure_demo_user() -> Dict:
+    user = await db.users.find_one({"handle": DEMO_HANDLE}, {"_id": 0, "password_hash": 0})
+    if user:
+        return user
+
+    pwd_hash = bcrypt.hashpw(f"demo::{DEMO_HANDLE}".encode(), bcrypt.gensalt()).decode()
+    doc = {
+        "id": str(uuid.uuid4()),
+        "handle": DEMO_HANDLE,
+        "wallet": _wallet_for(DEMO_HANDLE),
+        "password_hash": pwd_hash,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.update_one({"handle": DEMO_HANDLE}, {"$setOnInsert": doc}, upsert=True)
+    user = await db.users.find_one({"handle": DEMO_HANDLE}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(503, "Demo user is unavailable.")
+    return user
+
 async def current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> Dict:
     if not creds:
         raise HTTPException(401, "Unauthenticated — Empire 1 Ledger access denied.")
@@ -377,6 +400,15 @@ async def login(request: Request, req: LoginReq):
         raise HTTPException(401, "Invalid credentials.")
     token = _make_token(handle)
     return {"token": token, "handle": handle, "wallet": user["wallet"]}
+
+
+@api_router.post("/auth/demo")
+async def demo_login():
+    if not DEMO_MODE:
+        raise HTTPException(404, "Demo mode disabled.")
+    user = await _ensure_demo_user()
+    token = _make_token(user["handle"])
+    return {"token": token, "handle": user["handle"], "wallet": user["wallet"], "mode": "demo"}
 
 @api_router.get("/auth/me")
 async def me(user: Dict = Depends(current_user)):
@@ -506,14 +538,23 @@ async def root():
 @app.get("/health")
 @app.get("/api/health")
 async def health():
+    payload = {
+        "service": "empire1-ledger",
+        "demo_mode": DEMO_MODE,
+        "providers": {
+            "llm": bool(EMERGENT_LLM_KEY),
+            "music": bool(REPLICATE_API_KEY),
+            "tts": bool(EMERGENT_LLM_KEY),
+        },
+    }
     try:
         await client.admin.command("ping")
-        return {"status": "ok", "service": "empire1-ledger"}
+        return {"status": "ok", **payload}
     except Exception as e:
         logger.warning("health check failed: mongodb ping error: %s", e)
         return JSONResponse(
             status_code=503,
-            content={"status": "unhealthy", "service": "empire1-ledger", "detail": "mongodb_unreachable"},
+            content={"status": "unhealthy", "detail": "mongodb_unreachable", **payload},
         )
 
 @api_router.get("/tracks")

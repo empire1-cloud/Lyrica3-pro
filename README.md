@@ -168,15 +168,9 @@ tests/             Test suites
 ## Quick Start
 
 ```bash
-# Backend
-cd backend
-pip install -r requirements.txt
-uvicorn server:app --reload --port 8001
-
-# Frontend
-cd frontend
-yarn install
-yarn start
+npm run setup
+npm run dev
+npm run health
 ```
 
 ## GitHub Codespaces (CPU)
@@ -185,17 +179,27 @@ This repo can run in a standard CPU-only GitHub Codespace with the checked-in `.
 
 1. Create a new Codespace from this repository.
 2. Wait for the post-create step to finish installing backend and frontend dependencies.
-3. In the Codespace terminal, start the backend:
+3. Start the full app stack from the repo root:
    ```bash
-   cd backend
-   source .venv/bin/activate
-   uvicorn server:app --reload --port 8001
+   npm run dev
    ```
-4. In a second terminal, start the frontend:
+4. In another terminal, verify readiness:
    ```bash
-   cd frontend
-   yarn start
+   npm run health
    ```
+5. Open the app, enter the studio, and use the built-in **Status** tab if you need a frontend checklist for backend, Mongo, demo auth, and optional AI providers.
+
+### Root developer commands
+
+```bash
+npm run setup   # install backend/frontend deps and create local env files
+npm run dev     # start backend (8001) + frontend (3000) together
+npm run health  # check frontend, backend, Mongo, and demo mode
+```
+
+### Local machine fallback
+
+If you are not using Codespaces, start MongoDB on `localhost:27017`, then run the same root commands above. The backend defaults to `DEMO_MODE=true`, so the frontend can auto-sign into a guest account and generate fallback audio even when optional AI keys are unset.
 
 The Codespace config provisions:
 - a host recommendation with 4 CPUs, 8 GB RAM, and 32 GB storage
@@ -209,6 +213,7 @@ The Codespace config provisions:
 |---|---|
 | `REACT_APP_BACKEND_URL` | Lyrica3 API base |
 | `REACT_APP_GEMINI_API_KEY` | Google GenAI / Vertex AI key |
+| `DEMO_MODE` | Enables guest auth + no-keys-needed demo flow in the backend |
 
 ---
 
