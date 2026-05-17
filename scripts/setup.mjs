@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,7 +24,7 @@ let backendEnvText = readFileSync(backendEnv, 'utf8');
 if (!backendEnvText.includes('DEMO_MODE=')) {
   backendEnvText = `${backendEnvText.trimEnd()}\nDEMO_MODE=true\n`;
 }
-writeFileSync(backendEnv, backendEnvText.replace('MONGO_URL=mongodb://localhost:27017', 'MONGO_URL=mongodb://localhost:27017'));
+writeFileSync(backendEnv, backendEnvText);
 
 if (!existsSync(frontendEnv)) {
   writeFileSync(frontendEnv, 'REACT_APP_BACKEND_URL=http://localhost:8001\n');

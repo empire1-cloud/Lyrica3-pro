@@ -32,6 +32,7 @@ EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
 REPLICATE_API_KEY = os.environ.get('REPLICATE_API_KEY', '').strip()
 DEMO_MODE = os.environ.get('DEMO_MODE', 'true').lower() == 'true'
 DEMO_HANDLE = os.environ.get('DEMO_HANDLE', 'demo.operator').strip().lower() or 'demo.operator'
+APP_ENV = os.environ.get('ENVIRONMENT', os.environ.get('NODE_ENV', '')).strip().lower()
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 
 client = AsyncIOMotorClient(MONGO_URL)
@@ -117,6 +118,10 @@ app.add_middleware(SlowAPIMiddleware)
 # ------------------------------------------------------------
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("empire1")
+
+if DEMO_MODE and APP_ENV in {"production", "prod"}:
+    logger.warning("DEMO_MODE requested in a production-like environment; disabling demo auth.")
+    DEMO_MODE = False
 
 @app.exception_handler(Exception)
 async def unhandled_errors(request: Request, exc: Exception):

@@ -37,7 +37,7 @@ const stopAll = (signal = 'SIGTERM') => {
 
 for (const child of children) {
   child.on('exit', (code) => {
-    if (!shuttingDown && code && code !== 0) {
+    if (!shuttingDown && code != null && code !== 0) {
       stopAll();
       process.exit(code);
     }

@@ -132,12 +132,19 @@ function StudioBlackBox() {
     if (localStorage.getItem('e1_token')) return true;
     try {
       const response = await fetch(`${BACKEND}/api/auth/demo`, { method: 'POST' });
-      if (!response.ok) return false;
+      if (!response.ok) {
+        console.warn(`Demo auth unavailable: HTTP ${response.status}`);
+        return false;
+      }
       const data = await response.json();
-      if (!data?.token) return false;
+      if (!data?.token) {
+        console.warn('Demo auth response did not include a token.');
+        return false;
+      }
       localStorage.setItem('e1_token', data.token);
       return true;
     } catch {
+      console.warn('Demo auth request failed. Check backend readiness in the Status tab.');
       return false;
     }
   };
@@ -222,7 +229,7 @@ function StudioBlackBox() {
       detail: health?.demo_mode ? 'Guest auth is active for local/Codespaces use.' : 'Demo auth is disabled. Use normal auth before generating.',
     },
     {
-      label: 'Optional AI providers',
+      label: 'Demo / fallback providers',
       ok: Boolean(health?.providers?.llm || health?.providers?.music || health?.demo_mode),
       detail: health?.providers
         ? `LLM ${health.providers.llm ? 'configured' : 'fallback'} · Music ${health.providers.music ? 'configured' : 'fallback'} · TTS ${health.providers.tts ? 'configured' : 'fallback'}`
