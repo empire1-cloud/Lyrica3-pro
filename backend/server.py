@@ -662,8 +662,9 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     data = await _generate_lml(req, matrix, recipe)
 
     # ============================================================
-    # THE BEAST — Primary music generation via Vertex AI Reasoning Engine
-    # Falls back to Replicate (MusicGen) → Demucs if Beast unavailable
+    # SOULFIRE PIPELINE — Primary music generation via Vertex AI
+    # SL Audio Master (THE BRAIN) → The Beast (THE ORCHESTRATOR) → Sub-agents
+    # Falls back to Replicate (MusicGen) → Demucs if Soulfire unavailable
     # ============================================================
     from integrations import (
         audio_synth, auto_split, fallback_stems, build_synth_prompt,
@@ -674,10 +675,10 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     synth_source_url: Optional[str] = None
     synth_provider = "fallback"
     
-    # TRY THE BEAST FIRST
+    # TRY SOULFIRE FIRST (SL Audio Master → The Beast)
     try:
-        from vertex_agents_config import generate_music_with_beast
-        beast_result = await generate_music_with_beast(
+        from vertex_agents_config import generate_music_with_soulfire
+        soulfire_result = await generate_music_with_soulfire(
             lyrics=req.lyrics,
             genre=req.genre,
             mood=req.mood,
@@ -685,28 +686,31 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             cultural_matrix=matrix,
             mood_recipe=recipe,
         )
-        if beast_result:
-            logger.info("🎯 The Beast generated music successfully")
-            synth_provider = "vertex:beast"
-            # Parse Beast's response and extract stems/audio
-            # TODO: Map Beast's output structure to stems format
-            # For now, if Beast returns data, mark it as successful
-            if isinstance(beast_result, dict):
-                # Check if Beast returned stems directly
-                if "stems" in beast_result:
-                    stems = beast_result["stems"]
+        if soulfire_result:
+            logger.info("🔥 Soulfire pipeline generated music successfully")
+            synth_provider = "vertex:soulfire"
+            # Parse Soulfire's response and extract stems/audio
+            # TODO: Map Soulfire's output structure to stems format
+            # For now, if Soulfire returns data, mark it as successful
+            if isinstance(soulfire_result, dict):
+                # Check if returned stems directly
+                if "stems" in soulfire_result:
+                    stems = soulfire_result["stems"]
                 # Or if it returned a single audio URL
-                elif "audio_url" in beast_result or "instrumental_url" in beast_result:
-                    synth_source_url = beast_result.get("audio_url") or beast_result.get("instrumental_url")
+                elif "audio_url" in soulfire_result or "instrumental_url" in soulfire_result:
+                    synth_source_url = soulfire_result.get("audio_url") or soulfire_result.get("instrumental_url")
                     # Try to split into stems
                     stems = await auto_split(
                         synth_source_url,
                         out_dir=str(ROOT_DIR / "static" / "stems"),
                     )
+                # Log SL Audio Master payload if present
+                if "sl_audio_master_payload" in soulfire_result:
+                    logger.info(f"🧠 SL Audio Master physics payload received")
     except ImportError:
-        logger.warning("Beast agent module not found, falling back to Replicate")
+        logger.warning("Soulfire modules not found, falling back to Replicate")
     except Exception as e:
-        logger.warning(f"Beast generation failed: {e}, falling back to Replicate")
+        logger.warning(f"Soulfire generation failed: {e}, falling back to Replicate")
     
     # FALLBACK TO REPLICATE IF BEAST DIDN'T PRODUCE STEMS
     if not stems and REPLICATE_API_KEY:
