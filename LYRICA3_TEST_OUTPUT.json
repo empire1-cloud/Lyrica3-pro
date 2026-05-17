@@ -1,0 +1,56 @@
+{
+  "id": "51a94a33-aa52-4e00-8116-d5320ea39d1a",
+  "dna_tag": "trk_s2_abcfc926a4",
+  "title": "Sleep on the Floor",
+  "creator": "test_user_1779058699",
+  "cultural_matrix": "LA SGV Chicano Heritage",
+  "stems": [
+    {
+      "name": "Raw Human Pipes",
+      "level": 0.84,
+      "peak": 0.71,
+      "src": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3"
+    },
+    {
+      "name": "Late-Pocket Drums",
+      "level": 0.77,
+      "peak": 0.65,
+      "src": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3"
+    },
+    {
+      "name": "Sub Bass / Acoustic Requinto",
+      "level": 0.69,
+      "peak": 0.59,
+      "src": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3"
+    },
+    {
+      "name": "Analog Melody",
+      "level": 0.61,
+      "peak": 0.52,
+      "src": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+    }
+  ],
+  "biometrics": {
+    "resonance_quality": "Deep",
+    "vulnerability_level": "Deep",
+    "breath_profile": "Deep",
+    "expressive_range": "Deep",
+    "biometrics_active": true,
+    "signature_glyph": "\u25c7\u25c8\u25c9\u25c8\u25c7"
+  },
+  "splits": {
+    "beat_maker": 0.5,
+    "vocalist": 0.3,
+    "lyricist": 0.2
+  },
+  "streams": 0,
+  "flips": 0,
+  "earnings_usd": 0.0,
+  "stream_rate_usd": 0.004,
+  "parent_dna": null,
+  "synth_source_url": null,
+  "synth_provider": "fallback:no_audio_engine",
+  "voice_provider": "none",
+  "voice_meta": null,
+  "created_at": "2026-05-17T22:58:32.794881+00:00"
+}
