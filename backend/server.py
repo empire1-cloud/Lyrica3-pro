@@ -662,6 +662,36 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     data = await _generate_lml(req, matrix, recipe)
 
     # ============================================================
+    # VICS: VIBE INTERPRETATION & CULTURAL SYNTHESIS
+    # Emotional intelligence layer - detects subtext, cultural roots, performance directives
+    # ============================================================
+    from lyrica_agent.orchestrator import run_lyrica_agent_dict
+    
+    vics_blueprint = None
+    try:
+        logger.info("🧠 Running VICS (Vibe Interpretation & Cultural Synthesis)...")
+        vics_blueprint = run_lyrica_agent_dict(
+            lyric=req.lyrics,
+            genre=req.genre,
+            user_goal=req.mood,  # mood = emotional goal
+        )
+        logger.info(f"✅ VICS generated blueprint: {vics_blueprint['emotional_vector']['primary_label']}")
+        
+        # Log VICS insights
+        ev = vics_blueprint["emotional_vector"]
+        logger.info(f"   Emotional Vector: valence={ev['valence']:.2f}, arousal={ev['arousal']:.2f}, cultural_resonance={ev['cultural_resonance']:.2f}")
+        
+        if vics_blueprint["respect_protocol"]["activated"]:
+            logger.info(f"   🛡️ Respect Protocol ACTIVE: {vics_blueprint['respect_protocol']['origin_acknowledgment']}")
+        
+        nodes = vics_blueprint["cultural_nodes"]
+        if nodes:
+            logger.info(f"   🌍 Cultural Nodes: {', '.join([n['name'] for n in nodes])}")
+    except Exception as e:
+        logger.warning(f"VICS generation failed (non-critical): {e}")
+        # VICS is optional - continue with generation even if it fails
+
+    # ============================================================
     # SOULFIRE PIPELINE — Primary music generation via Vertex AI
     # SL Audio Master (THE BRAIN) → The Beast (THE ORCHESTRATOR) → Sub-agents
     # Falls back to Replicate (MusicGen) → Demucs if Soulfire unavailable
@@ -772,6 +802,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         "synth_provider": synth_provider,        # stored internally
         "voice_provider": voice_provider,        # stored internally
         "voice_meta": voice_meta,                # stored internally
+        "vics_blueprint": vics_blueprint,        # VICS emotional intelligence + cultural analysis
         "created_at": now,
     }
     await db.tracks.insert_one(track)
