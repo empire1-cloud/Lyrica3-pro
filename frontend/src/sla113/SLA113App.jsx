@@ -6,7 +6,7 @@ import axios from 'axios';
 const TITLE_IMAGE =
   'https://customer-assets.emergentagent.com/job_3653cf8a-8710-488d-846f-2f0428b714dd/artifacts/v9jg01gi_titleScreen.jpg';
 
-const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://lyrica3-pro-backend-339698334666.us-central1.run.app';
+const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://lyrica3.com';
 const SLA113_TOKEN_KEY = 'sla113_op_token';
 
 // ─── Title Screen (exact replica) ────────────────────────────────

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Flame, Zap, Crown, Music2, CheckCircle2, Loader2, CreditCard, Star } from 'lucide-react';
 
-const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://lyrica3-pro-backend-e2q5oemapa-uc.a.run.app';
+const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://lyrica3.com';
 
 interface Package {
   amount: number;

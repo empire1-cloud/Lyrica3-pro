@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 // ─── Canon Config ─────────────────────────────────────────────────
-const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://lyrica3-pro-backend-339698334666.us-central1.run.app';
+const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://lyrica3.com';
 const API = `${BACKEND}/api/sla113`;
 
 const CANON_PALETTE = {
