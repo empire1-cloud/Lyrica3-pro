@@ -284,9 +284,16 @@ function StudioBlackBox() {
 
 /**
  * Lyrica 3 Pro - Sovereign Studio
- * DIRECT ACCESS - Bypass landing page for operator testing
+ * Landing page for visitors, Studio for authenticated users
  */
 export default function App() {
-  // Skip landing page, go directly to studio
-  return <StudioBlackBox />;
+  const [showStudio, setShowStudio] = React.useState(() => {
+    return !!localStorage.getItem('e1_token');
+  });
+
+  if (showStudio) {
+    return <StudioBlackBox />;
+  }
+
+  return <LyricaPublicLanding />;
 }
