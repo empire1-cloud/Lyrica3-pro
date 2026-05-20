@@ -260,32 +260,56 @@ class GenerateRequest(BaseModel):
     mood: str = "Late-Night Honesty"
     title: Optional[str] = None
     ghost_audio_name: Optional[str] = None
+    # Studio control overrides — sent from VulnerabilityPanel + LatePocketControl
+    vulnerability_override: Optional[float] = None  # 0.0-1.0 aggregate from UI sliders
+    swing_ms: Optional[int] = None                   # 10-15ms late-pocket snare drag
 
 # Internal genre/mood → secret recipe mapping (NEVER sent to client)
+# Values are canonical Omni-Genre Matrix production descriptors fed to MusicGen.
 _GENRE_MAP = {
-    # LA / SGV / Chicano spine
-    "SGV Oldies":                     "LA SGV Chicano Heritage",
-    "LA Heritage":                    "LA SGV Chicano Heritage",
-    "Art Laboe Sunday Dedication":    "Art Laboe Oldies",
-    "SGV Backyard Party":             "Late-Pocket Street Bounce",
-    "Nahuatl Ancestry":               "Pre-Columbian Ancestral",
-    "West Coast G-Funk Piano":        "West Coast G-Funk",
-    "Acoustic Requinto Weeping":      "Raw Spanish Corridos",
-    "Corridos":                       "Raw Spanish Corridos",
-    "Oldies":                         "Art Laboe Oldies",
-    "Street Bounce":                  "Late-Pocket Street Bounce",
-    "Cruising":                       "Late Night Cruising Melancholy",
-    "Resilience":                     "Street-Soft Resilience",
-    # Urban / contemporary
-    "R&B":                            "Neo-Soul R&B",
-    "Trap Soul":                      "Trap Soul",
-    "Hip Hop":                        "Boom Bap Hip-Hop",
-    "Rap":                            "West Coast Rap",
-    "Drill":                          "Drill",
-    "Afrobeats":                      "Afrobeats",
-    "UK Garage":                      "UK Garage",
-    "Jersey Club":                    "Jersey Club",
-    "Bossa Nova":                     "Bossa Nova",
+    # ── LA / SGV / Chicano spine ──────────────────────────────────────────────
+    "SGV Oldies":                   "LA SGV Chicano Heritage, doo-wop strings, accordion, requinto guitar, tape hiss",
+    "LA Heritage":                  "LA SGV Chicano Heritage, doo-wop strings, accordion, requinto guitar, tape hiss",
+    "Art Laboe Sunday Dedication":  "Art Laboe Oldies, 1960s ballad, lush strings, analog reverb, slow dance tempo",
+    "SGV Backyard Party":           "Late-Pocket Street Bounce, cumbias rhythm, bass-heavy, backyard BBQ energy",
+    "Nahuatl Ancestry":             "Pre-Columbian Ancestral, indigenous flute, conch shell bass, ceremonial drums",
+    "West Coast G-Funk Piano":      "West Coast G-Funk, Moog synth bass, whiny guitar lead, piano funk, 90s Compton",
+    "Acoustic Requinto Weeping":    "Raw Spanish Corridos, solo requinto guitar, brokenhearted balladry, minimal reverb",
+    "Corridos":                     "Raw Spanish Corridos, tuba sousaphone bass, banda drums, norteño accordion",
+    "Oldies":                       "Art Laboe Oldies, 1950s doo-wop, saxophone, upright bass, warm tube compression",
+    "Street Bounce":                "Late-Pocket Street Bounce, swung hi-hat, deep 808 kick, street snare snap",
+    "Cruising":                     "Late Night Cruising Melancholy, slow-rolling 60 BPM, lowrider imagery, quiet storm",
+    "Resilience":                   "Street-Soft Resilience, uplifting minor-to-major, swelling strings, hope and grit",
+    "Lowrider Soul":                "Late Night Cruising Melancholy, Chicano soul, hydraulic bounce, Hayes-era orchestration",
+    "East LA Ballad":               "LA SGV Chicano Heritage, sweeping strings, heartfelt tenor, late-night dedications",
+    # ── Urban / contemporary ──────────────────────────────────────────────────
+    "R&B":                          "Neo-Soul R&B, Rhodes piano, warm bass, sensual groove, layered background vocals",
+    "Trap Soul":                    "Trap Soul, 808 sub bass, ethereal synth pads, half-time trap drums, Auto-Tune",
+    "Hip Hop":                      "Boom Bap Hip-Hop, punchy vinyl snare, SP-1200 drum machine, jazz sample chops",
+    "Rap":                          "West Coast Rap, g-funk synth, rolling bass line, mid-tempo 90 BPM flow",
+    "Drill":                        "Drill, dark sliding bass, menacing piano, off-beat hi-hats, Chicago/UK tension",
+    "Afrobeats":                    "Afrobeats, afropop guitar, shekere percussion, joyful polyrhythm, 105 BPM",
+    "UK Garage":                    "UK Garage, 2-step shuffle, sub bass wobble, pitched-up vocal chops, London club",
+    "Jersey Club":                  "Jersey Club, 160 BPM club kick, sample manipulation, call-and-response breaks",
+    "Bossa Nova":                   "Bossa Nova, nylon guitar, brushed snare, soft samba rhythm, intimate café vibe",
+    "Neo-Soul":                     "Neo-Soul, Fender Rhodes, live drumkit, warm analog saturation, introspective",
+    "Gospel Soul":                  "Gospel Soul, Hammond organ, choir swells, uplifting call-and-response, Sunday sermon",
+    "Lo-Fi Chill":                  "Lo-Fi Hip-Hop, vinyl crackle, muted jazz guitar, rain sample, study session mood",
+    # ── Latin / regional ─────────────────────────────────────────────────────
+    "Reggaeton":                    "Reggaeton, dembow rhythm, 808 bass, perreo energy, Latin trap influence",
+    "Latin Trap":                   "Latin Trap, reggaeton dembow + trap 808, bilingual flow, dark melodic hook",
+    "Cumbia":                       "Colombian Cumbia, caja drum, guacharaca, tropical accordion, Andean roots",
+    "Norteño":                      "Norteño, 12-string bajo sexto, tuba bass, polka swing, border ballad narrative",
+    "Banda":                        "Banda Sinaloense, tubas, trombones, clarinets, full brass power, Sinaloa pride",
+    "Salsa":                        "Salsa Dura, clave rhythm, congas, piano guajeo, big brass section, New York energy",
+    "Flamenco Soul":                "Flamenco Soul, palo seco handclaps, flamenco guitar, duende emotional intensity",
+    # ── Global / experimental ─────────────────────────────────────────────────
+    "Amapiano":                     "Amapiano, log drum bass, piano keys riff, South African township jazz",
+    "Dancehall":                    "Dancehall, riddim one-drop, ragga toasting, Kingston Jamaica energy, reverb vocal",
+    "K-Pop":                        "K-Pop, pristine production, punchy 4-on-floor, synchronized harmonies, idol format",
+    "Alternative R&B":              "Alternative R&B, ambient textures, unconventional song structure, raw emotion",
+    "Indie Soul":                   "Indie Soul, intimate room sound, acoustic guitar, confessional lyrics, bedroom pop",
+    "Country Soul":                 "Country Soul, pedal steel guitar, dusty reverb, Southern porch storytelling",
 }
 # mood → (lung, throat, fry, crack) private biometric recipe
 _MOOD_RECIPE = {
@@ -620,11 +644,21 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
             session_id=f"s2_{uuid.uuid4().hex[:8]}",
             system_message=LML_SYSTEM,
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        # Apply studio control overrides when provided by frontend sliders
+        eff_lung  = lung
+        eff_crack = crack
+        if req.vulnerability_override is not None:
+            v = max(0.0, min(1.0, req.vulnerability_override))
+            eff_lung  = round(lung  * 0.5 + v * 0.5, 3)
+            eff_crack = round(crack * 0.5 + v * 0.5, 3)
+        swing_note = ""
+        if req.swing_ms is not None:
+            swing_note = f"\nLate-Pocket Swing: {req.swing_ms}ms snare drag — encode this groove into the drum descriptor tags."
         user_text = (
             f"Cultural Matrix: {matrix}\n"
-            f"Biometric dials — lung_capacity={lung:.2f}, throat_resonance={throat:.2f}, "
-            f"vocal_fry={fry:.2f}, emotional_cracks={crack:.2f}\n"
-            f"Ghost audio artifact: {req.ghost_audio_name or 'none'}\n"
+            f"Biometric dials — lung_capacity={eff_lung:.3f}, throat_resonance={throat:.2f}, "
+            f"vocal_fry={fry:.2f}, emotional_cracks={eff_crack:.3f}\n"
+            f"Ghost audio artifact: {req.ghost_audio_name or 'none'}{swing_note}\n"
             f"Raw lyric seed:\n{req.lyrics}\n\n"
             f"Compose the Soulfire. Return JSON only."
         )
@@ -826,11 +860,16 @@ async def vibes_catalog():
              "items": ["SGV Oldies", "LA Heritage", "Art Laboe Sunday Dedication",
                        "SGV Backyard Party", "Nahuatl Ancestry", "West Coast G-Funk Piano",
                        "Acoustic Requinto Weeping", "Corridos", "Oldies",
-                       "Street Bounce", "Cruising", "Resilience"]},
+                       "Street Bounce", "Cruising", "Resilience",
+                       "Lowrider Soul", "East LA Ballad"]},
             {"title": "Urban · Contemporary",
-             "items": ["R&B", "Trap Soul", "Hip Hop", "Rap", "Drill"]},
+             "items": ["R&B", "Trap Soul", "Hip Hop", "Rap", "Drill",
+                       "Neo-Soul", "Gospel Soul", "Lo-Fi Chill", "Alternative R&B", "Indie Soul"]},
+            {"title": "Latin · Regional",
+             "items": ["Reggaeton", "Latin Trap", "Cumbia", "Norteño", "Banda", "Salsa", "Flamenco Soul"]},
             {"title": "Global",
-             "items": ["Afrobeats", "UK Garage", "Jersey Club", "Bossa Nova"]},
+             "items": ["Afrobeats", "UK Garage", "Jersey Club", "Bossa Nova",
+                       "Amapiano", "Dancehall", "K-Pop", "Country Soul"]},
         ],
         "mood_groups": [
             {"title": "Chicano/Oldies Lineage",
@@ -1205,6 +1244,128 @@ async def billing_webhook(request: Request):
         )
     return {"received": True}
 
+
+# ============================================================
+# VIBE TRANSLATE ENDPOINT — server-side Gemini call
+# Routes SLUniversalApp.tsx translateVibeToParams() through the backend
+# so the Gemini/Emergent key is never exposed to the client.
+# ============================================================
+
+class VibeTranslateRequest(BaseModel):
+    vibe: str
+    context: Optional[Dict] = None  # {weather, time, heartRate}
+
+@api_router.post("/vibe/translate")
+@limiter.limit("20/minute")
+async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict = Depends(current_user)):
+    """Translate a free-text vibe into structured VibeParams via Gemini (server-side).
+    Returns the JSON blob directly so the client never needs a Gemini API key."""
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(503, "LLM key not configured on this server.")
+    context_str = ""
+    if req.context:
+        weather = req.context.get("weather", "")
+        time_of_day = req.context.get("time", "")
+        hr = req.context.get("heartRate", "")
+        if weather or time_of_day or hr:
+            context_str = f" Context: {weather}, {time_of_day}, {hr} BPM."
+    prompt = (
+        f'Translate this music vibe into a full technical emotional blueprint for the music generation engine: '
+        f'"{req.vibe}".{context_str} '
+        "The engine supports multi-genre blending (R&B, Oldies, Funk, Rock, Country, Soul, Chicano oldies, "
+        "90s duos, 70s funk, 2000s heartbreak, Modern trap-soul, Acoustic country). "
+        "Return JSON with: style, mood, tempo, key, lyrics, vocalStyle, engine, moodMatrix, genreDNA, "
+        "proceduralSFX, vulnerabilitySlider, harmonicStructure, personaCount, personas, vocalFry, "
+        "inhaleIntensity, emotionalBreak, roomSize, material, breathingPattern, genreBlend, "
+        "instrumentation, spatialEffects, harmonicTension, vocalLayering, mixWarmth, reverbType, "
+        "eraTexture, emotionalMode, delayTime, delayFeedback, chorusDepth, phaserRate."
+    )
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage  # type: ignore
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"vibe_translate_{user['handle']}",
+            system_message="You are a music production AI. Return ONLY valid JSON with the requested fields. No prose, no markdown.",
+        )
+        resp = await asyncio.to_thread(
+            chat.chat,
+            UserMessage(content=prompt),
+            model="google/gemini-2.0-flash",
+        )
+        raw = resp.text if hasattr(resp, "text") else str(resp)
+        # Strip markdown fences
+        clean = raw.strip()
+        if clean.startswith("```"):
+            parts = clean.split("```")
+            clean = parts[1] if len(parts) > 1 else clean
+            if clean.startswith("json"):
+                clean = clean[4:]
+        import json as _json
+        return {"status": "ok", "params": _json.loads(clean)}
+    except Exception as e:
+        logger.warning(f"vibe_translate error: {e}")
+        raise HTTPException(500, f"Vibe translation failed: {e}")
+
+
+# ============================================================
+# SL-UNIVERSAL PIPELINE — AURA→EFL→ASE→ECHO→EFAD
+# Merged from /sl-universal/main_agent.py
+# Tries Vertex AI (Gemini) pipeline; falls back to Claude LLM.
+# ============================================================
+
+class UniversalQueryRequest(BaseModel):
+    query: str
+    user_id: str = "web_user"
+
+@api_router.post("/universal/query")
+@limiter.limit("10/minute")
+async def universal_query(request: Request, req: UniversalQueryRequest, user: Dict = Depends(current_user)):
+    """Run the AURA→EFL→ASE→ECHO→EFAD deterministic cognitive pipeline.
+    Falls back to a single Claude call with merged stage prompts if Vertex AI unavailable."""
+    try:
+        # Try Vertex AI Lyrica3Agent first
+        import sys, os as _os
+        _sl_path = _os.path.join(_os.path.dirname(__file__), '..', '..', 'sl-universal')
+        if _sl_path not in sys.path:
+            sys.path.insert(0, _sl_path)
+        from main_agent import Lyrica3Agent
+        _agent = Lyrica3Agent(
+            project=_os.environ.get('GOOGLE_CLOUD_PROJECT', 'disco-amphora-490606-n8'),
+            location=_os.environ.get('GOOGLE_CLOUD_LOCATION', 'us-west1'),
+        )
+        _agent.set_up()
+        result = _agent.query(req.query)
+        return {"status": "success", "user_id": req.user_id, "pipeline": "vertex:aura-efad", "result": result}
+    except Exception as vertex_err:
+        logger.warning(f"Vertex AURA-EFAD failed ({vertex_err}), falling back to Claude LLM pipeline")
+
+    # Claude fallback — compress all 5 stages into one structured prompt
+    if not EMERGENT_LLM_KEY:
+        raise HTTPException(503, "Universal pipeline unavailable — no LLM key configured.")
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        system = (
+            "You are the SL Universal Lyrica 3 cognitive pipeline running 5 stages in sequence:\n"
+            "AURA: Extract semantic intent, rhetorical devices, bruised subtext, culture/style anchors.\n"
+            "EFL: Map detected emotions to frequency/loudness/tone parameters.\n"
+            "ASE: Evaluate cultural authenticity and produce a Soulfire style score (0-1).\n"
+            "ECHO: Specify DSP effects (reverb, tape, swing, EQ) matching the emotional vector.\n"
+            "EFAD: Assemble a final structured JSON result with keys: aura, efl, ase, echo, track_directive.\n"
+            "Output ONLY valid JSON with these 5 keys. No prose, no markdown."
+        )
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"universal_{uuid.uuid4().hex[:8]}",
+            system_message=system,
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        resp = await chat.send_message(UserMessage(text=f"User query:\n{req.query}"))
+        txt = resp.strip()
+        m = re.search(r"\{[\s\S]*\}", txt)
+        data = json.loads(m.group(0) if m else txt)
+        return {"status": "success", "user_id": req.user_id, "pipeline": "claude:aura-efad-fallback", "result": data}
+    except Exception as e:
+        logger.error(f"Universal query pipeline error: {e}")
+        raise HTTPException(500, "Universal pipeline failed.")
 
 app.include_router(api_router)
 
