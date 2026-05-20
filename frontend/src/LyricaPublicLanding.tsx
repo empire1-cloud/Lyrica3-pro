@@ -1668,7 +1668,11 @@ const LANDING_HTML = `
 
 `;
 
-export default function LyricaPublicLanding() {
+type LandingProps = {
+  onEnterStudio?: () => void;
+};
+
+export default function LyricaPublicLanding({ onEnterStudio }: LandingProps = {}) {
   useEffect(() => {
     // Inject Google Fonts
     const link = document.createElement('link');
@@ -1680,6 +1684,30 @@ export default function LyricaPublicLanding() {
       document.head.removeChild(link);
     };
   }, []);
+
+  useEffect(() => {
+    // Wire up CTA buttons to enter the studio instead of reloading the page
+    if (!onEnterStudio) return;
+
+    const handleClick = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a');
+      if (!anchor) return;
+      const href = anchor.getAttribute('href') || '';
+      // Intercept links that point to lyrica3.com (same-site) or #start
+      if (
+        href === 'https://lyrica3.com' ||
+        href === 'https://lyrica3.com/' ||
+        href === '#start'
+      ) {
+        e.preventDefault();
+        onEnterStudio();
+      }
+    };
+
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [onEnterStudio]);
 
   return (
     <>
