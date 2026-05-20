@@ -27,6 +27,17 @@ const LANDING_STYLES = `
 
 html { scroll-behavior: smooth; }
 
+.lyrica-landing-root {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  width: 100%;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -1710,9 +1721,9 @@ export default function LyricaPublicLanding({ onEnterStudio }: LandingProps = {}
   }, [onEnterStudio]);
 
   return (
-    <>
+    <div className="lyrica-landing-root">
       <style dangerouslySetInnerHTML={{ __html: LANDING_STYLES }} />
       <div dangerouslySetInnerHTML={{ __html: LANDING_HTML }} />
-    </>
+    </div>
   );
 }
