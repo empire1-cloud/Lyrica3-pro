@@ -161,6 +161,11 @@ class LyricaAgentBlueprint:
     """
     Full emotional + cultural blueprint for the performance.
     This is what VICS outputs for every lyric or musical request.
+    
+    Now includes:
+    - ARRE rhythmic mapping (BPM, timing offsets, instrumentation)
+    - CSN justification (explains WHY choices were made)
+    - Vocal Archetype (specific historical vocal style)
     """
     emotional_vector: EmotionalVector
     subtext: Subtext
@@ -171,3 +176,15 @@ class LyricaAgentBlueprint:
     vibe_check: Optional[VibeCheck] = None
     artifacts: List[str] = field(default_factory=list)
     dsp_modifiers: Optional[DSPModifiers] = None
+    
+    # ARRE (Affective & Rhythmic Resonance Engine)
+    rhythmic_mapping: Optional[object] = None         # RhythmicMapping from arre.py
+    instrumentation: Optional[object] = None          # InstrumentationConfig from arre.py
+    music_generation_config: Optional[object] = None  # MusicGenerationConfig from arre.py
+    
+    # CSN (Cognitive Synthesis Network)
+    csn_justification: Optional[object] = None        # CSNJustification from csn.py
+    
+    # Vocal Archetype (z_S_style)
+    vocal_archetype: Optional[object] = None          # VocalArchetype from vocal_archetypes.py
+    vocal_blueprint: Optional[object] = None          # VocalBlueprint from vocal_archetypes.py

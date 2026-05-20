@@ -1,25 +1,62 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SlidersHorizontal, Volume2, Activity, Radio, Save, Download, Upload, Trash2, Plus, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { 
+  Play, Pause, SlidersHorizontal, Volume2, Activity, Radio, Save, Download, 
+  Upload, Trash2, Plus, ChevronDown, ChevronRight, Undo2, Redo2, 
+  Maximize2, Minimize2, Mic, Music, Zap, Drum, Settings2, Info
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MixerProps {
-  audioBlob: Blob;
+  audioBlob?: Blob;
 }
 
 interface MixerPreset {
   id: string;
   name: string;
-  trackStates: any[];
+  trackStates: TrackState[];
   masterVolume: number;
   createdAt: string;
 }
 
+interface TrackState {
+  volume: number;
+  pan: number;
+  eqLow: number;
+  eqLowFreq: number;
+  eqLowMid: number;
+  eqLowMidFreq: number;
+  eqHighMid: number;
+  eqHighMidFreq: number;
+  eqHigh: number;
+  eqHighFreq: number;
+  compThresh: number;
+  compRatio: number;
+  reverb: number;
+  mute: boolean;
+  solo: boolean;
+}
+
 const TRACKS = [
-  { id: 'vocal', name: 'Vocal/Lead', color: 'bg-pink-500', text: 'text-pink-400' },
-  { id: 'harmony', name: 'Harmony/Pad', color: 'bg-purple-500', text: 'text-purple-400' },
-  { id: 'rhythm', name: 'Rhythm/Bass', color: 'bg-blue-500', text: 'text-blue-400' },
-  { id: 'percussion', name: 'Percussion', color: 'bg-emerald-500', text: 'text-emerald-400' }
+  { id: 'vocal', name: 'Vocal/Lead', color: 'bg-studio-accent', text: 'text-studio-accent', icon: Mic, presets: ['Radio Vocal', 'Vintage Air', 'Crisp Lead'] },
+  { id: 'harmony', name: 'Harmony/Pad', color: 'bg-studio-aqua', text: 'text-studio-aqua', icon: Music, presets: ['Warm Pad', 'Ethereal', 'Wide Chorus'] },
+  { id: 'rhythm', name: 'Rhythm/Bass', color: 'bg-studio-yellow', text: 'text-studio-yellow', icon: Zap, presets: ['Sub Bass', 'Punchy Kick', 'Solid Low'] },
+  { id: 'percussion', name: 'Percussion', color: 'bg-studio-fg', text: 'text-studio-fg', icon: Drum, presets: ['Pop Drums', 'Tight Snare', 'Roomy'] }
 ];
+
+const PRESET_VALUES: Record<string, Partial<TrackState>> = {
+  'Radio Vocal': { eqHigh: 4, eqHighMid: 2, eqLowMid: -2, eqLow: -4, compThresh: -24, compRatio: 4, reverb: 0.15 },
+  'Vintage Air': { eqHigh: 6, eqHighMid: -2, eqLowMid: 0, eqLow: -6, compThresh: -20, compRatio: 3, reverb: 0.2 },
+  'Crisp Lead': { eqHigh: 3, eqHighMid: 4, eqLowMid: -4, eqLow: -2, compThresh: -18, compRatio: 5, reverb: 0.1 },
+  'Warm Pad': { eqHigh: -2, eqHighMid: -2, eqLowMid: 2, eqLow: 2, compThresh: -30, compRatio: 2, reverb: 0.4 },
+  'Ethereal': { eqHigh: 4, eqHighMid: 0, eqLowMid: -4, eqLow: -6, compThresh: -35, compRatio: 1.5, reverb: 0.7 },
+  'Wide Chorus': { eqHigh: 2, eqHighMid: 2, eqLowMid: 0, eqLow: 0, compThresh: -25, compRatio: 2.5, reverb: 0.3 },
+  'Sub Bass': { eqHigh: -12, eqHighMid: -6, eqLowMid: 2, eqLow: 6, compThresh: -18, compRatio: 8, reverb: 0 },
+  'Punchy Kick': { eqHigh: 0, eqHighMid: -4, eqLowMid: 2, eqLow: 4, compThresh: -12, compRatio: 6, reverb: 0.05 },
+  'Solid Low': { eqHigh: -6, eqHighMid: -2, eqLowMid: 4, eqLow: 2, compThresh: -15, compRatio: 4, reverb: 0 },
+  'Pop Drums': { eqHigh: 2, eqHighMid: 0, eqLowMid: -2, eqLow: 4, compThresh: -12, compRatio: 6, reverb: 0.05 },
+  'Tight Snare': { eqHigh: 4, eqHighMid: 2, eqLowMid: 2, eqLow: -6, compThresh: -10, compRatio: 5, reverb: 0.1 },
+  'Roomy': { eqHigh: 0, eqHighMid: 0, eqLowMid: 0, eqLow: 2, compThresh: -20, compRatio: 4, reverb: 0.4 },
+};
 
 function createReverb(ctx: AudioContext) {
   const length = ctx.sampleRate * 2.0;
@@ -36,17 +73,54 @@ function createReverb(ctx: AudioContext) {
   return convolver;
 }
 
+function BusMiniStrip({ track, state, active, onClick, meter }: any) {
+  const Icon = track.icon;
+  return (
+    <button
+      onClick={onClick}
+      className={`relative w-14 flex flex-col items-center py-6 border-r border-white/5 transition-all hover:bg-white/5 ${active ? 'bg-studio-accent/10' : 'bg-black/40'}`}
+    >
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${track.color} shadow-[0_0_10px_currentColor] opacity-50`} />
+      <div className="flex-1 flex flex-col items-center gap-8">
+        <div className={`p-2 rounded-xl ${track.color} bg-opacity-10 border border-white/10 group-hover:border-white/20 transition-colors`}>
+          <Icon className={`w-4 h-4 ${track.text}`} />
+        </div>
+        <div className="h-40 w-2 bg-black/60 rounded-full overflow-hidden flex flex-col-reverse p-[1px] border border-white/5">
+          <div 
+            className={`w-full rounded-full transition-all duration-75 ${track.color} shadow-[0_0_8px_currentColor]`} 
+            style={{ height: `${meter.level * 100}%`, opacity: 0.4 + (meter.level * 0.6) }} 
+          />
+        </div>
+        <div className="writing-mode-vertical text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 rotate-180">
+          {track.name}
+        </div>
+      </div>
+      <div className={`absolute bottom-4 w-2.5 h-2.5 rounded-full border border-black/40 ${state.mute ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : state.solo ? 'bg-yellow-500 shadow-[0_0_8px_#eab308]' : 'bg-gray-800'}`} />
+    </button>
+  );
+}
+
 export default function Mixer({ audioBlob }: MixerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [buffer, setBuffer] = useState<AudioBuffer | null>(null);
   const [masterVolume, setMasterVolume] = useState(1.0);
-  const [meters, setMeters] = useState([0, 0, 0, 0, 0]); // 4 tracks + 1 master
+  const [meters, setMeters] = useState<{level: number, gr: number}[]>(
+    Array(5).fill({ level: 0, gr: 0 })
+  );
   const [presets, setPresets] = useState<MixerPreset[]>([]);
   const [showPresetMenu, setShowPresetMenu] = useState(false);
   const [newPresetName, setNewPresetName] = useState('');
+  const [expandedBus, setExpandedBus] = useState<string | null>(null);
+  const [showAllBuses, setShowAllBuses] = useState(false);
+  const [showAdvancedMaster, setShowAdvancedMaster] = useState(false);
+  
+  // Master Macros
+  const [masterTone, setMasterTone] = useState(0.5); // 0 = warm, 1 = bright
+  const [masterSpace, setMasterSpace] = useState(0.3); // 0 = dry, 1 = wet/wide
+  const [masterLoudness, setMasterLoudness] = useState(0.5); // 0 = dynamic, 1 = compressed
 
-  const [trackStates, setTrackStates] = useState(
+  const [trackStates, setTrackStates] = useState<TrackState[]>(
     TRACKS.map(() => ({
       volume: 0.8,
       pan: 0,
@@ -66,16 +140,56 @@ export default function Mixer({ audioBlob }: MixerProps) {
     }))
   );
 
+  // History for Undo/Redo
+  const [history, setHistory] = useState<TrackState[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
   const audioNodes = useRef<any>(null);
   const animationRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const applyStatesToNodes = (states: typeof trackStates, audioGraph: any, masterVol: number) => {
+  const pushToHistory = (states: TrackState[]) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(JSON.parse(JSON.stringify(states)));
+    if (newHistory.length > 50) newHistory.shift();
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const prev = history[historyIndex - 1];
+      setTrackStates(JSON.parse(JSON.stringify(prev)));
+      setHistoryIndex(historyIndex - 1);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const next = history[historyIndex + 1];
+      setTrackStates(JSON.parse(JSON.stringify(next)));
+      setHistoryIndex(historyIndex + 1);
+    }
+  };
+
+  const applyStatesToNodes = (states: TrackState[], audioGraph: any, masterVol: number) => {
     if (!audioGraph) return;
-    const { ctx, masterGain, tracks } = audioGraph;
+    const { ctx, masterGain, tracks, masterEq, masterComp, masterReverbSend } = audioGraph;
     const anySolo = states.some(t => t.solo);
 
     masterGain.gain.setTargetAtTime(masterVol, ctx.currentTime, 0.05);
+    
+    // Apply Master Macros
+    // Tone: Tilt EQ
+    masterEq.low.gain.setTargetAtTime((1 - masterTone) * 6 - 3, ctx.currentTime, 0.1);
+    masterEq.high.gain.setTargetAtTime(masterTone * 6 - 3, ctx.currentTime, 0.1);
+    
+    // Space: Global Reverb Send
+    masterReverbSend.gain.setTargetAtTime(masterSpace * 0.5, ctx.currentTime, 0.1);
+    
+    // Loudness: Master Compression
+    masterComp.threshold.setTargetAtTime(-20 - (masterLoudness * 20), ctx.currentTime, 0.1);
+    masterComp.ratio.setTargetAtTime(2 + (masterLoudness * 10), ctx.currentTime, 0.1);
 
     states.forEach((track, i) => {
       const nodes = tracks[i];
@@ -89,16 +203,9 @@ export default function Mixer({ audioBlob }: MixerProps) {
       nodes.pan.pan.setTargetAtTime(track.pan, time, 0.05);
       
       nodes.eqLow.gain.setTargetAtTime(track.eqLow, time, 0.05);
-      nodes.eqLow.frequency.setTargetAtTime(track.eqLowFreq, time, 0.05);
-      
       nodes.eqLowMid.gain.setTargetAtTime(track.eqLowMid, time, 0.05);
-      nodes.eqLowMid.frequency.setTargetAtTime(track.eqLowMidFreq, time, 0.05);
-      
       nodes.eqHighMid.gain.setTargetAtTime(track.eqHighMid, time, 0.05);
-      nodes.eqHighMid.frequency.setTargetAtTime(track.eqHighMidFreq, time, 0.05);
-      
       nodes.eqHigh.gain.setTargetAtTime(track.eqHigh, time, 0.05);
-      nodes.eqHigh.frequency.setTargetAtTime(track.eqHighFreq, time, 0.05);
 
       nodes.comp.threshold.setTargetAtTime(track.compThresh, time, 0.05);
       nodes.comp.ratio.setTargetAtTime(track.compRatio, time, 0.05);
@@ -108,7 +215,7 @@ export default function Mixer({ audioBlob }: MixerProps) {
 
   useEffect(() => {
     applyStatesToNodes(trackStates, audioNodes.current, masterVolume);
-  }, [trackStates, masterVolume]);
+  }, [trackStates, masterVolume, masterTone, masterSpace, masterLoudness]);
 
   useEffect(() => {
     const saved = localStorage.getItem('mixer_presets');
@@ -116,7 +223,7 @@ export default function Mixer({ audioBlob }: MixerProps) {
       try {
         setPresets(JSON.parse(saved));
       } catch (e) {
-        console.error("Failed to load presets from localStorage", e);
+        console.error("Failed to load presets", e);
       }
     }
   }, []);
@@ -143,6 +250,7 @@ export default function Mixer({ audioBlob }: MixerProps) {
     setTrackStates(JSON.parse(JSON.stringify(preset.trackStates)));
     setMasterVolume(preset.masterVolume);
     setShowPresetMenu(false);
+    pushToHistory(preset.trackStates);
   };
 
   const deletePreset = (id: string, e: React.MouseEvent) => {
@@ -187,17 +295,32 @@ export default function Mixer({ audioBlob }: MixerProps) {
     
     const masterGain = ctx.createGain();
     const masterAnalyzer = ctx.createAnalyser();
-    masterGain.connect(masterAnalyzer);
+    
+    // Master EQ for Tone macro
+    const masterEqLow = ctx.createBiquadFilter(); masterEqLow.type = 'lowshelf'; masterEqLow.frequency.value = 400;
+    const masterEqHigh = ctx.createBiquadFilter(); masterEqHigh.type = 'highshelf'; masterEqHigh.frequency.value = 3000;
+    
+    // Master Compressor for Loudness macro
+    const masterComp = ctx.createDynamicsCompressor();
+    
+    masterGain.connect(masterEqLow);
+    masterEqLow.connect(masterEqHigh);
+    masterEqHigh.connect(masterComp);
+    masterComp.connect(masterAnalyzer);
     masterAnalyzer.connect(ctx.destination);
 
     const reverb = createReverb(ctx);
     reverb.connect(masterGain);
+    
+    const masterReverbSend = ctx.createGain();
+    masterComp.connect(masterReverbSend);
+    masterReverbSend.connect(reverb);
 
     const tracks = TRACKS.map((_, i) => {
-      const eqLow = ctx.createBiquadFilter(); eqLow.type = 'lowshelf';
-      const eqLowMid = ctx.createBiquadFilter(); eqLowMid.type = 'peaking'; eqLowMid.Q.value = 1.2;
-      const eqHighMid = ctx.createBiquadFilter(); eqHighMid.type = 'peaking'; eqHighMid.Q.value = 1.2;
-      const eqHigh = ctx.createBiquadFilter(); eqHigh.type = 'highshelf';
+      const eqLow = ctx.createBiquadFilter(); eqLow.type = 'lowshelf'; eqLow.frequency.value = 250;
+      const eqLowMid = ctx.createBiquadFilter(); eqLowMid.type = 'peaking'; eqLowMid.Q.value = 1.2; eqLowMid.frequency.value = 800;
+      const eqHighMid = ctx.createBiquadFilter(); eqHighMid.type = 'peaking'; eqHighMid.Q.value = 1.2; eqHighMid.frequency.value = 2500;
+      const eqHigh = ctx.createBiquadFilter(); eqHigh.type = 'highshelf'; eqHigh.frequency.value = 8000;
 
       const comp = ctx.createDynamicsCompressor();
       const pan = ctx.createStereoPanner();
@@ -218,35 +341,23 @@ export default function Mixer({ audioBlob }: MixerProps) {
       reverbSend.connect(reverb);
 
       let firstNode: AudioNode = eqLow;
-      let splitterHp: BiquadFilterNode | undefined;
-      let splitterLp: BiquadFilterNode | undefined;
-
       if (i === 0) {
-        splitterHp = ctx.createBiquadFilter(); splitterHp.type = 'highpass'; splitterHp.frequency.value = 300;
-        splitterLp = ctx.createBiquadFilter(); splitterLp.type = 'lowpass'; splitterLp.frequency.value = 3000;
-        splitterHp.connect(splitterLp);
-        splitterLp.connect(eqLow);
-        firstNode = splitterHp;
-      } else if (i === 1) {
-        splitterHp = ctx.createBiquadFilter(); splitterHp.type = 'highpass'; splitterHp.frequency.value = 500;
-        splitterLp = ctx.createBiquadFilter(); splitterLp.type = 'lowpass'; splitterLp.frequency.value = 5000;
-        splitterHp.connect(splitterLp);
-        splitterLp.connect(eqLow);
-        firstNode = splitterHp;
+        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 100;
+        hp.connect(eqLow); firstNode = hp;
       } else if (i === 2) {
-        splitterLp = ctx.createBiquadFilter(); splitterLp.type = 'lowpass'; splitterLp.frequency.value = 300;
-        splitterLp.connect(eqLow);
-        firstNode = splitterLp;
-      } else if (i === 3) {
-        splitterHp = ctx.createBiquadFilter(); splitterHp.type = 'highpass'; splitterHp.frequency.value = 3000;
-        splitterHp.connect(eqLow);
-        firstNode = splitterHp;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400;
+        lp.connect(eqLow); firstNode = lp;
       }
 
       return { eqLow, eqLowMid, eqHighMid, eqHigh, comp, pan, gain, reverbSend, analyzer, firstNode, source: null as AudioBufferSourceNode | null };
     });
 
-    audioNodes.current = { ctx, masterGain, masterAnalyzer, reverb, tracks };
+    audioNodes.current = { 
+      ctx, masterGain, masterAnalyzer, reverb, tracks, 
+      masterEq: { low: masterEqLow, high: masterEqHigh },
+      masterComp, masterReverbSend
+    };
+    
     applyStatesToNodes(trackStates, audioNodes.current, masterVolume);
 
     audioBlob.arrayBuffer()
@@ -265,23 +376,24 @@ export default function Mixer({ audioBlob }: MixerProps) {
 
   const updateMeters = () => {
     if (!audioNodes.current || !isPlaying) return;
-    const { tracks, masterAnalyzer } = audioNodes.current;
+    const { tracks, masterAnalyzer, masterComp } = audioNodes.current;
     
     const newMeters = tracks.map((t: any) => {
       const data = new Uint8Array(t.analyzer.frequencyBinCount);
       t.analyzer.getByteFrequencyData(data);
       const avg = data.reduce((a, b) => a + b, 0) / data.length;
-      return avg / 255;
+      const reduction = Math.abs(t.comp.reduction);
+      return { level: avg / 255, gr: reduction / 20 };
     });
 
     const masterData = new Uint8Array(masterAnalyzer.frequencyBinCount);
     masterAnalyzer.getByteFrequencyData(masterData);
     const masterAvg = masterData.reduce((a, b) => a + b, 0) / masterData.length;
-    newMeters.push(masterAvg / 255);
+    const masterReduction = Math.abs(masterComp.reduction);
+    newMeters.push({ level: masterAvg / 255, gr: masterReduction / 20 });
 
     setMeters(newMeters);
 
-    // Draw Visualizer
     if (canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
@@ -289,17 +401,11 @@ export default function Mixer({ audioBlob }: MixerProps) {
         const width = canvas.width;
         const height = canvas.height;
         ctx.clearRect(0, 0, width, height);
-        
         const barWidth = (width / masterData.length) * 2.5;
         let x = 0;
-
         for (let i = 0; i < masterData.length; i++) {
           const barHeight = (masterData[i] / 255) * height;
-          const grad = ctx.createLinearGradient(0, height, 0, height - barHeight);
-          grad.addColorStop(0, '#4f46e5'); // indigo-600
-          grad.addColorStop(0.5, '#a855f7'); // purple-500
-          grad.addColorStop(1, '#ec4899'); // pink-500
-          ctx.fillStyle = grad;
+          ctx.fillStyle = `rgba(99, 102, 241, ${0.3 + (masterData[i]/255)})`;
           ctx.fillRect(x, height - barHeight, barWidth - 1, barHeight);
           x += barWidth;
         }
@@ -343,304 +449,584 @@ export default function Mixer({ audioBlob }: MixerProps) {
     });
   };
 
-  const RotaryKnob = ({ label, value, min, max, onChange, color = 'indigo' }: any) => {
+  const handleTrackChangeEnd = () => {
+    pushToHistory(trackStates);
+  };
+
+  const applyPresetToTrack = (index: number, presetName: string) => {
+    const preset = PRESET_VALUES[presetName];
+    if (preset) {
+      setTrackStates(prev => {
+        const next = [...prev];
+        next[index] = { ...next[index], ...preset };
+        return next;
+      });
+      pushToHistory(trackStates);
+    }
+  };
+
+  // --- Sub-components ---
+
+  const MacroKnob = ({ label, value, min, max, onChange, color = 'studio-accent', tooltip }: any) => {
     const percentage = (value - min) / (max - min);
     const rotation = -135 + (percentage * 270);
     
-    const colorMap: any = {
-      indigo: 'from-indigo-400 to-indigo-600',
-      emerald: 'from-emerald-400 to-emerald-600',
-      cyan: 'from-cyan-400 to-cyan-600',
-      purple: 'from-purple-400 to-purple-600',
-      gray: 'from-gray-300 to-gray-500',
-    };
-
     return (
-      <div className="flex flex-col items-center gap-1.5">
-        <div className="relative w-10 h-10 rounded-full bg-gradient-to-b from-[#2a2a35] to-[#1a1a24] border border-[#3a3a45] shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_1px_2px_rgba(255,255,255,0.1)] flex items-center justify-center cursor-pointer group hover:border-[#4a4a55] transition-colors">
+      <div className="flex flex-col items-center gap-2 group/knob relative">
+        {tooltip && (
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black/90 text-[9px] text-white px-3 py-1.5 rounded-lg opacity-0 group-hover/knob:opacity-100 transition-all scale-95 group-hover/knob:scale-100 whitespace-nowrap z-50 pointer-events-none border border-white/10 shadow-2xl">
+            {tooltip}
+          </div>
+        )}
+        <div className="relative w-14 h-14 rounded-full bg-[#1a1a24] border-2 border-white/5 shadow-[0_10px_20px_rgba(0,0,0,0.4)] flex items-center justify-center cursor-pointer group-hover/knob:border-white/10 transition-colors">
           <input
             type="range" min={min} max={max} step={(max - min) / 100}
             value={value} onChange={e => onChange(parseFloat(e.target.value))}
+            onMouseUp={handleTrackChangeEnd}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           />
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3a3a45] to-[#2a2a35] shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)] flex items-center justify-center pointer-events-none">
+          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gray-800 to-black shadow-inner flex items-center justify-center pointer-events-none border border-white/5">
              <div 
               className="w-full h-full rounded-full absolute transition-transform duration-75"
               style={{ transform: `rotate(${rotation}deg)` }}
             >
-              <div className={`w-1 h-3 bg-gradient-to-b ${colorMap[color]} absolute top-1 left-1/2 -translate-x-1/2 rounded-full shadow-[0_0_5px_currentColor]`} />
+              <div className={`w-1.5 h-4 bg-${color} absolute top-1 left-1/2 -translate-x-1/2 rounded-full shadow-[0_0_12px_currentColor]`} />
             </div>
           </div>
         </div>
-        <span className="text-[9px] text-gray-400 font-mono uppercase tracking-widest">{label}</span>
+        <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest group-hover/knob:text-white transition-colors" title={tooltip || label}>{label}</span>
       </div>
     );
   };
 
-  const LEDMeter = ({ level }: { level: number }) => {
-    const segments = 16;
+  const ParametricEQ = ({ state, onChange }: any) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    
+    useEffect(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Draw Grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      
+      // Vertical lines for frequencies (approximate logarithmic)
+      const freqs = [100, 1000, 10000];
+      freqs.forEach(f => {
+        const x = (Math.log10(f) - 1.3) * (w / 3); // Very rough log scale
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      });
+
+      ctx.beginPath();
+      ctx.moveTo(0, h / 2);
+      ctx.lineTo(w, h / 2);
+      ctx.stroke();
+
+      // Draw Curve
+      ctx.beginPath();
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2;
+      
+      const points = [
+        { x: 0, y: h/2 - (state.eqLow * (h/30)) },
+        { x: w/4, y: h/2 - (state.eqLowMid * (h/30)) },
+        { x: w/2, y: h/2 - (state.eqHighMid * (h/30)) },
+        { x: w, y: h/2 - (state.eqHigh * (h/30)) }
+      ];
+
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        const xc = (points[i].x + points[i-1].x) / 2;
+        const yc = (points[i].y + points[i-1].y) / 2;
+        ctx.quadraticCurveTo(points[i-1].x, points[i-1].y, xc, yc);
+      }
+      ctx.lineTo(points[3].x, points[3].y);
+      ctx.stroke();
+
+      // Fill area
+      ctx.lineTo(w, h);
+      ctx.lineTo(0, h);
+      ctx.fillStyle = 'rgba(99, 102, 241, 0.1)';
+      ctx.fill();
+
+    }, [state]);
+
     return (
-      <div className="w-2.5 h-40 bg-[#0a0a0c] rounded-full overflow-hidden flex flex-col-reverse gap-[1px] p-[2px] border border-white/5 shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)]">
-        {Array.from({ length: segments }).map((_, i) => {
-          const threshold = i / segments;
-          const isActive = level > threshold;
-          let color = 'bg-emerald-500';
-          if (i > 10) color = 'bg-yellow-500';
-          if (i > 13) color = 'bg-red-500';
-          return (
-            <div 
-              key={i} 
-              className={`flex-1 rounded-sm transition-all duration-75 ${isActive ? color + ' shadow-[0_0_8px_currentColor]' : 'bg-gray-800 opacity-20'}`} 
-            />
-          );
-        })}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-[8px] text-gray-500 uppercase font-bold px-1">
+          <span>EQ Graph</span>
+          <div className="flex gap-2">
+            <span>100Hz</span>
+            <span>1kHz</span>
+            <span>10kHz</span>
+          </div>
+        </div>
+        <div className="w-full h-24 bg-black/40 rounded border border-white/10 overflow-hidden relative group">
+          <canvas ref={canvasRef} width={200} height={96} className="w-full h-full" />
+          <div className="absolute inset-0 flex items-center justify-around opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 backdrop-blur-[1px]">
+             <div className="flex flex-col gap-1">
+               <input type="range" min="-12" max="12" value={state.eqLow} onChange={e => onChange('eqLow', parseFloat(e.target.value))} className="w-12 h-1 accent-indigo-500" />
+               <span className="text-[6px] text-center text-white" title="Low Shelf">Low</span>
+             </div>
+             <div className="flex flex-col gap-1">
+               <input type="range" min="-12" max="12" value={state.eqLowMid} onChange={e => onChange('eqLowMid', parseFloat(e.target.value))} className="w-12 h-1 accent-indigo-500" />
+               <span className="text-[6px] text-center text-white" title="Low Mid Peaking">L-Mid</span>
+             </div>
+             <div className="flex flex-col gap-1">
+               <input type="range" min="-12" max="12" value={state.eqHighMid} onChange={e => onChange('eqHighMid', parseFloat(e.target.value))} className="w-12 h-1 accent-indigo-500" />
+               <span className="text-[6px] text-center text-white" title="High Mid Peaking">H-Mid</span>
+             </div>
+             <div className="flex flex-col gap-1">
+               <input type="range" min="-12" max="12" value={state.eqHigh} onChange={e => onChange('eqHigh', parseFloat(e.target.value))} className="w-12 h-1 accent-indigo-500" />
+               <span className="text-[6px] text-center text-white" title="High Shelf">High</span>
+             </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const LEDMeter = ({ level, gr = 0, height = 120 }: { level: number, gr?: number, height?: number }) => {
+    const segments = 12;
+    return (
+      <div className="flex gap-1 items-end">
+        {/* Main Level Meter */}
+        <div className="w-2 bg-black rounded-full overflow-hidden flex flex-col-reverse gap-[1px] p-[1px] border border-white/5" style={{ height }}>
+          {Array.from({ length: segments }).map((_, i) => {
+            const threshold = i / segments;
+            const isActive = level > threshold;
+            let color = 'bg-emerald-500';
+            if (i > 8) color = 'bg-yellow-500';
+            if (i > 10) color = 'bg-red-500';
+            return (
+              <div 
+                key={i} 
+                className={`flex-1 rounded-sm transition-all duration-75 ${isActive ? color + ' shadow-[0_0_4px_currentColor]' : 'bg-gray-800 opacity-10'}`} 
+              />
+            );
+          })}
+        </div>
+        {/* Gain Reduction Meter (Small) */}
+        {gr > 0 && (
+          <div className="w-1 bg-black rounded-full overflow-hidden flex flex-col gap-[1px] p-[0.5px] border border-white/5" style={{ height: height * 0.6 }}>
+            {Array.from({ length: 8 }).map((_, i) => {
+              const threshold = i / 8;
+              const isActive = gr > threshold;
+              return (
+                <div 
+                  key={i} 
+                  className={`flex-1 rounded-sm transition-all duration-75 ${isActive ? 'bg-orange-500 shadow-[0_0_2px_rgba(249,115,22,0.5)]' : 'bg-gray-800 opacity-5'}`} 
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="glass-panel rounded-2xl p-6 shadow-2xl border-t border-white/10">
-      <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-6">
-        <div className="flex items-center gap-6">
-          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-gray-800 to-black flex items-center justify-center border border-white/10 shadow-[inset_0_2px_10px_rgba(255,255,255,0.1),0_5px_15px_rgba(0,0,0,0.5)]">
-            <SlidersHorizontal className="w-7 h-7 text-indigo-400" />
+    <div className="glass-panel rounded-3xl p-8 shadow-2xl border border-white/10 bg-[#0d0d12] relative overflow-hidden">
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-studio-accent to-transparent opacity-50" />
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-10 pb-8 border-b border-white/5 gap-6">
+        <div className="flex items-center gap-5">
+          <div className="w-14 h-14 rounded-2xl bg-studio-accent flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.3)] border border-white/20">
+            <SlidersHorizontal className="w-7 h-7 text-black" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white tracking-widest uppercase flex items-center gap-3">
-              SSL-V Console <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400 text-[10px] border border-indigo-500/30">PRO</span>
+            <h2 className="text-2xl font-black text-white tracking-tighter uppercase italic flex items-center gap-3">
+              Sonance <span className="text-studio-accent">Pro Mixer</span>
             </h2>
-            <p className="text-[10px] text-gray-400 font-mono uppercase tracking-widest flex items-center gap-2 mt-1">
-              <Activity className="w-3 h-3 text-emerald-400" /> 4-Bus Neural Processing Engine
-            </p>
+            <div className="flex items-center gap-4 mt-1.5">
+              <span className="text-[10px] font-black text-studio-accent bg-studio-accent/10 px-2 py-0.5 rounded-full border border-studio-accent/20 uppercase tracking-[0.2em]">v2.5 Neural Core</span>
+              <div className="flex items-center gap-2">
+                <button onClick={undo} disabled={historyIndex <= 0} className="p-1.5 text-gray-500 hover:text-studio-accent disabled:opacity-20 transition-all hover:scale-110"><Undo2 className="w-4 h-4" /></button>
+                <button onClick={redo} disabled={historyIndex >= history.length - 1} className="p-1.5 text-gray-500 hover:text-studio-accent disabled:opacity-20 transition-all hover:scale-110"><Redo2 className="w-4 h-4" /></button>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div className="flex items-center gap-6">
-          {/* Presets Menu */}
-          <div className="relative">
-            <button
-              onClick={() => setShowPresetMenu(!showPresetMenu)}
-              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-gray-300 px-4 py-2.5 rounded-lg border border-white/10 transition-all text-[10px] font-bold uppercase tracking-widest"
+
+        <div className="flex items-center gap-5 w-full md:w-auto">
+          <div className="flex-1 md:flex-none flex items-center gap-3 bg-black/60 p-1.5 rounded-xl border border-white/5 shadow-inner">
+            <button 
+              onClick={() => setShowAllBuses(!showAllBuses)}
+              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${showAllBuses ? 'bg-studio-accent text-black shadow-lg shadow-studio-accent/20' : 'text-gray-500 hover:text-white'}`}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
-              Presets <ChevronDown className={`w-3 h-3 transition-transform ${showPresetMenu ? 'rotate-180' : ''}`} />
+              Show All
             </button>
-
-            <AnimatePresence>
-              {showPresetMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 top-full mt-2 w-72 bg-[#1a1a24] border border-white/10 rounded-xl shadow-2xl z-[100] overflow-hidden"
-                >
-                  <div className="p-4 border-b border-white/5 bg-black/20">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Save New Preset</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newPresetName}
-                        onChange={e => setNewPresetName(e.target.value)}
-                        placeholder="Preset Name..."
-                        className="flex-1 bg-black/40 border border-white/10 rounded px-3 py-1.5 text-xs text-white outline-none focus:border-indigo-500/50 transition-colors"
-                        onKeyDown={e => e.key === 'Enter' && saveCurrentPreset()}
-                      />
-                      <button
-                        onClick={saveCurrentPreset}
-                        className="bg-indigo-600 hover:bg-indigo-500 text-white p-1.5 rounded transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                    {presets.length === 0 ? (
-                      <div className="p-8 text-center text-gray-500 text-[10px] uppercase tracking-widest italic">
-                        No saved presets
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-white/5">
-                        {presets.map(p => (
-                          <div
-                            key={p.id}
-                            onClick={() => loadPreset(p)}
-                            className="flex items-center justify-between p-3 hover:bg-white/5 cursor-pointer group transition-colors"
-                          >
-                            <div className="flex flex-col">
-                              <span className="text-xs font-bold text-gray-200">{p.name}</span>
-                              <span className="text-[8px] text-gray-500 font-mono">{new Date(p.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <button
-                              onClick={(e) => deletePreset(p.id, e)}
-                              className="p-1.5 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-3 bg-black/20 border-t border-white/5 flex gap-2">
-                    <button
-                      onClick={exportPresets}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 rounded bg-white/5 hover:bg-white/10 text-[9px] font-bold text-gray-400 uppercase tracking-widest transition-colors"
-                    >
-                      <Download className="w-3 h-3" /> Export
-                    </button>
-                    <label className="flex-1 flex items-center justify-center gap-2 py-2 rounded bg-white/5 hover:bg-white/10 text-[9px] font-bold text-gray-400 uppercase tracking-widest transition-colors cursor-pointer">
-                      <Upload className="w-3 h-3" /> Import
-                      <input type="file" accept=".json" onChange={importPresets} className="hidden" />
-                    </label>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Visualizer */}
-          <div className="hidden md:flex flex-col items-end gap-1">
-            <div className="flex items-center gap-2 text-[9px] font-mono text-gray-500 uppercase tracking-widest">
-              <Radio className="w-3 h-3 text-indigo-400" /> Master Spectrum
-            </div>
-            <div className="w-64 h-16 bg-[#0a0a0c] rounded-lg border border-white/5 shadow-inner overflow-hidden relative">
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 mix-blend-overlay pointer-events-none" />
-              <canvas ref={canvasRef} width={256} height={64} className="w-full h-full opacity-90" />
-            </div>
+            <div className="w-px h-5 bg-white/10" />
+            <button 
+              onClick={() => setShowPresetMenu(!showPresetMenu)}
+              className="px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-studio-accent flex items-center gap-2 transition-colors"
+            >
+              <Save className="w-3.5 h-3.5" /> Snapshots
+            </button>
           </div>
 
           <button
             onClick={togglePlay}
             disabled={!isReady}
-            className="flex items-center gap-3 bg-gradient-to-b from-indigo-500 to-indigo-700 text-white px-8 py-4 rounded-xl font-bold text-xs uppercase tracking-widest hover:from-indigo-400 hover:to-indigo-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_10px_20px_rgba(99,102,241,0.3),inset_0_1px_0_rgba(255,255,255,0.2)] border border-indigo-500/50"
+            className={`flex items-center gap-4 px-8 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-2xl border-2 ${isPlaying ? 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20' : 'bg-studio-accent border-white/20 text-black hover:bg-studio-yellow hover:scale-[1.02] active:scale-95'}`}
           >
             {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
-            {isReady ? (isPlaying ? 'Pause' : 'Play Mix') : 'Loading Audio...'}
+            {isReady ? (isPlaying ? 'Stop' : 'Play Mix') : 'Loading...'}
           </button>
         </div>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {TRACKS.map((trackInfo, i) => {
-          const state = trackStates[i];
-          return (
-            <div key={trackInfo.id} className="min-w-[140px] flex-1 bg-gradient-to-b from-[#111116] to-[#0a0a0c] border border-white/5 rounded-xl p-4 flex flex-col gap-6 shadow-inner relative group/track">
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-5 mix-blend-overlay pointer-events-none rounded-xl" />
-              {/* Header */}
-              <div className="text-center border-b border-white/5 pb-3 relative z-10">
-                <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full ${trackInfo.color} opacity-0 group-hover/track:opacity-100 transition-opacity shadow-[0_0_10px_currentColor]`} />
-                <span className={`text-[10px] font-bold uppercase tracking-widest ${trackInfo.text}`}>{trackInfo.name}</span>
-                <div className={`w-full h-0.5 mt-2 rounded-full ${trackInfo.color} opacity-30`} />
+      {/* Preset Menu Overlay */}
+      <AnimatePresence>
+        {showPresetMenu && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowPresetMenu(false)}
+          >
+            <div 
+              className="w-full max-w-md bg-[#1a1a24] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-white/5 bg-black/20 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white uppercase tracking-widest">Mix Snapshots</h3>
+                <button onClick={() => setShowPresetMenu(false)} className="text-gray-500 hover:text-white transition-colors"><Minimize2 className="w-4 h-4" /></button>
               </div>
-
-              {/* EQ & FX Knobs */}
-              <div className="flex flex-col gap-4 relative z-10">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-4">
-                    <RotaryKnob label="Hi Gain" value={state.eqHigh} min={-12} max={12} onChange={(v: number) => updateTrack(i, 'eqHigh', v)} color="cyan" />
-                    <RotaryKnob label="Hi Freq" value={state.eqHighFreq} min={4000} max={16000} onChange={(v: number) => updateTrack(i, 'eqHighFreq', v)} color="gray" />
-                  </div>
-                  <div className="space-y-4">
-                    <RotaryKnob label="H-Mid G" value={state.eqHighMid} min={-12} max={12} onChange={(v: number) => updateTrack(i, 'eqHighMid', v)} color="emerald" />
-                    <RotaryKnob label="H-Mid F" value={state.eqHighMidFreq} min={1500} max={6000} onChange={(v: number) => updateTrack(i, 'eqHighMidFreq', v)} color="gray" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-4">
-                    <RotaryKnob label="L-Mid G" value={state.eqLowMid} min={-12} max={12} onChange={(v: number) => updateTrack(i, 'eqLowMid', v)} color="purple" />
-                    <RotaryKnob label="L-Mid F" value={state.eqLowMidFreq} min={400} max={1500} onChange={(v: number) => updateTrack(i, 'eqLowMidFreq', v)} color="gray" />
-                  </div>
-                  <div className="space-y-4">
-                    <RotaryKnob label="Lo Gain" value={state.eqLow} min={-12} max={12} onChange={(v: number) => updateTrack(i, 'eqLow', v)} color="indigo" />
-                    <RotaryKnob label="Lo Freq" value={state.eqLowFreq} min={40} max={400} onChange={(v: number) => updateTrack(i, 'eqLowFreq', v)} color="gray" />
-                  </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newPresetName}
+                    onChange={e => setNewPresetName(e.target.value)}
+                    placeholder="New Snapshot Name..."
+                    className="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-xs text-white outline-none focus:border-indigo-500 transition-colors"
+                  />
+                  <button onClick={saveCurrentPreset} className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg transition-colors"><Plus className="w-4 h-4" /></button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-white/5">
-                  <RotaryKnob label="Rev" value={state.reverb} min={0} max={1} onChange={(v: number) => updateTrack(i, 'reverb', v)} color="indigo" />
-                  <RotaryKnob label="Comp" value={state.compThresh} min={-60} max={0} onChange={(v: number) => updateTrack(i, 'compThresh', v)} color="gray" />
-                  <RotaryKnob label="Pan" value={state.pan} min={-1} max={1} onChange={(v: number) => updateTrack(i, 'pan', v)} color="gray" />
+                <div className="max-h-64 overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                  {presets.map(p => (
+                    <div key={p.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:border-indigo-500/30 transition-all group">
+                      <div className="cursor-pointer flex-1" onClick={() => loadPreset(p)}>
+                        <p className="text-xs font-bold text-gray-200">{p.name}</p>
+                        <p className="text-[8px] text-gray-500 font-mono">{new Date(p.createdAt).toLocaleString()}</p>
+                      </div>
+                      <button onClick={(e) => deletePreset(p.id, e)} className="p-2 text-gray-600 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ))}
+                  {presets.length === 0 && <p className="text-center py-8 text-[10px] text-gray-600 uppercase tracking-widest italic">No snapshots saved yet</p>}
                 </div>
               </div>
 
-              {/* Mute/Solo */}
-              <div className="flex justify-center gap-2 mt-2 relative z-10">
-                <button 
-                  onClick={() => updateTrack(i, 'mute', !state.mute)}
-                  className={`flex-1 h-8 text-[8px] font-bold rounded-md transition-all shadow-inner border flex items-center justify-center gap-1 ${state.mute ? 'bg-red-500 text-white border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-[#1a1a24] text-gray-500 border-white/5 hover:bg-[#2a2a35] hover:text-gray-300'}`}
-                >
-                  <Volume2 className={`w-2.5 h-2.5 ${state.mute ? 'text-white' : 'text-gray-600'}`} />
-                  MUTE
-                </button>
-                <button 
-                  onClick={() => updateTrack(i, 'solo', !state.solo)}
-                  className={`flex-1 h-8 text-[8px] font-bold rounded-md transition-all shadow-inner border flex items-center justify-center gap-1 ${state.solo ? 'bg-yellow-500 text-black border-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.4)]' : 'bg-[#1a1a24] text-gray-500 border-white/5 hover:bg-[#2a2a35] hover:text-gray-300'}`}
-                >
-                  <Radio className={`w-2.5 h-2.5 ${state.solo ? 'text-black' : 'text-gray-600'}`} />
-                  SOLO
-                </button>
+              <div className="p-4 bg-black/40 border-t border-white/5 flex gap-3">
+                <button onClick={exportPresets} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded text-[9px] font-bold text-gray-400 uppercase tracking-widest transition-colors flex items-center justify-center gap-2"><Download className="w-3.5 h-3.5" /> Export</button>
+                <label className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded text-[9px] font-bold text-gray-400 uppercase tracking-widest transition-colors flex items-center justify-center gap-2 cursor-pointer"><Upload className="w-3.5 h-3.5" /> Import<input type="file" accept=".json" onChange={importPresets} className="hidden" /></label>
               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              {/* Fader & Meter */}
-              <div className="flex justify-center gap-6 mt-auto pt-6 border-t border-white/5 relative z-10">
-                <LEDMeter level={meters[i] || 0} />
-                <div className="relative h-40 w-10 flex justify-center group">
-                  <div className="absolute top-0 bottom-0 w-1.5 bg-black rounded-full shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)] border border-white/5" />
-                  <div className="absolute top-0 bottom-0 w-6 flex flex-col justify-between py-2 pointer-events-none opacity-30">
-                     {[...Array(9)].map((_, idx) => <div key={idx} className="w-full h-px bg-white" />)}
-                  </div>
-                  <input 
-                    type="range" min="0" max="1.5" step="0.01" 
-                    value={state.volume} 
-                    onChange={e => updateTrack(i, 'volume', parseFloat(e.target.value))} 
-                    className="fader-track absolute w-10 h-40 appearance-none bg-transparent outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:bg-gradient-to-b [&::-webkit-slider-thumb]:from-gray-300 [&::-webkit-slider-thumb]:to-gray-500 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_0_rgba(0,0,0,0.3)] [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-gray-600 cursor-pointer z-10 hover:[&::-webkit-slider-thumb]:from-gray-200 hover:[&::-webkit-slider-thumb]:to-gray-400 transition-all" 
+      {/* Main Mixer Grid */}
+      <div className="flex bg-[#0a0a0c] rounded-2xl border border-white/5 overflow-hidden shadow-[inset_0_0_40px_rgba(0,0,0,0.8)] h-[650px]">
+        {/* Navigation Rail / Mini Strips */}
+        {!showAllBuses && (
+          <div className="flex border-r border-white/10 bg-black/60">
+            {TRACKS.map((track, i) => (
+              <BusMiniStrip 
+                key={track.id}
+                track={track}
+                state={trackStates[i]}
+                active={expandedBus === track.id}
+                onClick={() => setExpandedBus(track.id)}
+                meter={meters[i] || { level: 0, gr: 0 }}
+              />
+            ))}
+            <button
+              onClick={() => setExpandedBus('master')}
+              className={`relative w-14 flex flex-col items-center py-6 transition-all hover:bg-white/5 ${expandedBus === 'master' ? 'bg-studio-accent/10' : 'bg-black/40'}`}
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-white/20 shadow-[0_0_10px_rgba(255,255,255,0.3)]" />
+              <div className="flex-1 flex flex-col items-center gap-8">
+                <div className="p-2 rounded-xl bg-white/10 border border-white/10">
+                  <Activity className="w-4 h-4 text-white" />
+                </div>
+                <div className="h-40 w-2 bg-black/60 rounded-full overflow-hidden flex flex-col-reverse p-[1px] border border-white/5">
+                  <div 
+                    className="w-full rounded-full transition-all duration-75 bg-white shadow-[0_0_8px_rgba(255,255,255,0.5)]" 
+                    style={{ height: `${(meters[4]?.level || 0) * 100}%`, opacity: 0.4 + ((meters[4]?.level || 0) * 0.6) }} 
                   />
                 </div>
+                <div className="writing-mode-vertical text-[9px] font-black uppercase tracking-[0.2em] text-gray-300 rotate-180">
+                  MASTER
+                </div>
               </div>
-              <div className="text-center text-[9px] font-mono text-gray-500 relative z-10">{Math.round(state.volume * 100)}%</div>
-            </div>
-          );
-        })}
-
-        {/* Master Bus */}
-        <div className="min-w-[160px] bg-gradient-to-b from-[#1a1a24] to-[#0a0a0c] border border-indigo-500/30 rounded-xl p-4 flex flex-col gap-6 shadow-[0_0_30px_rgba(99,102,241,0.1),inset_0_1px_0_rgba(255,255,255,0.1)] relative ml-4 group/master">
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10 pointer-events-none mix-blend-overlay rounded-xl" />
-          <div className="text-center border-b border-indigo-500/20 pb-3 relative z-10">
-            <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-indigo-500 opacity-0 group-hover/master:opacity-100 transition-opacity shadow-[0_0_10px_currentColor]`} />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Master Bus</span>
-            <div className="w-full h-0.5 mt-2 rounded-full bg-indigo-500 opacity-50" />
+            </button>
           </div>
+        )}
 
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 relative z-10">
-             <div className="w-20 h-20 rounded-full border-4 border-indigo-500/20 flex items-center justify-center shadow-[inset_0_0_20px_rgba(99,102,241,0.2)] bg-[#0a0a0c]">
-                <span className="text-sm font-mono text-indigo-300 font-bold">{Math.round(masterVolume * 100)}%</span>
-             </div>
-          </div>
+        {/* Console Panel */}
+        <div className="flex-1 overflow-x-auto custom-scrollbar bg-gradient-to-b from-[#16161e] to-[#0d0d12]">
+          <div className="flex h-full min-w-max">
+            {TRACKS.map((track, i) => {
+              const isExpanded = expandedBus === track.id || showAllBuses;
+              if (!isExpanded) return null;
+              const state = trackStates[i];
+              const Icon = track.icon;
 
-          <div className="flex justify-center gap-8 mt-auto pt-6 border-t border-indigo-500/20 relative z-10">
-            <LEDMeter level={meters[4] || 0} />
-            <div className="relative h-48 w-12 flex justify-center group">
-              <div className="absolute top-0 bottom-0 w-2 bg-black rounded-full shadow-[inset_0_2px_5px_rgba(0,0,0,0.8)] border border-white/5" />
-              <div className="absolute top-0 bottom-0 w-8 flex flex-col justify-between py-2 pointer-events-none opacity-30">
-                 {[...Array(11)].map((_, idx) => <div key={idx} className="w-full h-px bg-indigo-300" />)}
-              </div>
-              <input 
-                type="range" min="0" max="1.5" step="0.01" 
-                value={masterVolume} 
-                onChange={e => setMasterVolume(parseFloat(e.target.value))} 
-                className="fader-track absolute w-12 h-48 appearance-none bg-transparent outline-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-10 [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:bg-gradient-to-b [&::-webkit-slider-thumb]:from-indigo-400 [&::-webkit-slider-thumb]:to-indigo-600 [&::-webkit-slider-thumb]:rounded-sm [&::-webkit-slider-thumb]:shadow-[0_5px_10px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.8),inset_0_-1px_0_rgba(0,0,0,0.3)] [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-indigo-700 cursor-pointer z-10" 
-              />
-            </div>
+              return (
+                <motion.div 
+                  key={track.id}
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 340, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  className="flex flex-col border-r border-white/5 h-full relative group/strip"
+                >
+                  {/* Bus Header */}
+                  <div className={`p-5 flex items-center justify-between ${track.color} bg-opacity-5 border-b border-white/5 relative overflow-hidden`}>
+                    <div className={`absolute top-0 left-0 w-full h-0.5 ${track.color} opacity-30`} />
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2.5 rounded-2xl ${track.color} bg-opacity-10 border border-white/10 shadow-inner`}>
+                        <Icon className={`w-5 h-5 ${track.text}`} />
+                      </div>
+                      <div>
+                        <h3 className="text-[11px] font-black text-white uppercase tracking-widest">{track.name}</h3>
+                        <p className="text-[8px] text-gray-500 font-mono uppercase tracking-tighter">Channel {i + 1}</p>
+                      </div>
+                    </div>
+                    {!showAllBuses && (
+                      <button onClick={() => setExpandedBus(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all hover:scale-110">
+                        <Minimize2 className="w-4 h-4 text-gray-500" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Bus Content */}
+                  <div className="flex-1 flex p-8 gap-10 overflow-y-auto custom-scrollbar bg-black/20">
+                    {/* Meter & Fader */}
+                    <div className="flex flex-col items-center gap-6">
+                      <div className="bg-black/40 p-3 rounded-2xl border border-white/5 shadow-inner">
+                        <LEDMeter level={meters[i]?.level || 0} gr={meters[i]?.gr || 0} height={220} />
+                      </div>
+                      
+                      <div className="relative h-48 flex flex-col items-center group/fader">
+                        <div className="absolute top-0 bottom-0 w-1.5 bg-black/60 rounded-full border border-white/5 shadow-inner" />
+                        <input
+                          type="range" min="0" max="1.5" step="0.01"
+                          value={state.volume}
+                          onChange={e => updateTrack(i, 'volume', parseFloat(e.target.value))}
+                          onMouseUp={handleTrackChangeEnd}
+                          className="absolute inset-0 w-8 h-full opacity-0 cursor-pointer z-10 writing-mode-vertical"
+                          style={{ appearance: 'slider-vertical' }}
+                        />
+                        <motion.div 
+                          className={`absolute w-10 h-14 rounded-lg shadow-2xl border-2 border-white/10 flex flex-col items-center justify-center cursor-pointer transition-colors ${state.volume > 1.0 ? 'bg-red-600' : 'bg-[#2a2a35] group-hover/fader:bg-[#3a3a45]'}`}
+                          style={{ bottom: `${(state.volume / 1.5) * 100}%`, transform: 'translateY(50%)' }}
+                        >
+                          <div className="w-6 h-0.5 bg-white/20 rounded-full mb-1" />
+                          <div className="w-8 h-1 bg-studio-accent rounded-full shadow-[0_0_8px_rgba(255,215,0,0.5)]" />
+                          <div className="w-6 h-0.5 bg-white/20 rounded-full mt-1" />
+                        </motion.div>
+                      </div>
+                      <span className="text-[10px] font-mono text-gray-400">{(state.volume * 100).toFixed(0)}%</span>
+                    </div>
+                      <div className="flex flex-col gap-3">
+                        <button 
+                          onClick={() => updateTrack(i, 'mute', !state.mute)}
+                          className={`w-12 h-10 rounded-xl flex items-center justify-center transition-all border-2 ${state.mute ? 'bg-red-500 border-red-400 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-black/40 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                        >
+                          <Volume2 className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => updateTrack(i, 'solo', !state.solo)}
+                          className={`w-12 h-10 rounded-xl flex items-center justify-center transition-all border-2 ${state.solo ? 'bg-studio-yellow border-studio-yellow/50 text-black shadow-[0_0_15px_rgba(255,215,0,0.4)]' : 'bg-black/40 border-white/5 text-gray-500 hover:text-gray-300'}`}
+                        >
+                          <span className="text-xs font-black">S</span>
+                        </button>
+                      </div>
+
+                    {/* Controls Column */}
+                    <div className="flex-1 flex flex-col gap-8">
+                      {/* Presets Chips */}
+                      <div className="space-y-3">
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em]">Mix Presets</span>
+                        <div className="flex flex-wrap gap-2">
+                          {track.presets.map(p => (
+                            <button
+                              key={p}
+                              onClick={() => applyPresetToTrack(i, p)}
+                              className="px-3 py-1.5 rounded-lg bg-black/40 hover:bg-studio-accent/20 text-[8px] font-black text-gray-400 hover:text-studio-accent border border-white/5 transition-all uppercase tracking-widest"
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* EQ Section */}
+                      <div className="bg-black/40 p-4 rounded-2xl border border-white/5 shadow-inner">
+                        <ParametricEQ state={state} onChange={(key: string, val: number) => updateTrack(i, key, val)} />
+                      </div>
+
+                      {/* Pan & Space */}
+                      <div className="grid grid-cols-2 gap-6 pt-4 border-t border-white/5">
+                        <MacroKnob label="Pan" value={state.pan} min={-1} max={1} onChange={(v: number) => updateTrack(i, 'pan', v)} color="studio-fg" tooltip="Left/Right Balance" />
+                        <MacroKnob label="Reverb" value={state.reverb} min={0} max={1} onChange={(v: number) => updateTrack(i, 'reverb', v)} color="studio-aqua" tooltip="Space/Depth" />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+
+            {/* Master Bus Column */}
+            {(expandedBus === 'master' || showAllBuses) && (
+              <motion.div 
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 360, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                className="flex flex-col border-r border-white/10 h-full bg-studio-accent/5 relative"
+              >
+                <div className="absolute top-0 left-0 w-full h-1 bg-studio-accent opacity-30" />
+                <div className="p-5 flex items-center justify-between bg-black/40 border-b border-white/10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 rounded-2xl bg-studio-accent shadow-[0_0_20px_rgba(255,215,0,0.2)] border border-white/20">
+                      <Activity className="w-6 h-6 text-black" />
+                    </div>
+                    <div>
+                      <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Master Bus</h3>
+                      <p className="text-[8px] text-studio-accent font-mono uppercase tracking-tighter">Final Output</p>
+                    </div>
+                  </div>
+                  {!showAllBuses && (
+                    <button onClick={() => setExpandedBus(null)} className="p-2 hover:bg-white/10 rounded-xl transition-all hover:scale-110">
+                      <Minimize2 className="w-4 h-4 text-gray-500" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex-1 flex p-8 gap-10 overflow-y-auto custom-scrollbar bg-black/40">
+                  <div className="flex flex-col items-center gap-6">
+                    <div className="bg-black/60 p-3 rounded-2xl border border-white/10 shadow-2xl">
+                      <LEDMeter level={meters[4]?.level || 0} gr={meters[4]?.gr || 0} height={220} />
+                    </div>
+                    
+                    <div className="relative h-48 flex flex-col items-center group/fader">
+                      <div className="absolute top-0 bottom-0 w-2 bg-black/80 rounded-full border border-white/10 shadow-inner" />
+                      <input
+                        type="range" min="0" max="1.5" step="0.01"
+                        value={masterVolume}
+                        onChange={e => setMasterVolume(parseFloat(e.target.value))}
+                        className="absolute inset-0 w-10 h-full opacity-0 cursor-pointer z-10 writing-mode-vertical"
+                        style={{ appearance: 'slider-vertical' }}
+                      />
+                      <motion.div 
+                        className={`absolute w-12 h-16 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.6)] border-2 border-white/20 flex flex-col items-center justify-center cursor-pointer transition-colors ${masterVolume > 1.0 ? 'bg-red-600' : 'bg-studio-accent group-hover/fader:bg-studio-yellow'}`}
+                        style={{ bottom: `${(masterVolume / 1.5) * 100}%`, transform: 'translateY(50%)' }}
+                      >
+                        <div className="w-8 h-0.5 bg-black/20 rounded-full mb-1" />
+                        <div className="w-10 h-1.5 bg-black/40 rounded-full shadow-inner" />
+                        <div className="w-8 h-0.5 bg-black/20 rounded-full mt-1" />
+                      </motion.div>
+                    </div>
+                    <div className="w-12 h-10 rounded-xl bg-studio-accent/10 border-2 border-studio-accent/30 flex items-center justify-center text-studio-accent shadow-[0_0_15px_rgba(255,215,0,0.1)]">
+                      <Radio className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex flex-col gap-10">
+                    <div className="space-y-5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Master Macros</span>
+                        <button 
+                          onClick={() => setShowAdvancedMaster(!showAdvancedMaster)}
+                          className="text-[9px] font-black text-studio-accent hover:text-studio-yellow uppercase tracking-widest transition-colors"
+                        >
+                          {showAdvancedMaster ? 'Basic' : 'Advanced'}
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-8">
+                        <MacroKnob label="Tone" value={masterTone} min={0} max={1} onChange={setMasterTone} color="studio-yellow" tooltip="Warm to Bright" />
+                        <MacroKnob label="Space" value={masterSpace} min={0} max={1} onChange={setMasterSpace} color="studio-aqua" tooltip="Global Reverb" />
+                        <MacroKnob label="Loudness" value={masterLoudness} min={0} max={1} onChange={setMasterLoudness} color="red-500" tooltip="Master Compression" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Output Visualizer</span>
+                      <div className="w-full h-32 bg-black/80 rounded-2xl border border-white/10 overflow-hidden shadow-inner relative">
+                        <div className="absolute inset-0 bg-gradient-to-t from-studio-accent/5 to-transparent pointer-events-none" />
+                        <canvas ref={canvasRef} width={300} height={128} className="w-full h-full" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
-          <div className="text-center text-[10px] font-bold tracking-widest text-indigo-400/50 relative z-10">MASTER</div>
         </div>
-
       </div>
+      {/* Global CSS for Vertical Faders */}
+      <style>{`
+        .fader-vertical {
+          -webkit-appearance: none;
+          appearance: none;
+          background: transparent;
+          cursor: pointer;
+          width: 192px !important; /* Match height of container */
+          height: 40px !important;
+          transform: rotate(-90deg) translate(-76px, 0px); /* Center in container */
+          margin: 0;
+        }
+        .fader-vertical::-webkit-slider-runnable-track {
+          width: 100%;
+          height: 4px;
+          background: transparent;
+        }
+        .fader-vertical::-webkit-slider-thumb {
+          height: 32px;
+          width: 20px;
+          border-radius: 4px;
+          background: #27272a;
+          cursor: pointer;
+          -webkit-appearance: none;
+          margin-top: -14px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+          border: 1px solid #09090b;
+          background-image: linear-gradient(to right, transparent 45%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.1) 55%, transparent 55%);
+        }
+        .fader-vertical:hover::-webkit-slider-thumb {
+          background: #3f3f46;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+          height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(0,0,0,0.2);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(99, 102, 241, 0.3);
+          border-radius: 10px;
+        }
+        .writing-mode-vertical {
+          writing-mode: vertical-rl;
+        }
+      `}</style>
     </div>
   );
 }

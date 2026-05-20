@@ -26,6 +26,9 @@ export const getWallet  = () => apiGet("/wallet");
 export const getVibes   = () => apiGet("/vibes");
 export const getBloodlines = () => apiGet("/leaderboard/bloodlines");
 
+export const getDuetProfiles = () => apiGet("/duet/profiles");
+export const generateDuet    = (body) => apiPost("/duet/generate", body);
+
 export const uploadForDemucs = (file) => {
   const form = new FormData();
   form.append("file", file);

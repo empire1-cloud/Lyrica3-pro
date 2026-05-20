@@ -1,4 +1,4 @@
-import VICSModule from '../studio/VICSModule';
+import VICSModule from '../components/studio/VICSModule';
 import { motion } from 'motion/react';
 import { ShieldCheck } from 'lucide-react';
 

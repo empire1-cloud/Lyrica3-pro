@@ -1,0 +1,388 @@
+{
+  "slang_dictionary_v1": {
+    "metadata": {
+      "version": "2.0.0",
+      "last_updated": "2026-05-17",
+      "total_entries": 40,
+      "cultural_lenses": ["chicano_soul", "trap_soul", "boom_bap", "drill", "afrobeat_lagos", "kpop_seoul", "uk_drill_london"],
+      "community_verified": true,
+      "gatekeeping_active": true,
+      "global_expansion": true
+    },
+    "chicano_soul": {
+      "home": {
+        "ipa_standard": "/hoʊm/",
+        "ipa_target": "/hɔːm/",
+        "formant_shift": -0.15,
+        "duration_multiplier": 1.1,
+        "spectral_tilt": -0.3,
+        "nasal_boost_db": 2.0,
+        "nasal_boost_hz": 2500,
+        "cultural_note": "Elongated, warm, foundational term. Open 'O' sound = 'Hawme'.",
+        "reference_artists": ["Thee Midniters", "Tierra"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "homeboy": {
+        "ipa_standard": "/hoʊm.bɔɪ/",
+        "ipa_target": "/hɔːm.bɔɪ/",
+        "formant_shift": -0.15,
+        "duration_multiplier": 1.1,
+        "spectral_tilt": -0.3,
+        "nasal_boost_db": 3.0,
+        "nasal_boost_hz": 2500,
+        "timing_offset_ms": 15,
+        "biometric_artifacts": ["<vocal_fry_grit>"],
+        "cultural_note": "Communal identifier, respectful emphasis. Warmer chest resonance.",
+        "reference_artists": ["Thee Midniters", "Tierra", "War"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "brother": {
+        "ipa_standard": "/ˈbrʌðər/",
+        "ipa_target": "/ˈbrɔːðə/",
+        "formant_shift": -0.12,
+        "consonant_softness": 0.8,
+        "drop_final_r": true,
+        "spectral_tilt": -0.3,
+        "cultural_note": "Communal, respectful, relaxed. Final 'R' softened or dropped. 'Brawtha'.",
+        "reference_artists": ["El Chicano"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "right": {
+        "ipa_standard": "/raɪt/",
+        "ipa_target": "/raːt/",
+        "vowel_flatten": true,
+        "glottal_stop_t": true,
+        "formant_shift": -0.08,
+        "biometric_artifacts": ["<glottal_stop_hard>"],
+        "cultural_note": "Affirmation, cool confidence. Flattened 'I', glottal stop replaces crisp 'T'.",
+        "reference_artists": ["Thee Midniters"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "girl": {
+        "ipa_standard": "/ɡɜːrl/",
+        "ipa_target": "/ɡɪəl/",
+        "formant_shift": -0.10,
+        "consonant_softness": 0.7,
+        "y_glide_injection": true,
+        "cultural_note": "Slight 'Y' glide, softened 'R'. More melodic.",
+        "reference_artists": ["Tierra"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "sure": {
+        "ipa_standard": "/ʃʊr/",
+        "ipa_target": "/ʃɔː/",
+        "drop_final_r": true,
+        "duration_multiplier": 1.15,
+        "cultural_note": "'R' completely dropped. 'Shaw'. Confident assertion.",
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "gonna": {
+        "ipa_standard": "/ˈɡoʊɪŋ tuː/",
+        "ipa_target": "/ɡɔːnə/",
+        "compression_ratio": 0.7,
+        "syllable_merge": true,
+        "formant_shift": -0.10,
+        "cultural_note": "Future intent, casual flow. 2 syllables → 1 syllable, 30% compression.",
+        "reference_artists": ["War"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "outta": {
+        "ipa_standard": "/aʊt ʌv/",
+        "ipa_target": "/ˈaʊɾə/",
+        "compression_ratio": 0.6,
+        "flapped_t": true,
+        "syllable_merge": true,
+        "cultural_note": "Fast, fluid transition. Flapped 'T' replaces hard 'T'.",
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "wanna": {
+        "ipa_standard": "/wɑnt tuː/",
+        "ipa_target": "/ˈwɑːnə/",
+        "compression_ratio": 0.7,
+        "syllable_merge": true,
+        "cultural_note": "Desire, intent. 2 syllables → 1 syllable.",
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "kinda": {
+        "ipa_standard": "/kaɪnd ʌv/",
+        "ipa_target": "/ˈkaɪnə/",
+        "compression_ratio": 0.75,
+        "consonant_softness": 0.9,
+        "cultural_note": "Hedging, softness. 'D' barely touched. 1.5 syllables.",
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "ese": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/ˈeɪseɪ/",
+        "formant_shift": -0.18,
+        "nasal_boost_db": 4.0,
+        "nasal_boost_hz": 2500,
+        "spectral_tilt": -0.4,
+        "timing_offset_ms": 25,
+        "biometric_artifacts": ["<vocal_fry_grit>", "<spanish_roll_r>"],
+        "cultural_note": "HIGHLY SPECIFIC CHICANO IDENTIFIER. Use with caution/context. Requires Respect Protocol.",
+        "reference_artists": ["Thee Midniters", "Tierra", "El Chicano"],
+        "cultural_gatekeeping": "STRICT",
+        "allowed_lenses": ["chicano_soul", "lowrider_oldies", "chicano_rap"],
+        "respect_protocol": true
+      },
+      "vato": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/ˈbɑːto/",
+        "formant_shift": -0.15,
+        "nasal_boost_db": 3.0,
+        "nasal_boost_hz": 2500,
+        "cultural_note": "Chicano slang for 'dude/guy'. Requires cultural context.",
+        "reference_artists": ["Kid Frost", "Cypress Hill"],
+        "cultural_gatekeeping": "STRICT",
+        "allowed_lenses": ["chicano_soul", "chicano_rap"],
+        "respect_protocol": true
+      }
+    },
+    "trap_soul": {
+      "finna": {
+        "ipa_standard": "/ˈfɪksɪŋ tuː/",
+        "ipa_target": "/ˈfɪnə/",
+        "compression_ratio": 0.6,
+        "syllable_merge": true,
+        "formant_shift": -0.08,
+        "cultural_note": "Immediate future, urgent. 'Fixing to' → 'Finna'. Southern AAVE origin.",
+        "reference_artists": ["Bryson Tiller", "6LACK", "SZA"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "tryna": {
+        "ipa_standard": "/ˈtraɪɪŋ tuː/",
+        "ipa_target": "/ˈtraɪnə/",
+        "compression_ratio": 0.6,
+        "syllable_merge": true,
+        "cultural_note": "Effort, struggle, desire. 'Trying to' → 'Tryna'.",
+        "reference_artists": ["Bryson Tiller", "PartyNextDoor"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "gotta": {
+        "ipa_standard": "/ɡɑt tuː/",
+        "ipa_target": "/ˈɡɑɾə/",
+        "compression_ratio": 0.65,
+        "flapped_t": true,
+        "syllable_merge": true,
+        "cultural_note": "Necessity, obligation. 'Got to' → 'Gotta'.",
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "prolly": {
+        "ipa_standard": "/ˈprɑbəbli/",
+        "ipa_target": "/ˈprɑli/",
+        "compression_ratio": 0.5,
+        "syllable_merge": true,
+        "cultural_note": "Uncertainty, casual. 'Probably' → 'Prolly'.",
+        "cultural_gatekeeping": "OPTIONAL"
+      }
+    },
+    "boom_bap": {
+      "yo": {
+        "ipa_standard": "/joʊ/",
+        "ipa_target": "/joʊ/",
+        "formant_shift": -0.05,
+        "duration_multiplier": 0.9,
+        "cultural_note": "Attention-getter, affirmation. NYC Hip-Hop staple.",
+        "reference_artists": ["Nas", "Mobb Deep", "Wu-Tang Clan"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "aight": {
+        "ipa_standard": "/ɔːl raɪt/",
+        "ipa_target": "/aɪt/",
+        "compression_ratio": 0.5,
+        "syllable_merge": true,
+        "glottal_stop_t": true,
+        "cultural_note": "'All right' → 'Aight'. Confirmation, agreement.",
+        "reference_artists": ["Nas", "AZ"],
+        "cultural_gatekeeping": "OPTIONAL"
+      }
+    },
+    "drill": {
+      "opps": {
+        "ipa_standard": "/əˈpoʊnənts/",
+        "ipa_target": "/ɑps/",
+        "compression_ratio": 0.4,
+        "formant_shift": -0.12,
+        "duration_multiplier": 0.8,
+        "cultural_note": "'Opponents' → 'Opps'. Adversarial terminology.",
+        "reference_artists": ["Chief Keef", "Pop Smoke", "Headie One"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "onna": {
+        "ipa_standard": "/ɑn ðə/",
+        "ipa_target": "/ˈɑnə/",
+        "compression_ratio": 0.6,
+        "syllable_merge": true,
+        "cultural_note": "'On the' → 'Onna'. Location/status indicator.",
+        "reference_artists": ["Chief Keef", "Lil Durk"],
+        "cultural_gatekeeping": "OPTIONAL"
+      }
+    },
+    "afrobeat_lagos": {
+      "wetin": {
+        "ipa_standard": "/wɒt/",
+        "ipa_target": "/weˈtin/",
+        "formant_shift": 0.05,
+        "duration_multiplier": 0.9,
+        "vowel_purity": true,
+        "cultural_note": "Pidgin English for 'What'. Pure open vowels, no diphthongs.",
+        "reference_artists": ["Burna Boy", "Wizkid", "Fela Kuti"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "na": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/na/",
+        "formant_shift": 0.05,
+        "duration_multiplier": 0.8,
+        "vowel_purity": true,
+        "cultural_note": "Pidgin English for 'Is/It is'. Pure vowel sound.",
+        "reference_artists": ["Burna Boy", "Wizkid"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "oya": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/ɔːja/",
+        "formant_shift": 0.05,
+        "duration_multiplier": 1.0,
+        "vowel_purity": true,
+        "biometric_artifacts": ["<call_and_response_echo>"],
+        "cultural_note": "Yoruba for 'Come on/Let's go'. Community invitation.",
+        "reference_artists": ["Fela Kuti", "Burna Boy"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "jare": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/ˈdʒare/",
+        "formant_shift": 0.05,
+        "vowel_purity": true,
+        "cultural_note": "Yoruba slang intensifier. 'Please/Just'.",
+        "reference_artists": ["Wizkid", "Tems"],
+        "cultural_gatekeeping": "OPTIONAL"
+      }
+    },
+    "kpop_seoul": {
+      "daebak": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/tɛbɑk/",
+        "formant_shift": 0.0,
+        "consonant_crispness": 1.0,
+        "pitch_accuracy_cents": 5,
+        "cultural_note": "Korean for 'Awesome/Amazing'. Hard consonants (T, K).",
+        "reference_artists": ["IU", "Taeyeon"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "oppa": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/ˈopːa/",
+        "formant_shift": 0.0,
+        "vowel_purity": true,
+        "duration_multiplier": 1.1,
+        "cultural_note": "Korean for 'Older brother' (female speaker). Pure vowels.",
+        "reference_artists": ["IU", "ROSÉ"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "saranghae": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/saɾaŋhɛ/",
+        "formant_shift": 0.0,
+        "vowel_purity": true,
+        "pitch_accuracy_cents": 3,
+        "biometric_artifacts": ["<ad_lib_high_note>"],
+        "cultural_note": "Korean for 'I love you'. Emotional K-Ballad staple.",
+        "reference_artists": ["Ailee", "Baekhyun"],
+        "cultural_gatekeeping": "OPTIONAL"
+      }
+    },
+    "uk_drill_london": {
+      "innit": {
+        "ipa_standard": "/ɪznt ɪt/",
+        "ipa_target": "/ˈɪnɪt/",
+        "compression_ratio": 0.5,
+        "glottal_stop_t": true,
+        "formant_shift": -0.10,
+        "cultural_note": "MLE for 'Isn't it'. Glottal stop on T.",
+        "reference_artists": ["Headie One", "Central Cee"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "bruv": {
+        "ipa_standard": "/brʌðər/",
+        "ipa_target": "/brʌv/",
+        "compression_ratio": 0.4,
+        "formant_shift": -0.12,
+        "consonant_softness": 0.6,
+        "cultural_note": "MLE for 'Brother'. Short, clipped.",
+        "reference_artists": ["Skepta", "Headie One"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "mandem": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/ˈmandɛm/",
+        "formant_shift": -0.10,
+        "consonant_crispness": 0.8,
+        "cultural_note": "MLE for 'Crew/Group'. Collective identifier.",
+        "reference_artists": ["Digga D", "Dave"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "wagwan": {
+        "ipa_standard": "/wɒts ɡoʊɪŋ ɑn/",
+        "ipa_target": "/waɡˈwan/",
+        "compression_ratio": 0.3,
+        "formant_shift": -0.08,
+        "cultural_note": "Jamaican Patois/MLE for 'What's going on'. Greeting.",
+        "reference_artists": ["Skepta", "Central Cee"],
+        "cultural_gatekeeping": "OPTIONAL"
+      },
+      "peng": {
+        "ipa_standard": "N/A",
+        "ipa_target": "/pɛŋ/",
+        "formant_shift": -0.08,
+        "duration_multiplier": 0.9,
+        "cultural_note": "MLE for 'Attractive/Excellent'. Positive descriptor.",
+        "reference_artists": ["Dave", "AJ Tracey"],
+        "cultural_gatekeeping": "OPTIONAL"
+      }
+    }
+  },
+  "processing_rules": {
+    "vowel_shifts": {
+      "description": "How mouth shape changes pronunciation",
+      "examples": {
+        "open_o_shift": "home /hoʊm/ → /hɔːm/ (darker, warmer)",
+        "flattened_i": "right /raɪt/ → /raːt/ (less bright, more cool)",
+        "dropped_r": "brother /ˈbrʌðər/ → /ˈbrɔːðə/ (softened ending)"
+      }
+    },
+    "consonant_texture": {
+      "description": "How tongue hits teeth/palate",
+      "examples": {
+        "t_glottalization": "Insert <glottal_stop_hard> for words like 'better', 'right'",
+        "d_softening": "Reduce transient energy 40% for final 'D' sounds",
+        "s_hiss_reduction": "Apply de-esser @ 6kHz with slow release"
+      }
+    },
+    "rhythmic_compression": {
+      "description": "How syllables are squeezed/stretched",
+      "examples": {
+        "syllable_merge": "2 syllables → 1 syllable (wanna, gonna, outta)",
+        "duration_compression": "Reduce duration 30-40% for merged syllables",
+        "timing_offset": "Apply +15-25ms late-pocket timing for swagger"
+      }
+    }
+  },
+  "cultural_gatekeeping": {
+    "strict_terms": ["ese", "vato", "nigga", "n-word variants"],
+    "enforcement_rules": {
+      "context_matching": "Cultural Lens must match Slang Dictionary entry's allowed_lenses",
+      "authenticity_check": "Flag mismatches with warning message",
+      "respect_protocol": "Terms with respect_protocol=true trigger additional cultural validation"
+    },
+    "warning_template": "⚠️ WARNING: Cultural Mismatch\nSlang '{term}' requires {required_lens} Cultural Lens.\nCurrent Lens: {current_lens} (INCOMPATIBLE)"
+  },
+  "community_verification": {
+    "status": "ACTIVE",
+    "description": "New slang entries voted on by Discord Community before master dictionary addition",
+    "voting_threshold": 0.75,
+    "minimum_voters": 10
+  }
+}

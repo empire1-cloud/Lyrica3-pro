@@ -52,6 +52,16 @@ module.exports = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
+  			},
+  			'studio': {
+  				'bg': '#0a0a0a',
+  				'fg': '#f3ece1',
+  				'accent': '#ff1b8d',
+  				'pink': '#ff1b8d',
+  				'cyan': '#00f0ff',
+  				'yellow': '#ffd84d',
+  				'purple': '#a855f7',
+  				'aqua': '#09e19f'
   			}
   		},
   		keyframes: {

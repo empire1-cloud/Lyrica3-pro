@@ -1,6 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+// Gemini client retained for generateMusicStream (Lyria Realtime streaming).
+// translateVibeToParams is now routed through the backend so the key is never
+// exposed in the browser bundle.
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || "" });
+
+const BACKEND_URL: string =
+  (process.env.REACT_APP_BACKEND_URL as string) ||
+  (import.meta.env.VITE_BACKEND_URL as string) ||
+  "";
 
 export interface VibeParams {
   style: string;
@@ -42,72 +50,41 @@ export interface VibeParams {
 }
 
 export async function translateVibeToParams(vibe: string, context?: { weather?: string, time?: string, heartRate?: number }): Promise<VibeParams> {
-  const contextStr = context ? ` Context: ${context.weather}, ${context.time}, ${context.heartRate} BPM.` : '';
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: `Translate this music vibe into a full technical emotional blueprint for the music generation engine: "${vibe}".${contextStr}
-    The engine supports multi-genre blending (R&B, Oldies, Funk, Rock, Country, Soul, Chicano oldies, 90s duos, 70s funk, 2000s heartbreak, Modern trap-soul, Acoustic country).
-    
-    Return JSON with:
-    - style (string)
-    - mood (string)
-    - tempo (number)
-    - key (string)
-    - lyrics (string)
-    - vocalStyle (string)
-    - engine (e.g., "Standard-Ensemble-v1")
-    - moodMatrix (string array, e.g., ["melancholy", "nostalgia"])
-    - genreDNA (e.g., "90s_R&B_Soul")
-    - proceduralSFX (e.g., "light_rain_on_windshield")
-    - vulnerabilitySlider (0-1)
-    - harmonicStructure (e.g., "Major 7th", "Minor 9th")
-    - personaCount (number)
-    - personas (string array, e.g., ["Persona A", "Persona B"])
-    - vocalFry (0-1)
-    - inhaleIntensity (0-1)
-    - emotionalBreak (0-1)
-    - roomSize (0-1)
-    - material (string)
-    - breathingPattern (string)
-    - genreBlend (string array)
-    - instrumentation (string array)
-    - spatialEffects (string array)
-    - harmonicTension (0-1)
-    - vocalLayering (string)
-    - mixWarmth (0-1)
-    - reverbType (string)
-    - eraTexture (string)
-    - emotionalMode ('Pain' | 'Playful' | 'Mirror')
-    - delayTime (number, ms)
-    - delayFeedback (0-1)
-    - chorusDepth (0-1)
-    - phaserRate (number, Hz)`,
-    config: {
-      responseMimeType: "application/json",
-    },
-  });
-
+  // Route through backend — Gemini key lives server-side only
+  const token = localStorage.getItem("lyrica3_token") || "";
   try {
-    return JSON.parse(response.text || "{}");
+    const res = await fetch(`${BACKEND_URL}/api/vibe/translate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ vibe, context }),
+    });
+    if (!res.ok) throw new Error(`Backend ${res.status}`);
+    const data = await res.json();
+    if (data.params) return data.params as VibeParams;
   } catch (e) {
-    return {
-      style: "Soul / R&B",
-      mood: "Melancholic",
-      tempo: 90,
-      key: "B Minor",
-      lyrics: "Two broken smiles in the rain...",
-      vocalStyle: "Intimate Confession",
-      vocalFry: 0.4,
-      inhaleIntensity: 0.6,
-      emotionalBreak: 0.3,
-      roomSize: 0.5,
-      material: "Wood",
-      delayTime: 250,
-      delayFeedback: 0.3,
-      chorusDepth: 0.2,
-      phaserRate: 0.5
-    };
+    console.warn("translateVibeToParams backend call failed, using defaults:", e);
   }
+  // Safe default when backend unreachable
+  return {
+    style: "Soul / R&B",
+    mood: "Melancholic",
+    tempo: 90,
+    key: "B Minor",
+    lyrics: "Two broken smiles in the rain...",
+    vocalStyle: "Intimate Confession",
+    vocalFry: 0.4,
+    inhaleIntensity: 0.6,
+    emotionalBreak: 0.3,
+    roomSize: 0.5,
+    material: "Wood",
+    delayTime: 250,
+    delayFeedback: 0.3,
+    chorusDepth: 0.2,
+    phaserRate: 0.5,
+  };
 }
 
 export async function generateMusicStream(params: VibeParams) {

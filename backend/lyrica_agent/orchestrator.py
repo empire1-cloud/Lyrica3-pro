@@ -28,6 +28,14 @@ from .emotional_vector_calculator import (
     EmotionalVectorInputs,
     calculate_emotional_vector,
 )
+from .arre import (
+    calculate_bpm,
+    map_groove_to_offsets,
+    select_instrumentation,
+    build_music_generation_config,
+)
+from .csn import generate_csn_report
+from .vocal_archetypes import select_vocal_archetype, select_vocal_archetype_with_slang, VocalBlueprint
 
 
 # ---------------------------------------------------------
@@ -412,6 +420,10 @@ def run_lyrica_agent(
     5. Performance Directives → vocal timbre, phrasing, intensity
     6. DSP Modifiers → reverb, saturation, stereo width
     7. Respect Protocol → cultural sensitivity guardrails
+    8. ARRE → rhythmic mapping + instrumentation selection
+    9. Vocal Archetype → specific historical vocal style
+    10. Barrio Phonetics Engine → slang-aware phonetic transformations
+    11. CSN → cognitive justification (explains WHY choices were made)
     """
 
     # 1. Subtext
@@ -438,7 +450,7 @@ def run_lyrica_agent(
     # 6. DSP modifiers
     dsp = build_dsp_modifiers(ev)
 
-    # 7. Build blueprint
+    # 7. Build initial blueprint
     blueprint = LyricaAgentBlueprint(
         emotional_vector=ev,
         subtext=sub,
@@ -451,6 +463,50 @@ def run_lyrica_agent(
     respect = apply_respect_protocol(genre, blueprint)
     blueprint.respect_protocol = respect
     blueprint.vibe_check = vibe
+
+    # 9. ARRE: Rhythmic mapping + instrumentation
+    bpm = calculate_bpm(genre, ev)
+    rhythmic_mapping = map_groove_to_offsets(ev, genre, bpm)
+    instrumentation = select_instrumentation(genre, nodes, ev)
+    music_gen_config = build_music_generation_config(
+        instrumentation,
+        rhythmic_mapping,
+        ev,
+        user_goal or ""
+    )
+    
+    blueprint.rhythmic_mapping = rhythmic_mapping
+    blueprint.instrumentation = instrumentation
+    blueprint.music_generation_config = music_gen_config
+
+    # 10. Vocal Archetype + Slang Phonetics (Barrio Phonetics Engine)
+    vocal_archetype, slang_phonetics = select_vocal_archetype_with_slang(
+        genre, ev, nodes, lyric, user_goal
+    )
+    vocal_blueprint_obj = VocalBlueprint(
+        archetype=vocal_archetype,
+        performance_directives=perf,
+        autotune_amount=respect.autotune_amount if respect else "medium",
+        respect_protocol_active=respect.activated if respect else False,
+        slang_phonetics=slang_phonetics  # Include Barrio Phonetics DSP parameters
+    )
+    
+    blueprint.vocal_archetype = vocal_archetype
+    blueprint.vocal_blueprint = vocal_blueprint_obj
+
+    # 11. CSN: Cognitive Synthesis Network (justification report)
+    csn_justification = generate_csn_report(
+        user_goal=user_goal,
+        emotional_vector=ev,
+        cultural_nodes=nodes,
+        rhythmic_mapping=rhythmic_mapping,
+        instrumentation=instrumentation,
+        performance_directives=perf,
+        lyric=lyric,
+        genre=genre
+    )
+    
+    blueprint.csn_justification = csn_justification
 
     return blueprint
 
