@@ -87,15 +87,12 @@ async def vocal_performance(
         return None
     chosen_voice = voice or _MOOD_VOICE.get(mood, "onyx")
     try:
-        from emergentintegrations.llm.openai import OpenAITextToSpeech
-    except Exception as e:
-        logger.warning(f"TTS import failed: {e}")
-        return None
-    try:
-        tts = OpenAITextToSpeech(api_key=EMERGENT_LLM_KEY)
-        audio_bytes = await tts.generate_speech(
-            text=text, model=model, voice=chosen_voice, response_format="mp3"
+        import openai as _openai
+        _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
+        _resp = await _client.audio.speech.create(
+            model=model, voice=chosen_voice, input=text, response_format="mp3"
         )
+        audio_bytes = _resp.content
         Path(out_dir).mkdir(parents=True, exist_ok=True)
         uid = uuid.uuid4().hex[:10]
 

@@ -635,56 +635,83 @@ Hard rules:
 - Never sanitize pain. The Matriarch demands bruised subtext."""
 
 async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dict:
-    """Call Claude Sonnet 4.5 via EMERGENT_LLM_KEY. Internal prompt-engineering — never exposed."""
+    """Call Claude / Gemini via EMERGENT_LLM_KEY (OpenAI-compatible endpoint).
+    Internal prompt-engineering — never exposed to client."""
     lung, throat, fry, crack = recipe
+    eff_lung  = lung
+    eff_crack = crack
+    if req.vulnerability_override is not None:
+        v = max(0.0, min(1.0, req.vulnerability_override))
+        eff_lung  = round(lung  * 0.5 + v * 0.5, 3)
+        eff_crack = round(crack * 0.5 + v * 0.5, 3)
+    swing_note = ""
+    if req.swing_ms is not None:
+        swing_note = f"\nLate-Pocket Swing: {req.swing_ms}ms snare drag — encode this groove into the drum descriptor tags."
+    user_text = (
+        f"Cultural Matrix: {matrix}\n"
+        f"Biometric dials — lung_capacity={eff_lung:.3f}, throat_resonance={throat:.2f}, "
+        f"vocal_fry={fry:.2f}, emotional_cracks={eff_crack:.3f}\n"
+        f"Ghost audio artifact: {req.ghost_audio_name or 'none'}{swing_note}\n"
+        f"Raw lyric seed:\n{req.lyrics}\n\n"
+        f"Compose the Soulfire. Return JSON only."
+    )
+    # --- Primary: OpenAI-compatible client via EMERGENT_LLM_KEY ---
+    if EMERGENT_LLM_KEY:
+        try:
+            import openai as _openai
+            _client = _openai.AsyncOpenAI(
+                api_key=EMERGENT_LLM_KEY,
+                base_url="https://api.openai.com/v1",
+            )
+            _resp = await _client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": LML_SYSTEM},
+                    {"role": "user",   "content": user_text},
+                ],
+                temperature=0.9,
+                max_tokens=1200,
+            )
+            txt = _resp.choices[0].message.content.strip()
+            m = re.search(r"\{[\s\S]*\}", txt)
+            if m: txt = m.group(0)
+            data = json.loads(txt)
+            for k in ("title", "cultural_subtext", "lml"):
+                if k not in data or not isinstance(data[k], str):
+                    raise ValueError(f"missing {k}")
+            return data
+        except Exception as e:
+            logger.warning(f"OpenAI LML generation failed: {e} — trying Vertex AI")
+    # --- Secondary: Vertex AI Gemini ---
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"s2_{uuid.uuid4().hex[:8]}",
-            system_message=LML_SYSTEM,
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
-        # Apply studio control overrides when provided by frontend sliders
-        eff_lung  = lung
-        eff_crack = crack
-        if req.vulnerability_override is not None:
-            v = max(0.0, min(1.0, req.vulnerability_override))
-            eff_lung  = round(lung  * 0.5 + v * 0.5, 3)
-            eff_crack = round(crack * 0.5 + v * 0.5, 3)
-        swing_note = ""
-        if req.swing_ms is not None:
-            swing_note = f"\nLate-Pocket Swing: {req.swing_ms}ms snare drag — encode this groove into the drum descriptor tags."
-        user_text = (
-            f"Cultural Matrix: {matrix}\n"
-            f"Biometric dials — lung_capacity={eff_lung:.3f}, throat_resonance={throat:.2f}, "
-            f"vocal_fry={fry:.2f}, emotional_cracks={eff_crack:.3f}\n"
-            f"Ghost audio artifact: {req.ghost_audio_name or 'none'}{swing_note}\n"
-            f"Raw lyric seed:\n{req.lyrics}\n\n"
-            f"Compose the Soulfire. Return JSON only."
-        )
-        resp = await chat.send_message(UserMessage(text=user_text))
-        txt = resp.strip()
-        # strip accidental fences
+        import vertexai
+        from vertexai.generative_models import GenerativeModel
+        vertexai.init(project=os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8"),
+                      location=os.environ.get("VERTEX_LOCATION", "us-west1"))
+        def _sync():
+            model = GenerativeModel("gemini-1.5-pro", system_instruction=LML_SYSTEM)
+            return model.generate_content(user_text).text
+        txt = await asyncio.to_thread(_sync)
         m = re.search(r"\{[\s\S]*\}", txt)
         if m: txt = m.group(0)
         data = json.loads(txt)
-        # minimal validation
         for k in ("title", "cultural_subtext", "lml"):
             if k not in data or not isinstance(data[k], str):
                 raise ValueError(f"missing {k}")
         return data
     except Exception as e:
-        logger.warning(f"LLM fallback engaged: {e}")
-        seed = (req.lyrics or "").strip().splitlines()[0][:40] or "Untitled Soulfire"
-        return {
-            "title": seed.title(),
-            "cultural_subtext": f"Rooted in {matrix}. Encoded biometric truth, bruised subtext, tape-hiss memory.",
-            "lml": (f"<intro breath='deep' inhale='adaptive'/>\n[verse]\n"
-                    f"<vocal_fry depth='{fry:.2f}'>{req.lyrics.strip() or 'wildflowers in the cracks'}</vocal_fry>\n"
-                    f"<adaptive_inhale depth='deep'/>\n"
-                    f"<emotional_crack intensity='{crack:.2f}'>carry the name like a prayer</emotional_crack>\n"
-                    f"<tape_hiss level='subtle'/>"),
-        }
+        logger.warning(f"Vertex AI LML generation failed: {e} — using structured fallback")
+    # --- Final fallback: structured seed ---
+    seed = (req.lyrics or "").strip().splitlines()[0][:40] or "Untitled Soulfire"
+    return {
+        "title": seed.title(),
+        "cultural_subtext": f"Rooted in {matrix}. Encoded biometric truth, bruised subtext, tape-hiss memory.",
+        "lml": (f"<intro breath='deep' inhale='adaptive'/>\n[verse]\n"
+                f"<vocal_fry depth='{fry:.2f}'>{req.lyrics.strip() or 'wildflowers in the cracks'}</vocal_fry>\n"
+                f"<adaptive_inhale depth='deep'/>\n"
+                f"<emotional_crack intensity='{crack:.2f}'>carry the name like a prayer</emotional_crack>\n"
+                f"<tape_hiss level='subtle'/>"),
+    }
 
 @api_router.post("/generate")
 @limiter.limit("10/minute")
@@ -1316,27 +1343,20 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
         "eraTexture, emotionalMode, delayTime, delayFeedback, chorusDepth, phaserRate."
     )
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage  # type: ignore
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"vibe_translate_{user['handle']}",
-            system_message="You are a music production AI. Return ONLY valid JSON with the requested fields. No prose, no markdown.",
+        import openai as _openai
+        _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
+        _resp = await _client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a music production AI. Return ONLY valid JSON with the requested fields. No prose, no markdown."},
+                {"role": "user",   "content": prompt},
+            ],
+            temperature=0.7,
+            max_tokens=800,
         )
-        resp = await asyncio.to_thread(
-            chat.chat,
-            UserMessage(content=prompt),
-            model="google/gemini-2.0-flash",
-        )
-        raw = resp.text if hasattr(resp, "text") else str(resp)
-        # Strip markdown fences
-        clean = raw.strip()
-        if clean.startswith("```"):
-            parts = clean.split("```")
-            clean = parts[1] if len(parts) > 1 else clean
-            if clean.startswith("json"):
-                clean = clean[4:]
-        import json as _json
-        return {"status": "ok", "params": _json.loads(clean)}
+        raw = _resp.choices[0].message.content.strip()
+        clean = raw.lstrip("```json").lstrip("```").rstrip("```").strip()
+        return {"status": "ok", "params": json.loads(clean)}
     except Exception as e:
         logger.warning(f"vibe_translate error: {e}")
         raise HTTPException(500, f"Vibe translation failed: {e}")
@@ -1374,11 +1394,11 @@ async def universal_query(request: Request, req: UniversalQueryRequest, user: Di
     except Exception as vertex_err:
         logger.warning(f"Vertex AURA-EFAD failed ({vertex_err}), falling back to Claude LLM pipeline")
 
-    # Claude fallback — compress all 5 stages into one structured prompt
+    # OpenAI fallback — compress all 5 stages into one structured prompt
     if not EMERGENT_LLM_KEY:
         raise HTTPException(503, "Universal pipeline unavailable — no LLM key configured.")
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        import openai as _openai
         system = (
             "You are the SL Universal Lyrica 3 cognitive pipeline running 5 stages in sequence:\n"
             "AURA: Extract semantic intent, rhetorical devices, bruised subtext, culture/style anchors.\n"
@@ -1388,16 +1408,20 @@ async def universal_query(request: Request, req: UniversalQueryRequest, user: Di
             "EFAD: Assemble a final structured JSON result with keys: aura, efl, ase, echo, track_directive.\n"
             "Output ONLY valid JSON with these 5 keys. No prose, no markdown."
         )
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id=f"universal_{uuid.uuid4().hex[:8]}",
-            system_message=system,
-        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
-        resp = await chat.send_message(UserMessage(text=f"User query:\n{req.query}"))
-        txt = resp.strip()
+        _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
+        _resp = await _client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user",   "content": f"User query:\n{req.query}"},
+            ],
+            temperature=0.7,
+            max_tokens=1200,
+        )
+        txt = _resp.choices[0].message.content.strip()
         m = re.search(r"\{[\s\S]*\}", txt)
         data = json.loads(m.group(0) if m else txt)
-        return {"status": "success", "user_id": req.user_id, "pipeline": "claude:aura-efad-fallback", "result": data}
+        return {"status": "success", "user_id": req.user_id, "pipeline": "openai:aura-efad", "result": data}
     except Exception as e:
         logger.error(f"Universal query pipeline error: {e}")
         raise HTTPException(500, "Universal pipeline failed.")

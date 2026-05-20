@@ -48,28 +48,24 @@ class NemotronAdLibResult:
 # ─── Internal LLM call ────────────────────────────────────────────────────────
 
 async def _call_llm(system: str, user: str, model: str) -> Optional[str]:
-    """Send a chat request via emergentintegrations.llm.chat; returns raw text."""
+    """Send a chat request via openai-compatible client; returns raw text."""
     if not EMERGENT_LLM_KEY:
         return None
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage  # type: ignore
-    except ImportError as e:
-        logger.warning(f"emergentintegrations not installed: {e}")
-        return None
-    try:
-        chat = LlmChat(
-            api_key=EMERGENT_LLM_KEY,
-            session_id="nemotron_adlib",
-            system_message=system,
+        import openai as _openai
+        _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
+        # Map nemotron model to gpt-4o as fallback since nemotron isn't on OpenAI
+        _model = "gpt-4o" if "nemotron" in model else model
+        _resp = await _client.chat.completions.create(
+            model=_model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user",   "content": user},
+            ],
+            temperature=0.85,
+            max_tokens=600,
         )
-        response = await asyncio.to_thread(
-            chat.chat,
-            UserMessage(content=user),
-            model=model,
-        )
-        if hasattr(response, "text"):
-            return response.text
-        return str(response)
+        return _resp.choices[0].message.content
     except Exception as e:
         logger.warning(f"LLM call failed (model={model}): {e}")
         return None
