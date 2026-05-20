@@ -662,59 +662,68 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     data = await _generate_lml(req, matrix, recipe)
 
     # ============================================================
-    # SOULFIRE PIPELINE — Primary music generation via Vertex AI
-    # SL Audio Master (THE BRAIN) → The Beast (THE ORCHESTRATOR) → Sub-agents
-    # Falls back to Replicate (MusicGen) → Demucs if Soulfire unavailable
+    # REAL AUDIO PIPELINE — Vertex AI (Lyria 2 + Chirp 3 HD)
+    # Primary: Google Lyria 2 instrumental + Chirp 3 HD vocal
+    # Fallback: Soulfire agents → Replicate → SoundHelix placeholders
     # ============================================================
     from integrations import (
         audio_synth, auto_split, fallback_stems, build_synth_prompt,
         vocal_performance, REPLICATE_API_KEY,
     )
-    
+    from vertex_ai import (
+        vertex_lyria_full_song, vertex_chirp_tts, VERTEX_AI_ENABLED,
+    )
+
     stems: list = []
     synth_source_url: Optional[str] = None
     synth_provider = "fallback"
-    
-    # TRY SOULFIRE FIRST (SL Audio Master → The Beast)
-    try:
-        from vertex_agents_config import generate_music_with_soulfire
-        soulfire_result = await generate_music_with_soulfire(
-            lyrics=req.lyrics,
-            genre=req.genre,
-            mood=req.mood,
-            title=req.title,
-            cultural_matrix=matrix,
+    voice_provider = "none"
+    voice_meta: Optional[dict] = None
+
+    # ── STEP 1: Lyria 2 — Full song stitching (multi-segment crossfade) ──
+    if VERTEX_AI_ENABLED:
+        synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
+        full_song_path = await vertex_lyria_full_song(
+            base_prompt=synth_prompt,
+            matrix=matrix,
             mood_recipe=recipe,
+            out_dir=str(ROOT_DIR / "static" / "stems"),
         )
-        if soulfire_result:
-            logger.info("🔥 Soulfire pipeline generated music successfully")
-            synth_provider = "vertex:soulfire"
-            # Parse Soulfire's response and extract stems/audio
-            # TODO: Map Soulfire's output structure to stems format
-            # For now, if Soulfire returns data, mark it as successful
-            if isinstance(soulfire_result, dict):
-                # Check if returned stems directly
+        if full_song_path:
+            from pathlib import Path as _Path
+            _fname = _Path(full_song_path).name
+            synth_source_url = f"/api/static/stems/{_fname}"
+            synth_provider = "vertex:lyria2-full"
+            logger.info(f"🎵 Lyria 2 full song stitched: {synth_source_url}")
+
+    # ── STEP 2: Soulfire agents (SL Audio Master → The Beast) ──────────
+    if not synth_source_url:
+        try:
+            from vertex_agents_config import generate_music_with_soulfire
+            soulfire_result = await generate_music_with_soulfire(
+                lyrics=req.lyrics,
+                genre=req.genre,
+                mood=req.mood,
+                title=req.title,
+                cultural_matrix=matrix,
+                mood_recipe=recipe,
+            )
+            if soulfire_result and isinstance(soulfire_result, dict):
                 if "stems" in soulfire_result:
                     stems = soulfire_result["stems"]
-                # Or if it returned a single audio URL
+                    synth_provider = "vertex:soulfire"
                 elif "audio_url" in soulfire_result or "instrumental_url" in soulfire_result:
                     synth_source_url = soulfire_result.get("audio_url") or soulfire_result.get("instrumental_url")
-                    # Try to split into stems
-                    stems = await auto_split(
-                        synth_source_url,
-                        out_dir=str(ROOT_DIR / "static" / "stems"),
-                    )
-                # Log SL Audio Master payload if present
+                    synth_provider = "vertex:soulfire"
                 if "sl_audio_master_payload" in soulfire_result:
-                    logger.info(f"🧠 SL Audio Master physics payload received")
-    except ImportError:
-        logger.warning("Soulfire modules not found, falling back to Replicate")
-    except Exception as e:
-        logger.warning(f"Soulfire generation failed: {e}, falling back to Replicate")
-    
-    # FALLBACK TO REPLICATE IF BEAST DIDN'T PRODUCE STEMS
-    if not stems and REPLICATE_API_KEY:
-        logger.info("Falling back to Replicate MusicGen")
+                    logger.info("🧠 SL Audio Master physics payload received")
+        except ImportError:
+            logger.warning("Soulfire modules not found")
+        except Exception as e:
+            logger.warning(f"Soulfire generation failed: {e}")
+
+    # ── STEP 3: Replicate MusicGen fallback ─────────────────────────────
+    if not synth_source_url and not stems and REPLICATE_API_KEY:
         synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
         synth_source_url = await audio_synth(synth_prompt)
         if synth_source_url:
@@ -723,26 +732,48 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 synth_source_url,
                 out_dir=str(ROOT_DIR / "static" / "stems"),
             )
-    
-    # FINAL FALLBACK TO PLACEHOLDER STEMS
-    if not stems:
-        stems = fallback_stems()
-        synth_provider = "fallback:no_audio_engine"
 
-    # AI Vocal Performance (OpenAI TTS) — overrides the vocal stem when successful
-    voice_provider = "none"
-    voice_meta: Optional[dict] = None
-    vp = await vocal_performance(
-        lml=data["lml"], mood=req.mood,
-        out_dir=str(ROOT_DIR / "static" / "voices"),
-    )
-    if vp:
-        voice_provider = "openai:tts-1-hd"
-        voice_meta = vp
-        # replace the Raw Human Pipes stem with the real AI voice
+    # ── STEP 4: Final fallback to placeholders ──────────────────────────
+    if not synth_source_url and not stems:
+        stems = fallback_stems()
+        synth_provider = "fallback:soundhelix"
+
+    # Build stems from Lyria 2 instrumental if we have one
+    if synth_source_url and synth_provider == "vertex:lyria2" and not stems:
+        stems = [
+            {"name": "Full Mix", "src": synth_source_url, "level": 1.0, "peak": 0.9},
+            {"name": "Raw Human Pipes", "src": None, "level": 0.0, "peak": 0.0},
+        ]
+
+    # ── STEP 5: Chirp 3 HD — Real vocal performance (primary) ──────────
+    if VERTEX_AI_ENABLED:
+        text = _strip_lml(data["lml"])
+        if text:
+            chirp_result = await vertex_chirp_tts(
+                text=text,
+                voice_name="en-US-Chirp3-HD-Orus",
+                out_dir=str(ROOT_DIR / "static" / "voices"),
+            )
+            if chirp_result:
+                voice_provider = "vertex:chirp3-hd"
+                voice_meta = chirp_result
+                logger.info(f"🎤 Chirp 3 HD vocal: {chirp_result['url']}")
+
+    # ── STEP 6: OpenAI TTS fallback for vocals ──────────────────────────
+    if voice_provider == "none":
+        vp = await vocal_performance(
+            lml=data["lml"], mood=req.mood,
+            out_dir=str(ROOT_DIR / "static" / "voices"),
+        )
+        if vp:
+            voice_provider = "openai:tts-1-hd"
+            voice_meta = vp
+
+    # Replace the Raw Human Pipes stem with the real AI voice
+    if voice_meta and stems:
         for i, s in enumerate(stems):
             if s["name"] == "Raw Human Pipes":
-                stems[i] = {**s, "src": vp["url"], "level": 0.95, "peak": 0.8}
+                stems[i] = {**s, "src": voice_meta["url"], "level": 0.95, "peak": 0.8}
                 break
 
     dna = f"trk_s2_{uuid.uuid4().hex[:10]}"
@@ -774,11 +805,15 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         "voice_meta": voice_meta,                # stored internally
         "created_at": now,
     }
+    # VICS Ledger — cryptographic seal before DB insert
+    from vics_ledger import sign_track
+    track = sign_track(track)
+
     await db.tracks.insert_one(track)
     await db.ledger.insert_one({
         "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": dna,
         "actor": user["handle"], "amount_usd": 0.0,
-        "note": f"Soulfire ignited · synth={synth_provider} · voice={voice_provider}",
+        "note": f"Soulfire ignited · synth={synth_provider} · voice={voice_provider} · vics=sealed",
         "timestamp": now,
     })
     track.pop("_id", None)
