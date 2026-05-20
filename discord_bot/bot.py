@@ -298,7 +298,7 @@ async def remix(
         if genre:
             payload["genre"] = genre.value
         r = await auth._client.post(
-            f"{EMPIRE1_API_URL}/api/flip",
+            f"{EMPIRE1_API_URL}/api/tracks/{dna}/flip",
             headers={"Authorization": f"Bearer {t}"},
             json=payload,
         )
@@ -393,8 +393,10 @@ async def royalties(interaction: discord.Interaction):
     await interaction.response.defer(thinking=True, ephemeral=True)
     try:
         t = await auth.token()
+        # Note: uses the bot service account. When user handle mapping
+        # is implemented, pass the Discord user's Empire 1 handle instead.
         r = await auth._client.get(
-            f"{EMPIRE1_API_URL}/api/royalties/me",
+            f"{EMPIRE1_API_URL}/api/royalties/dashboard/{EMPIRE1_BOT_HANDLE}",
             headers={"Authorization": f"Bearer {t}"},
         )
         r.raise_for_status()
@@ -403,31 +405,30 @@ async def royalties(interaction: discord.Interaction):
         await interaction.followup.send(f"❌ Royalty ledger unreachable: `{e}`", ephemeral=True)
         return
 
-    wallet  = data.get("wallet", {}) or {}
-    chain   = data.get("active_chains", []) or []
-    balance = wallet.get("balance_usd", 0.0)
-    pending = wallet.get("pending_usd", 0.0)
-    total   = wallet.get("total_earned_usd", 0.0)
+    total   = data.get("total_earnings_usd", 0.0)
+    by_role = data.get("earnings_by_role", {}) or {}
+    tracks  = data.get("tracks_created", 0)
+    recent  = data.get("recent_distributions", []) or []
 
     embed = discord.Embed(
-        title="💰 Your Empire 1 Royalty Wallet",
+        title="💰 Empire 1 Royalty Dashboard",
         description=f"Snapshot for `{interaction.user.display_name}`",
         color=AMBER,
     )
-    embed.add_field(name="Balance",       value=f"**${balance:,.2f}**",  inline=True)
-    embed.add_field(name="Pending",       value=f"${pending:,.2f}",       inline=True)
-    embed.add_field(name="Total Earned",  value=f"${total:,.2f}",         inline=True)
+    embed.add_field(name="Total Earned",   value=f"**${total:,.2f}**",     inline=True)
+    embed.add_field(name="Tracks Created", value=f"{tracks}",              inline=True)
+    embed.add_field(name="Distributions",  value=f"{data.get('distributions_received', 0)}", inline=True)
 
-    if chain:
-        embed.add_field(name="\u200b", value="**Active Royalty Chains**", inline=False)
-        for ch in chain[:5]:
-            root_dna = ch.get("root_dna", "—")
-            pct      = ch.get("your_share", 0.0)
-            earned   = ch.get("earned_usd", 0.0)
-            rule     = ch.get("rule_applied", "—")
+    if by_role:
+        role_lines = "\n".join(f"**{role}**: ${amt:,.2f}" for role, amt in by_role.items())
+        embed.add_field(name="Earnings by Role", value=role_lines or "—", inline=False)
+
+    if recent:
+        embed.add_field(name="\u200b", value="**Recent Distributions**", inline=False)
+        for dist in recent[:5]:
             embed.add_field(
-                name=f"`{root_dna}` · {pct:.0%} share",
-                value=f"Earned **${earned:,.2f}** · Rule `{rule}`",
+                name=f"`{dist.get('track_id', '—')}` · {dist.get('role', '—')}",
+                value=f"**${dist.get('amount_usd', 0):,.2f}** · {dist.get('source', '—')}",
                 inline=False,
             )
     embed.set_footer(text="RULE_001/002/003 · Royalty Chain Engine · SLA-113 · Lyrica 3 Pro")
@@ -501,6 +502,7 @@ def main():
         port = int(os.environ.get("PORT", "8080"))
         app = web.Application()
         app.router.add_get("/", _health)
+        app.router.add_get("/health", _health)
         runner = web.AppRunner(app)
         await runner.setup()
         await web.TCPSite(runner, "0.0.0.0", port).start()
