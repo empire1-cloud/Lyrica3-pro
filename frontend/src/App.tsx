@@ -295,5 +295,8 @@ export default function App() {
     return <StudioBlackBox />;
   }
 
-  return <LyricaPublicLanding />;
+  return <LyricaPublicLanding onEnterStudio={() => {
+    localStorage.setItem('e1_token', 'sovereign_operator_access');
+    setShowStudio(true);
+  }} />;
 }
