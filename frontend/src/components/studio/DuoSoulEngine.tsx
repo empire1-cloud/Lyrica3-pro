@@ -164,10 +164,6 @@ Xochitl: Bajo la luna, bailamos con el viento.`
       }
     } catch (error) {
       console.error("Failed to generate duet:", error);
-      // Fallback simulation for the Empire
-      setTimeout(() => {
-        setIsRenderComplete(true);
-      }, 2000);
     } finally {
       setIsGenerating(false);
     }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Wand2, Dna, Shuffle, Activity, Lock, Play, Loader2, CheckCircle2, Waves, Zap, User, ChevronDown, AlertTriangle, Key, Mic2, Sparkles } from 'lucide-react';
 import { VOCAL_PROFILES } from './VoiceAuditionGallery';
+import { generate } from '../../lib/api';
 
 const OBSIDIAN_LACE_PAYLOAD = {
   track_metadata: {
@@ -36,25 +37,48 @@ export default function S2Synthesizer() {
   const [coreGenre, setCoreGenre] = useState('UK Drill');
   const [vocalState, setVocalState] = useState(85);
   const [fusionHypothesis, setFusionHypothesis] = useState<string | null>(null);
-
-  const HYPOTHESES = [
-    "Transplanting UK Drill sliding 808s into a 1960s Chicano Souldies harmonic structure.",
-    "Juxtaposing Corrido Tumbado requinto patterns with Phonk drift textures.",
-    "Mapping 'Hurt-Girl' mirror energy onto a surgical Trap groove.",
-    "Synthesizing vintage analog tape flutter with modern UK Drill hi-hat geometry."
-  ];
+  const [fusionResult, setFusionResult] = useState<any>(null);
+  const [fusionError, setFusionError] = useState<string | null>(null);
 
   const currentProfile = VOCAL_PROFILES.find(p => p.voiceName === selectedVoice) || VOCAL_PROFILES[0];
 
-  const executeFusion = () => {
+  // Map UI genre to backend genre values
+  const GENRE_MAP: Record<string, string> = {
+    'UK Drill': 'Drill',
+    'Corrido Tumbado': 'Corridos',
+    'Trap': 'Trap Soul',
+    'Souldies': 'SGV Oldies',
+  };
+
+  const executeFusion = async () => {
+    if (isFusing) return;
     setIsFusing(true);
+    setFusionError(null);
+    setFusionResult(null);
     setFusionState('dissecting');
-    setTimeout(() => setFusionState('aligning'), 2500);
-    setTimeout(() => {
+
+    // Transition to 'aligning' after brief UI delay
+    await new Promise(r => setTimeout(r, 1500));
+    setFusionState('aligning');
+
+    try {
+      const lyricsPrompt = `${songTitle} — S2 metamorphic collision. Mutation: ${mutationLevel}%. Disruption: ${disruptionHeuristics}%. Vocal presence: ${vocalState}%.`;
+      const result = await generate({
+        lyrics: lyricsPrompt,
+        genre: GENRE_MAP[coreGenre] || coreGenre,
+        mood: 'Late-Night Honesty',
+        title: songTitle,
+        vulnerability_override: vocalState / 100,
+      });
+      setFusionResult(result);
+      setFusionHypothesis(result?.biometrics?.production_note || `S2 collision: ${coreGenre} primitives fused at ${mutationLevel}% mutation depth.`);
       setFusionState('complete');
+    } catch (err: any) {
+      setFusionError(err?.response?.data?.detail || err?.message || 'Fusion failed.');
+      setFusionState('idle');
+    } finally {
       setIsFusing(false);
-      setFusionHypothesis(HYPOTHESES[Math.floor(Math.random() * HYPOTHESES.length)]);
-    }, 5500);
+    }
   };
 
   return (
@@ -226,14 +250,22 @@ export default function S2Synthesizer() {
                     </div>
                     <div className="space-y-4">
                       <h3 className="text-3xl font-serif italic text-white">Mutation Successful</h3>
+                      {fusionResult?.dna_tag && (
+                        <div className="text-xs font-mono text-velvet-purple/80">{fusionResult.dna_tag}</div>
+                      )}
                       <div className="p-6 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl">
                         <p className="text-lg text-slate-300 font-serif leading-relaxed italic">
                           "{fusionHypothesis}"
                         </p>
                       </div>
+                      {fusionResult?.audio_url && (
+                        <audio controls src={fusionResult.audio_url} className="w-full mt-2" />
+                      )}
                     </div>
                     <div className="flex gap-4">
-                      <button className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:bg-white/10 transition-colors">Export Stems</button>
+                      {fusionResult?.audio_url && (
+                        <a href={fusionResult.audio_url} download className="px-6 py-2.5 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:bg-white/10 transition-colors">Download</a>
+                      )}
                       <button className="px-6 py-2.5 bg-velvet-purple/20 border border-velvet-purple/30 rounded-full text-[10px] font-bold uppercase tracking-widest text-velvet-purple hover:bg-velvet-purple/30 transition-colors">Mint DNA</button>
                     </div>
                   </motion.div>
@@ -321,6 +353,9 @@ export default function S2Synthesizer() {
       </div>
 
       <div className="mt-auto relative z-10">
+        {fusionError && (
+          <div className="mb-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-mono">{fusionError}</div>
+        )}
         <button
           onClick={executeFusion}
           disabled={isFusing || fusionState === 'complete'}

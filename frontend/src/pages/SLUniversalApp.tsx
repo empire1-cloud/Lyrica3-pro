@@ -41,6 +41,7 @@ import {
 import { cn } from '@/lib/utils';
 import { translateVibeToParams, generateMusicStream, VibeParams } from '../lib/gemini';
 import { LiveSession } from '../components/LiveSession';
+import { generate as backendGenerate } from '../lib/api';
 
 // --- Types ---
 interface Track {
@@ -126,6 +127,7 @@ export default function App() {
   const [emotionalMode, setEmotionalMode] = useState<'Pain' | 'Playful' | 'Mirror'>('Mirror');
   const [biometricSync, setBiometricSync] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const generatingRef = useRef(false); // synchronous guard against double-fire
 
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
@@ -194,23 +196,25 @@ export default function App() {
   };
 
   const handleExportStems = () => {
+    if (!currentTrack?.audioUrl) {
+      console.warn('No audio URL available to export.');
+      return;
+    }
     setIsExporting(true);
     setExportProgress(0);
-    
-    console.log(`Exporting in ${exportFormat} format...`);
-    console.log(`Sample Rate: ${sampleRate}, Bit Depth: ${bitDepth}`);
-    console.log(`AI Watermarking (SynthID): ${aiWatermarking ? 'ENABLED' : 'DISABLED'}`);
 
-    const interval = setInterval(() => {
-      setExportProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => setIsExporting(false), 1000);
-          return 100;
-        }
-        return prev + 5;
-      });
-    }, 100);
+    // Trigger real browser download of the audio URL
+    const link = document.createElement('a');
+    link.href = currentTrack.audioUrl;
+    const ext = exportFormat === 'MP3' ? 'mp3' : 'wav';
+    link.download = `${currentTrack.title || 'lyrica3-track'}.${ext}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Progress reflects the browser download initiation
+    setExportProgress(100);
+    setTimeout(() => setIsExporting(false), 800);
   };
 
   const [history, setHistory] = useState<Track[]>([]);
@@ -277,30 +281,53 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleMasterTrack = async () => {
+    if (!currentTrack) return;
     setIsMastering(true);
     setMasteringProgress(0);
     setIsMastered(false);
-    
-    const stages = ["Analyzing Track...", "Applying EQ...", "Compressing...", "Limiting..."];
-    
-    for (let i = 0; i < stages.length; i++) {
-      setMasteringStage(stages[i]);
-      for (let p = 0; p <= 25; p += 5) {
-        setMasteringProgress((i * 25) + p);
-        await new Promise(r => setTimeout(r, 100));
+    setMasteringStage("Submitting to Soulfire Mastering...");
+
+    try {
+      const result = await backendGenerate({
+        lyrics: currentTrack.lyrics || currentTrack.title || 'Mastered',
+        genre: currentTrack.params?.genre || 'SGV Oldies',
+        mood: currentTrack.params?.mood || 'Late-Night Honesty',
+        title: `${currentTrack.title} (Mastered)`,
+        vulnerability_override: masteringParams.compression,
+      });
+
+      setMasteringProgress(100);
+      setMasteringStage("Mastered");
+      setIsMastered(true);
+
+      if (result?.audio_url) {
+        setCurrentTrack({ ...currentTrack, audioUrl: result.audio_url, title: result.title || currentTrack.title });
       }
+    } catch (err: any) {
+      setMasteringStage("Mastering failed: " + (err?.response?.data?.detail || err?.message || 'Unknown error'));
+    } finally {
+      setIsMastering(false);
     }
-    
-    setMasteringStage("Mastered");
-    setIsMastering(false);
-    setIsMastered(true);
   };
 
   const handleGenerateMelody = async () => {
+    if (!currentTrack) return;
     setIsGeneratingMelody(true);
-    await new Promise(r => setTimeout(r, 2000));
-    setHasMelodyLayer(true);
-    setIsGeneratingMelody(false);
+    try {
+      const melodyLyrics = `Melody layer — style: ${melodyStyle}. ${currentTrack.lyrics || currentTrack.title}`;
+      await backendGenerate({
+        lyrics: melodyLyrics,
+        genre: currentTrack.params?.genre || 'SGV Oldies',
+        mood: currentTrack.params?.mood || 'Late-Night Honesty',
+        title: `${currentTrack.title} (Melody: ${melodyStyle})`,
+        vulnerability_override: 0.6,
+      });
+      setHasMelodyLayer(true);
+    } catch (err: any) {
+      console.error('Melody generation failed:', err?.response?.data?.detail || err?.message);
+    } finally {
+      setIsGeneratingMelody(false);
+    }
   };
 
   const handleMidiImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -368,6 +395,8 @@ export default function App() {
 
   const handleGenerate = async (vibe: string) => {
     if (!vibe) return;
+    if (generatingRef.current) return; // synchronous guard: drop duplicate calls
+    generatingRef.current = true;
     setIsGenerating(true);
     setAuraMode(true);
     setError(null);
@@ -493,7 +522,11 @@ export default function App() {
       };
       
       setCurrentTrack(newTrack);
-      setHistory(prev => [newTrack, ...prev]);
+      setHistory(prev => {
+        // Deduplicate: drop any existing entry with the same id before prepending
+        const deduped = prev.filter(t => t.id !== newTrack.id);
+        return [newTrack, ...deduped];
+      });
       setParamsHistory([params]);
       setParamsHistoryIndex(0);
       setIsPlaying(true);
@@ -501,6 +534,7 @@ export default function App() {
       console.error("Generation failed", err);
       setError(err.message || "Failed to generate track. Please check your API key and model access.");
     } finally {
+      generatingRef.current = false;
       setIsGenerating(false);
     }
   };
