@@ -655,7 +655,26 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         f"Raw lyric seed:\n{req.lyrics}\n\n"
         f"Compose the Soulfire. Return JSON only."
     )
-    # --- Primary: OpenAI-compatible client via EMERGENT_LLM_KEY ---
+    # --- Primary: Vertex AI Gemini (IAM auth, no API key needed) ---
+    try:
+        import vertexai
+        from vertexai.generative_models import GenerativeModel
+        vertexai.init(project=os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8"),
+                      location=os.environ.get("VERTEX_LOCATION", "us-west1"))
+        def _sync():
+            model = GenerativeModel("gemini-1.5-pro", system_instruction=LML_SYSTEM)
+            return model.generate_content(user_text).text
+        txt = await asyncio.to_thread(_sync)
+        m = re.search(r"\{[\s\S]*\}", txt)
+        if m: txt = m.group(0)
+        data = json.loads(txt)
+        for k in ("title", "cultural_subtext", "lml"):
+            if k not in data or not isinstance(data[k], str):
+                raise ValueError(f"missing {k}")
+        return data
+    except Exception as e:
+        logger.warning(f"Vertex AI LML generation failed: {e} — trying EMERGENT_LLM_KEY")
+    # --- Secondary: OpenAI-compatible client via EMERGENT_LLM_KEY ---
     if EMERGENT_LLM_KEY:
         try:
             import openai as _openai
@@ -681,26 +700,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
                     raise ValueError(f"missing {k}")
             return data
         except Exception as e:
-            logger.warning(f"OpenAI LML generation failed: {e} — trying Vertex AI")
-    # --- Secondary: Vertex AI Gemini ---
-    try:
-        import vertexai
-        from vertexai.generative_models import GenerativeModel
-        vertexai.init(project=os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8"),
-                      location=os.environ.get("VERTEX_LOCATION", "us-west1"))
-        def _sync():
-            model = GenerativeModel("gemini-1.5-pro", system_instruction=LML_SYSTEM)
-            return model.generate_content(user_text).text
-        txt = await asyncio.to_thread(_sync)
-        m = re.search(r"\{[\s\S]*\}", txt)
-        if m: txt = m.group(0)
-        data = json.loads(txt)
-        for k in ("title", "cultural_subtext", "lml"):
-            if k not in data or not isinstance(data[k], str):
-                raise ValueError(f"missing {k}")
-        return data
-    except Exception as e:
-        logger.warning(f"Vertex AI LML generation failed: {e} — using structured fallback")
+            logger.warning(f"OpenAI LML generation failed: {e} — using structured fallback")
     # --- Final fallback: structured seed ---
     seed = (req.lyrics or "").strip().splitlines()[0][:40] or "Untitled Soulfire"
     return {
@@ -1340,26 +1340,7 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
         "instrumentation, spatialEffects, harmonicTension, vocalLayering, mixWarmth, reverbType, "
         "eraTexture, emotionalMode, delayTime, delayFeedback, chorusDepth, phaserRate."
     )
-    # --- Primary: OpenAI-compatible client via EMERGENT_LLM_KEY ---
-    if EMERGENT_LLM_KEY:
-        try:
-            import openai as _openai
-            _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
-            _resp = await _client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": vibe_system},
-                    {"role": "user",   "content": prompt},
-                ],
-                temperature=0.7,
-                max_tokens=800,
-            )
-            raw = _resp.choices[0].message.content.strip()
-            clean = raw.lstrip("```json").lstrip("```").rstrip("```").strip()
-            return {"status": "ok", "params": json.loads(clean)}
-        except Exception as e:
-            logger.warning(f"OpenAI vibe_translate failed: {e} — trying Vertex AI")
-    # --- Fallback: Vertex AI Gemini via IAM ---
+    # --- Primary: Vertex AI Gemini via IAM (no API key needed) ---
     try:
         import vertexai
         from vertexai.generative_models import GenerativeModel
@@ -1379,8 +1360,28 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
                 clean = clean[4:]
         return {"status": "ok", "params": json.loads(clean.strip())}
     except Exception as e:
-        logger.warning(f"Vertex AI vibe_translate failed: {e}")
-        raise HTTPException(503, "Vibe translation unavailable — no LLM backend responded.")
+        logger.warning(f"Vertex AI vibe_translate failed: {e} — trying EMERGENT_LLM_KEY")
+    # --- Fallback: OpenAI-compatible client via EMERGENT_LLM_KEY ---
+    if EMERGENT_LLM_KEY:
+        try:
+            import openai as _openai
+            _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
+            _resp = await _client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": vibe_system},
+                    {"role": "user",   "content": prompt},
+                ],
+                temperature=0.7,
+                max_tokens=800,
+            )
+            raw = _resp.choices[0].message.content.strip()
+            clean = raw.lstrip("```json").lstrip("```").rstrip("```").strip()
+            return {"status": "ok", "params": json.loads(clean)}
+        except Exception as e:
+            logger.warning(f"OpenAI vibe_translate failed: {e}")
+            raise HTTPException(500, f"Vibe translation failed: {e}")
+    raise HTTPException(503, "Vibe translation unavailable — no LLM backend responded.")
 
 
 # ============================================================
