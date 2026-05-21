@@ -1321,8 +1321,6 @@ class VibeTranslateRequest(BaseModel):
 async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict = Depends(current_user)):
     """Translate a free-text vibe into structured VibeParams via Gemini (server-side).
     Returns the JSON blob directly so the client never needs a Gemini API key."""
-    if not EMERGENT_LLM_KEY:
-        raise HTTPException(503, "LLM key not configured on this server.")
     context_str = ""
     if req.context:
         weather = req.context.get("weather", "")
@@ -1330,6 +1328,7 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
         hr = req.context.get("heartRate", "")
         if weather or time_of_day or hr:
             context_str = f" Context: {weather}, {time_of_day}, {hr} BPM."
+    vibe_system = "You are a music production AI. Return ONLY valid JSON with the requested fields. No prose, no markdown."
     prompt = (
         f'Translate this music vibe into a full technical emotional blueprint for the music generation engine: '
         f'"{req.vibe}".{context_str} '
@@ -1341,24 +1340,47 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
         "instrumentation, spatialEffects, harmonicTension, vocalLayering, mixWarmth, reverbType, "
         "eraTexture, emotionalMode, delayTime, delayFeedback, chorusDepth, phaserRate."
     )
+    # --- Primary: OpenAI-compatible client via EMERGENT_LLM_KEY ---
+    if EMERGENT_LLM_KEY:
+        try:
+            import openai as _openai
+            _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
+            _resp = await _client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": vibe_system},
+                    {"role": "user",   "content": prompt},
+                ],
+                temperature=0.7,
+                max_tokens=800,
+            )
+            raw = _resp.choices[0].message.content.strip()
+            clean = raw.lstrip("```json").lstrip("```").rstrip("```").strip()
+            return {"status": "ok", "params": json.loads(clean)}
+        except Exception as e:
+            logger.warning(f"OpenAI vibe_translate failed: {e} — trying Vertex AI")
+    # --- Fallback: Vertex AI Gemini via IAM ---
     try:
-        import openai as _openai
-        _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
-        _resp = await _client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a music production AI. Return ONLY valid JSON with the requested fields. No prose, no markdown."},
-                {"role": "user",   "content": prompt},
-            ],
-            temperature=0.7,
-            max_tokens=800,
+        import vertexai
+        from vertexai.generative_models import GenerativeModel
+        vertexai.init(
+            project=os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8"),
+            location=os.environ.get("VERTEX_LOCATION", "us-west1"),
         )
-        raw = _resp.choices[0].message.content.strip()
-        clean = raw.lstrip("```json").lstrip("```").rstrip("```").strip()
-        return {"status": "ok", "params": json.loads(clean)}
+        def _sync():
+            model = GenerativeModel("gemini-2.0-flash", system_instruction=vibe_system)
+            return model.generate_content(prompt).text
+        txt = await asyncio.to_thread(_sync)
+        clean = txt.strip()
+        if clean.startswith("```"):
+            parts = clean.split("```")
+            clean = parts[1] if len(parts) > 1 else clean
+            if clean.startswith("json"):
+                clean = clean[4:]
+        return {"status": "ok", "params": json.loads(clean.strip())}
     except Exception as e:
-        logger.warning(f"vibe_translate error: {e}")
-        raise HTTPException(500, f"Vibe translation failed: {e}")
+        logger.warning(f"Vertex AI vibe_translate failed: {e}")
+        raise HTTPException(503, "Vibe translation unavailable — no LLM backend responded.")
 
 
 # ============================================================
@@ -1379,7 +1401,7 @@ async def universal_query(request: Request, req: UniversalQueryRequest, user: Di
     try:
         # Try Vertex AI Lyrica3Agent first
         import sys, os as _os
-        _sl_path = _os.path.join(_os.path.dirname(__file__), '..', '..', 'sl-universal')
+        _sl_path = _os.path.join(_os.path.dirname(__file__), '..', 'backend')
         if _sl_path not in sys.path:
             sys.path.insert(0, _sl_path)
         from main_agent import Lyrica3Agent
