@@ -781,9 +781,44 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     synth_provider = "fallback"
     voice_provider = "none"
     voice_meta: Optional[dict] = None
+    soulfire_lml: Optional[str] = None
 
-    # ── STEP 1: Lyria 2 — Full song stitching (multi-segment crossfade) ──
-    if VERTEX_AI_ENABLED:
+    # ── STEP 1: Soulfire agents — SL Audio Master (THE BRAIN) → The Beast ──
+    # Primary intelligence layer. Replaces _generate_lml for LML + production.
+    try:
+        from vertex_agents_config import generate_music_with_soulfire
+        soulfire_result = await generate_music_with_soulfire(
+            lyrics=req.lyrics,
+            genre=req.genre,
+            mood=req.mood,
+            title=req.title,
+            cultural_matrix=matrix,
+            mood_recipe=recipe,
+        )
+        if soulfire_result and isinstance(soulfire_result, dict):
+            soulfire_lml = soulfire_result.get("lml") or (
+                soulfire_result.get("sl_audio_master_payload", {}).get("lml_lyrics")
+            )
+            if soulfire_lml:
+                logger.info("🔥 SL Audio Master generated LML — using as primary")
+                data["lml"] = soulfire_lml
+                if soulfire_result.get("sl_audio_master_payload", {}).get("cultural_matrix"):
+                    data["cultural_subtext"] = soulfire_result["sl_audio_master_payload"]["cultural_matrix"]
+            if "stems" in soulfire_result:
+                stems = soulfire_result["stems"]
+                synth_provider = "vertex:soulfire"
+            elif "audio_url" in soulfire_result or "instrumental_url" in soulfire_result:
+                synth_source_url = soulfire_result.get("audio_url") or soulfire_result.get("instrumental_url")
+                synth_provider = "vertex:soulfire"
+            if "sl_audio_master_payload" in soulfire_result:
+                logger.info("🧠 SL Audio Master physics payload received")
+    except ImportError:
+        logger.warning("Soulfire modules not found")
+    except Exception as e:
+        logger.warning(f"Soulfire agents failed — falling through: {e}")
+
+    # ── STEP 2: Lyria 2 — Full song stitching (multi-segment crossfade) ──
+    if VERTEX_AI_ENABLED and not synth_source_url and not stems:
         synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
         full_song_path = await vertex_lyria_full_song(
             base_prompt=synth_prompt,
@@ -796,33 +831,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             _fname = _Path(full_song_path).name
             synth_source_url = f"/api/static/stems/{_fname}"
             synth_provider = "vertex:lyria2-full"
-            logger.info(f"🎵 Lyria 2 full song stitched: {synth_source_url}")
-
-    # ── STEP 2: Soulfire agents (SL Audio Master → The Beast) ──────────
-    if not synth_source_url:
-        try:
-            from vertex_agents_config import generate_music_with_soulfire
-            soulfire_result = await generate_music_with_soulfire(
-                lyrics=req.lyrics,
-                genre=req.genre,
-                mood=req.mood,
-                title=req.title,
-                cultural_matrix=matrix,
-                mood_recipe=recipe,
-            )
-            if soulfire_result and isinstance(soulfire_result, dict):
-                if "stems" in soulfire_result:
-                    stems = soulfire_result["stems"]
-                    synth_provider = "vertex:soulfire"
-                elif "audio_url" in soulfire_result or "instrumental_url" in soulfire_result:
-                    synth_source_url = soulfire_result.get("audio_url") or soulfire_result.get("instrumental_url")
-                    synth_provider = "vertex:soulfire"
-                if "sl_audio_master_payload" in soulfire_result:
-                    logger.info("🧠 SL Audio Master physics payload received")
-        except ImportError:
-            logger.warning("Soulfire modules not found")
-        except Exception as e:
-            logger.warning(f"Soulfire generation failed: {e}")
+            logger.info(f"Lyria 2 full song stitched: {synth_source_url}")
 
     # ── STEP 3: Replicate MusicGen fallback ─────────────────────────────
     if not synth_source_url and not stems and REPLICATE_API_KEY:
@@ -835,7 +844,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 out_dir=str(ROOT_DIR / "static" / "stems"),
             )
 
-    # ── STEP 4: Final fallback to placeholders ──────────────────────────
+    # ── STEP 4: Final fallback to SoundHelix ────────────────────────────
     if not synth_source_url and not stems:
         stems = fallback_stems()
         synth_provider = "fallback:soundhelix"
@@ -859,7 +868,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             if chirp_result:
                 voice_provider = "vertex:chirp3-hd"
                 voice_meta = chirp_result
-                logger.info(f"🎤 Chirp 3 HD vocal: {chirp_result['url']}")
+                logger.info(f"Chirp 3 HD vocal: {chirp_result['url']}")
 
     # ── STEP 6: OpenAI TTS fallback for vocals ──────────────────────────
     if voice_provider == "none":
