@@ -6,6 +6,7 @@ import {
   Mic2, Users, Disc3, ChevronDown, ExternalLink
 } from 'lucide-react';
 import BillingPage from './Billing';
+import PricingPage from './PricingPage';
 import LyricaPublicLanding from './LyricaPublicLanding';
 import BloodlineShareCard from './components/BloodlineShareCard';
 import OnboardingGuide from './components/OnboardingGuide';
@@ -643,6 +644,7 @@ function MainApp() {
             <Route path="/deck"  element={<StemDeck />} />
             <Route path="/duet"  element={<DuetEngine />} />
             <Route path="/vics"  element={<VICSProtocol />} />
+            <Route path="/pricing" element={<PricingPage />} />
             <Route path="/*" element={
               <AnimatePresence mode="wait">
                 {mode === 'sonance' && (
@@ -662,7 +664,7 @@ function MainApp() {
                 )}
                 {mode === 'plans' && (
                   <motion.div key="plans" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <BillingPage />
+                    <PricingPage />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -677,6 +679,12 @@ function MainApp() {
 // ─── Root Export ──────────────────────────────────────────────────────────────
 export default function App() {
   const [showStudio, setShowStudio] = useState(false);
+  const location = useLocation();
+
+  // Public pricing page — no login required
+  if (location.pathname === '/pricing') {
+    return <PricingPage />;
+  }
 
   if (showStudio) {
     return (
