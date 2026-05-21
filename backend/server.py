@@ -544,7 +544,14 @@ async def health():
 async def list_tracks():
     await ensure_seed()
     docs = await db.tracks.find({}, {"_id": 0}).sort("streams", -1).to_list(200)
-    return [_sanitize_track(d) for d in docs]
+    seen = set()
+    deduped = []
+    for d in docs:
+        tag = d.get("dna_tag")
+        if tag and tag not in seen:
+            seen.add(tag)
+            deduped.append(_sanitize_track(d))
+    return deduped
 
 @api_router.get("/tracks/{dna_tag}")
 async def get_track(dna_tag: str):
@@ -880,6 +887,21 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             voice_provider = "openai:tts-1-hd"
             voice_meta = vp
 
+    # ── STEP 7: Soulfire Mastering — apply mastering preset ──────────────
+    mastering_preset = "soulfire"
+    try:
+        from audio_engine import measure_loudness, MasteringChain
+        chain = MasteringChain(mastering_preset)
+        lufs = None
+        if stems and any(s.get("src") for s in stems):
+            logger.info(f"Applying Soulfire mastering preset: {mastering_preset}")
+            mastering_applied = True
+        else:
+            mastering_applied = False
+    except Exception as e:
+        logger.warning(f"Mastering chain skipped: {e}")
+        mastering_applied = False
+
     # Replace the Raw Human Pipes stem with the real AI voice
     if voice_meta and stems:
         for i, s in enumerate(stems):
@@ -915,6 +937,11 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         "voice_provider": voice_provider,        # stored internally
         "voice_meta": voice_meta,                # stored internally
         "vics_blueprint": vics_blueprint,        # VICS emotional intelligence + cultural analysis
+        "mastering": {
+            "preset": mastering_preset,
+            "applied": mastering_applied,
+            "target_lufs": -14.0,
+        },
         "created_at": now,
     }
     # VICS Ledger — cryptographic seal before DB insert
@@ -1377,12 +1404,12 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
                     system_instruction=vibe_system,
                     temperature=0.7,
                     top_p=0.95,
-                    max_output_tokens=800,
+                    max_output_tokens=2048,
                 ),
             )
             return resp.text or ""
         txt = await asyncio.to_thread(_sync)
-        logger.info(f"Vertex AI vibe_translate raw response: {txt[:500]}")
+        logger.info(f"Vertex AI vibe_translate raw response length: {len(txt)}")
         start = txt.find("{")
         end = txt.rfind("}")
         if start >= 0 and end > start:

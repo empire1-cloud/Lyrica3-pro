@@ -195,7 +195,8 @@ export default function FlipFeed() {
 
   const refresh = useCallback(() => {
     getTracks().then((ts) => {
-      setTracks(ts);
+      const seen = new Set();
+      setTracks(Array.isArray(ts) ? ts.filter(t => { if (seen.has(t.dna_tag)) return false; seen.add(t.dna_tag); return true; }) : ts);
       // Discord deep-link: /feed?flip=<dna> auto-opens the flip modal
       const flipDna = searchParams.get("flip");
       if (flipDna) {

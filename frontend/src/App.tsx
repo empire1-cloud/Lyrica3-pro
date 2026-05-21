@@ -294,7 +294,8 @@ function SonanceStudioPanel() {
       }
       if (tracksRes.ok) {
         const list = await tracksRes.json();
-        setTracks(Array.isArray(list) ? list : []);
+        const seen = new Set();
+        setTracks(Array.isArray(list) ? list.filter(t => { if (seen.has(t.dna_tag)) return false; seen.add(t.dna_tag); return true; }) : []);
       }
     } catch { setError('Unable to load studio data.'); }
   }, []);
