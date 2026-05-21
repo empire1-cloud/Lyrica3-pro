@@ -1375,7 +1375,6 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
                 contents=prompt,
                 config=gtypes.GenerateContentConfig(
                     system_instruction=vibe_system,
-                    response_mime_type="application/json",
                     temperature=0.7,
                     top_p=0.95,
                     max_output_tokens=800,
@@ -1383,7 +1382,13 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
             )
             return resp.text or ""
         txt = await asyncio.to_thread(_sync)
-        clean = txt.strip()
+        logger.info(f"Vertex AI vibe_translate raw response: {txt[:500]}")
+        start = txt.find("{")
+        end = txt.rfind("}")
+        if start >= 0 and end > start:
+            clean = txt[start:end+1]
+        else:
+            clean = txt.strip()
         if clean.startswith("```"):
             parts = clean.split("```")
             clean = parts[1] if len(parts) > 1 else clean

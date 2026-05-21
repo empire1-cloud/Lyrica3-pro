@@ -1,0 +1,11 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'REACT_APP_BACKEND_URL=https://lyrica3-backend-339698334666.us-west1.run.app'
+      - '-t'
+      - 'gcr.io/disco-amphora-490606-n8/lyrica3-frontend'
+      - '.'
+images:
+  - 'gcr.io/disco-amphora-490606-n8/lyrica3-frontend'
