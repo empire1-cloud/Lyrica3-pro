@@ -1129,6 +1129,7 @@ const LANDING_HTML = `
     <li><a href="#lineage">Artist DNA</a></li>
     <li><a href="#equity">Creator Equity</a></li>
     <li><a href="#products">Products</a></li>
+    <li><a href="/pricing" style="color:#ff1b8d;font-weight:700">Pricing</a></li>
   </ul>
   <a href="#start" class="nav-cta">Get Started</a>
 </nav>
@@ -1544,9 +1545,9 @@ const LANDING_HTML = `
       <div class="product-card featured">
         <div class="product-badge">Flagship</div>
         <h3>Sonance Pro</h3>
-        <div class="price">$99–$299/mo</div>
+        <div class="price">From $9.99/mo</div>
         <div class="price-sub">Professional AI music studio</div>
-        <div class="margin-tag">90% GROSS MARGIN</div>
+        <div class="margin-tag">100% CREATOR OWNERSHIP</div>
         <ul class="product-features">
           <li>Full Soulfire Engine access</li>
           <li>DNA Tagging on every track</li>
@@ -1598,6 +1599,9 @@ const LANDING_HTML = `
           <li>Share → discover → convert</li>
         </ul>
       </div>
+    </div>
+    <div style="text-align:center;margin-top:2rem;">
+      <a href="/pricing" style="display:inline-block;padding:14px 32px;border:1px solid rgba(255,27,141,0.4);border-radius:12px;color:#ff1b8d;font-weight:700;font-size:14px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;transition:all 0.2s;">See All Plans & Pricing →</a>
     </div>
   </div>
 </section>
@@ -1944,14 +1948,22 @@ export default function LyricaPublicLanding({ onEnterStudio }: Props) {
             No labels. No gatekeepers. No bullshit.
             <span className="block mt-2 text-gray-500">Just you, your culture, and your music.</span>
           </p>
-          <button
-            onClick={onEnterStudio}
-            className="group relative px-12 py-6 bg-pink-500 text-black text-base font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-pink-500/30 overflow-hidden"
-          >
-            <span className="relative z-10">Enter Studio Now</span>
-            <div className="absolute inset-0 bg-gradient-to-r from-pink-400 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </button>
-          <p className="text-sm text-gray-500 uppercase tracking-widest">Specificity is Sovereignty.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={onEnterStudio}
+              className="group relative px-12 py-6 bg-pink-500 text-black text-base font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-pink-500/30 overflow-hidden"
+            >
+              <span className="relative z-10">Enter Studio Now</span>
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-400 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+            <a
+              href="/pricing"
+              className="px-10 py-5 border border-white/20 text-sm font-bold uppercase tracking-[0.15em] rounded-2xl hover:bg-white/5 transition-all text-gray-300"
+            >
+              View Pricing
+            </a>
+          </div>
+          <p className="text-xs text-gray-600 uppercase tracking-widest">Free tier available • No credit card required</p>
         </div>
       </section>
 
