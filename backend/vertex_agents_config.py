@@ -6,9 +6,8 @@ Agent 1: agent_1775606766952 (Gemini 3.0)
 Agent 2: agent_1776939216148 (The Beast - Music Generation)
 Agent 3: agent_1778921386550 (SL Audio Master - THE BRAIN)
 
-NOTE: These agents are invoked via Gemini generative models on Vertex AI.
-      The agent IDs are logical identifiers; each role maps to a Gemini
-      model with a specialized system prompt.
+All agents are deployed as Vertex AI Reasoning Engines and called via
+the Vertex AI Agent Runtime API — NOT via direct Gemini model calls.
 """
 import os
 import json
@@ -22,13 +21,10 @@ logger = logging.getLogger("lyrica3.vertex_agents")
 VERTEX_PROJECT_ID = os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8")
 VERTEX_LOCATION = os.environ.get("VERTEX_LOCATION", "us-west1")
 
-# Agent IDs (logical, used for logging/tracing)
+# Deployed Reasoning Engine agent IDs
 GEMINI3_AGENT_ID = os.environ.get("GEMINI3_AGENT_ID", "agent_1775606766952")
 BEAST_AGENT_ID = os.environ.get("BEAST_AGENT_ID", "agent_1776939216148")
 SL_AUDIO_MASTER_ID = os.environ.get("SL_AUDIO_MASTER_ID", "agent_1778921386550")
-
-# Model to use for all agent roles
-VERTEX_AGENT_MODEL = os.environ.get("VERTEX_AGENT_MODEL", "gemini-1.5-pro")
 
 # Feature flags
 VERTEX_AGENTS_ENABLED = os.environ.get("VERTEX_AGENTS_ENABLED", "false").lower() == "true"
@@ -39,39 +35,20 @@ def _available() -> bool:
     return VERTEX_AGENTS_ENABLED and bool(VERTEX_PROJECT_ID)
 
 
-def _init_vertexai():
-    """Initialize Vertex AI — call once per invocation."""
-    import vertexai
-    vertexai.init(project=VERTEX_PROJECT_ID, location=VERTEX_LOCATION)
-
-
-async def _gemini_generate(system_instruction: str, prompt: str) -> Optional[str]:
+async def _call_agent(agent_id: str, payload: Dict[str, Any]) -> Optional[Any]:
     """
-    Call Gemini via Vertex AI with a system instruction and user prompt.
-    Returns the text response or None on failure.
+    Call a deployed Vertex AI Reasoning Engine agent.
+    Uses the Agent Runtime API — NOT a direct Gemini call.
     """
+    resource = f"projects/{VERTEX_PROJECT_ID}/locations/{VERTEX_LOCATION}/reasoningEngines/{agent_id}"
     try:
-        _init_vertexai()
-        from vertexai.generative_models import GenerativeModel, SafetySetting, HarmCategory, HarmBlockThreshold
-
-        safety = [
-            SafetySetting(category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                          threshold=HarmBlockThreshold.BLOCK_ONLY_HIGH),
-            SafetySetting(category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                          threshold=HarmBlockThreshold.BLOCK_ONLY_HIGH),
-        ]
-
+        from vertexai.preview import reasoning_engines
         def _sync():
-            model = GenerativeModel(
-                VERTEX_AGENT_MODEL,
-                system_instruction=system_instruction,
-            )
-            response = model.generate_content(prompt, safety_settings=safety)
-            return response.text
-
+            engine = reasoning_engines.ReasoningEngine(resource)
+            return engine.query(input=payload)
         return await asyncio.to_thread(_sync)
     except Exception as e:
-        logger.error(f"Gemini generation failed: {e}", exc_info=True)
+        logger.error(f"Agent {agent_id} call failed: {e}", exc_info=True)
         return None
 
 
@@ -90,9 +67,15 @@ async def invoke_gemini3_agent(query: Dict[str, Any]) -> Optional[Dict]:
     prompt = json.dumps(query)
 
     logger.info(f"Invoking Gemini 3.0 agent [{GEMINI3_AGENT_ID}]")
-    raw = await _gemini_generate(system, prompt)
+    raw = await _call_agent(GEMINI3_AGENT_ID, {
+        "input": prompt,
+        "system_instruction": system,
+        "query_type": "gemini3",
+    })
     if not raw:
         return None
+    if isinstance(raw, dict):
+        return raw
 
     try:
         clean = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
@@ -153,9 +136,17 @@ async def invoke_sl_audio_master(
     prompt = "\n".join(parts)
 
     logger.info(f"Invoking SL Audio Master (THE BRAIN) [{SL_AUDIO_MASTER_ID}]")
-    raw = await _gemini_generate(system, prompt)
+    raw = await _call_agent(SL_AUDIO_MASTER_ID, {
+        "input": prompt,
+        "system_instruction": system,
+        "query_type": "sl_audio_master",
+        "genre": genre,
+        "mood": mood,
+    })
     if not raw:
         return None
+    if isinstance(raw, dict):
+        return raw
 
     try:
         clean = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
@@ -205,9 +196,17 @@ async def invoke_beast_agent(
     user_prompt = "\n".join(user_parts)
 
     logger.info(f"Invoking The Beast [{BEAST_AGENT_ID}]")
-    raw = await _gemini_generate(system, user_prompt)
+    raw = await _call_agent(BEAST_AGENT_ID, {
+        "input": user_prompt,
+        "system_instruction": system,
+        "query_type": "beast",
+        "genre": genre,
+        "mood": mood,
+    })
     if not raw:
         return None
+    if isinstance(raw, dict):
+        return raw
 
     try:
         clean = raw.strip().lstrip("```json").lstrip("```").rstrip("```").strip()
@@ -362,7 +361,6 @@ def print_config():
     print("=" * 80)
     print(f"\nProject:  {VERTEX_PROJECT_ID}")
     print(f"Location: {VERTEX_LOCATION}")
-    print(f"Model:    {VERTEX_AGENT_MODEL}")
     print(f"\nAgents:")
     print(f"  1. SL Audio Master (THE BRAIN):  {SL_AUDIO_MASTER_ID}")
     print(f"  2. The Beast (ORCHESTRATOR):     {BEAST_AGENT_ID}")
