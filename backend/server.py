@@ -726,11 +726,10 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     # VICS: VIBE INTERPRETATION & CULTURAL SYNTHESIS
     # Emotional intelligence layer - detects subtext, cultural roots, performance directives
     # ============================================================
-    from lyrica_agent.orchestrator import run_lyrica_agent_dict
-    
     vics_blueprint = None
     try:
-        logger.info("🧠 Running VICS (Vibe Interpretation & Cultural Synthesis)...")
+        from lyrica_agent.orchestrator import run_lyrica_agent_dict
+        logger.info("Running VICS (Vibe Interpretation & Cultural Synthesis)...")
         vics_blueprint = run_lyrica_agent_dict(
             lyric=req.lyrics,
             genre=req.genre,
