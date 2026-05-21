@@ -661,7 +661,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         from google.genai import types as gtypes
         _vx_project = os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8")
         _vx_location = os.environ.get("VERTEX_LOCATION", "us-west1")
-        _vx_model = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-2.5-pro")
+        _vx_model = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-1.5-pro-002")
         _client = genai.Client(vertexai=True, project=_vx_project, location=_vx_location)
         def _sync():
             resp = _client.models.generate_content(
@@ -1358,7 +1358,7 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
         from google.genai import types as gtypes
         _vx_project = os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8")
         _vx_location = os.environ.get("VERTEX_LOCATION", "us-west1")
-        _vx_model = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-2.5-pro")
+        _vx_model = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-1.5-pro-002")
         _client = genai.Client(vertexai=True, project=_vx_project, location=_vx_location)
         def _sync():
             resp = _client.models.generate_content(
