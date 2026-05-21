@@ -758,7 +758,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     # ============================================================
     from integrations import (
         audio_synth, auto_split, fallback_stems, build_synth_prompt,
-        vocal_performance, REPLICATE_API_KEY,
+        vocal_performance, _strip_lml, REPLICATE_API_KEY,
     )
     from vertex_ai import (
         vertex_lyria_full_song, vertex_chirp_tts, VERTEX_AI_ENABLED,
@@ -1349,7 +1349,7 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
             location=os.environ.get("VERTEX_LOCATION", "us-west1"),
         )
         def _sync():
-            model = GenerativeModel("gemini-2.0-flash", system_instruction=vibe_system)
+            model = GenerativeModel("gemini-1.5-pro", system_instruction=vibe_system)
             return model.generate_content(prompt).text
         txt = await asyncio.to_thread(_sync)
         clean = txt.strip()
