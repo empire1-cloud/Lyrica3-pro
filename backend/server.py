@@ -657,13 +657,25 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
     )
     # --- Primary: Vertex AI Gemini (IAM auth, no API key needed) ---
     try:
-        import vertexai
-        from vertexai.generative_models import GenerativeModel
-        vertexai.init(project=os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8"),
-                      location=os.environ.get("VERTEX_LOCATION", "us-west1"))
+        from google import genai
+        from google.genai import types as gtypes
+        _vx_project = os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8")
+        _vx_location = os.environ.get("VERTEX_LOCATION", "us-west1")
+        _vx_model = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-2.5-pro")
+        _client = genai.Client(vertexai=True, project=_vx_project, location=_vx_location)
         def _sync():
-            model = GenerativeModel("gemini-1.5-pro", system_instruction=LML_SYSTEM)
-            return model.generate_content(user_text).text
+            resp = _client.models.generate_content(
+                model=_vx_model,
+                contents=user_text,
+                config=gtypes.GenerateContentConfig(
+                    system_instruction=LML_SYSTEM,
+                    response_mime_type="application/json",
+                    temperature=0.9,
+                    top_p=0.95,
+                    max_output_tokens=2048,
+                ),
+            )
+            return resp.text or ""
         txt = await asyncio.to_thread(_sync)
         m = re.search(r"\{[\s\S]*\}", txt)
         if m: txt = m.group(0)
@@ -1342,15 +1354,25 @@ async def vibe_translate(request: Request, req: VibeTranslateRequest, user: Dict
     )
     # --- Primary: Vertex AI Gemini via IAM (no API key needed) ---
     try:
-        import vertexai
-        from vertexai.generative_models import GenerativeModel
-        vertexai.init(
-            project=os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8"),
-            location=os.environ.get("VERTEX_LOCATION", "us-west1"),
-        )
+        from google import genai
+        from google.genai import types as gtypes
+        _vx_project = os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8")
+        _vx_location = os.environ.get("VERTEX_LOCATION", "us-west1")
+        _vx_model = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-2.5-pro")
+        _client = genai.Client(vertexai=True, project=_vx_project, location=_vx_location)
         def _sync():
-            model = GenerativeModel("gemini-1.5-pro", system_instruction=vibe_system)
-            return model.generate_content(prompt).text
+            resp = _client.models.generate_content(
+                model=_vx_model,
+                contents=prompt,
+                config=gtypes.GenerateContentConfig(
+                    system_instruction=vibe_system,
+                    response_mime_type="application/json",
+                    temperature=0.7,
+                    top_p=0.95,
+                    max_output_tokens=800,
+                ),
+            )
+            return resp.text or ""
         txt = await asyncio.to_thread(_sync)
         clean = txt.strip()
         if clean.startswith("```"):
