@@ -1,8 +1,29 @@
-# AGENTS.md
+# AGENTS.md — STOP. READ THIS BEFORE TOUCHING ANYTHING.
 
-## Cursor Cloud specific instructions
+## ⛔ CRITICAL RULES FOR ALL AI AGENTS (Copilot, Cursor, Vercel, etc.)
 
-### Services overview
+1. **DO NOT** create new branches without explicit human approval
+2. **DO NOT** modify `LyricaPublicLanding.tsx` — this is the canonical landing page
+3. **DO NOT** replace the landing page with placeholder/stub components
+4. **DO NOT** push directly to `main` — all changes go through PRs
+5. **DO NOT** modify `App.tsx` routing without explicit instruction
+6. **DO NOT** add new deployment configurations or override `vercel.json`
+
+## Architecture — DO NOT CHANGE
+
+```
+Landing page:  LyricaPublicLanding.tsx  →  (click "Get Started")  →  LoginGate  →  MainApp (Black Box Studio)
+Backend:       FastAPI at lyrica3-backend-e2q5oemapa-uw.a.run.app
+Frontend:      Vercel (builds from frontend/, CRA)
+```
+
+## Protected Files (DO NOT MODIFY without human approval)
+- `frontend/src/LyricaPublicLanding.tsx` — Landing page (1976 lines, black + neon pink)
+- `frontend/src/App.tsx` — Main routing
+- `vercel.json` — Deployment config
+- `AGENTS.md` — This file
+
+## Services Overview
 
 | Service | Path | Start command | Port |
 |---|---|---|---|
@@ -14,7 +35,7 @@ Optional services (not required for core dev):
 - Empire1 Ledger Service (`empire1_ledger_service/`)
 - Cultura Frontend/Backend (`cultura/`)
 
-### Prerequisites
+## Prerequisites
 
 - **MongoDB** must be running on `localhost:27017` before starting the backend. Quick start:
   ```
@@ -23,18 +44,14 @@ Optional services (not required for core dev):
 - Backend `.env` — copy from `backend/.env.example` to `backend/.env`. The defaults work for local dev (MongoDB on localhost, dev JWT secret).
 - Frontend `.env.local` — set `REACT_APP_BACKEND_URL=http://localhost:8001`.
 
-### Lint and test
+## Lint and Test
 
-- **Backend lint**: `cd backend && python3 -m flake8 server.py --max-line-length=120`
-- **Backend tests**: `REACT_APP_BACKEND_URL=http://127.0.0.1:8001 python3 -m pytest backend/tests/backend_test.py -v` (requires backend running)
-- **Frontend build check**: `cd frontend && yarn build` (CRA/CRACO build; ESLint is disabled in `craco.config.js`)
+- **Backend lint:** `cd backend && ruff check .`
+- **Backend tests:** `cd backend && python -m pytest tests/ -v`
+- **Frontend lint:** `cd frontend && npx eslint src/`
+- **Frontend tests:** `cd frontend && npx react-scripts test --watchAll=false`
 
-### Gotchas
-
-- **No lockfile committed.** The repo has no `yarn.lock` or `package-lock.json`; `yarn install` generates a fresh lockfile each time.
-- **TypeScript version mismatch.** The frontend pins `typescript@^4.9.5` but some dependencies (e.g. `react-hook-form@^7.56`) require TS 5+. Running `tsc --noEmit` fails on `node_modules` types. The CRA/CRACO build uses Babel and works fine regardless.
-- **Frontend compilation warnings.** Some source files have incorrect relative import paths (e.g. `../lib/utils` instead of `../../lib/utils`). These are pre-existing issues and cause build warnings but do not block the dev server.
-- **Two pre-existing test failures** in `backend_test.py`: `TestVibes.test_vibes` (expects 7 genres, API returns 21) and `TestManifest.test_manifest` (404 — endpoint not implemented). The `test_emss_phase234.py` tests target endpoints not yet implemented (duet features).
-- **System dependencies**: `ffmpeg` and `libsndfile1` are required by the backend for audio processing (Demucs/PyDub).
-- **Redis is optional.** The backend falls back to in-memory rate limiting if `REDIS_URL` is not set.
-- **AI API keys are optional for dev.** Track generation falls back to a `fallback` synth provider when no LLM keys are configured.
+## Build Notes
+- Frontend uses Create React App with CRACO config override
+- `TSC_COMPILE_ON_ERROR=true` and `DISABLE_ESLINT_PLUGIN=true` are set in `vercel.json` so TS warnings don't block builds
+- Backend Dockerfile pulls `htdemucs` model weights at build time — first build takes longer
