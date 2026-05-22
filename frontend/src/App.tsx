@@ -14,6 +14,7 @@ import SonanceProSection from './components/sections/SonancePro';
 import VulnerabilityPanel from './components/studio/VulnerabilityPanel';
 import LatePocketControl from './components/studio/LatePocketControl';
 import { VOCAL_PROFILES } from './components/studio/VoiceAuditionGallery';
+import App6Reference from './components/App6_reference';
 
 // Lazy-load heavy pages
 const FlipFeed       = lazy(() => import('./pages/FlipFeed'));
@@ -542,16 +543,7 @@ function SonanceStudioPanel() {
   );
 }
 
-// ─── Placeholder for Generative Audio Suite (Orchestrator) ────────────────────
-function OrchestratorPane() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
-      <Activity className="w-12 h-12 text-blue-500 mb-4" />
-      <h2 className="text-2xl font-black text-white mb-2">Generative Audio Suite</h2>
-      <p className="text-neutral-400 text-sm max-w-md">Vertex AI Orchestrator · Lyria 3 Pro integration. Requires EMERGENT_LLM_KEY + Vertex credentials.</p>
-    </div>
-  );
-}
+// ─── Generative Audio Suite (Orchestrator) ──────────────────────────────────
 
 // ─── Main Nav + App Shell ────────────────────────────────────────────────────
 const NAV_TABS: { id: AppMode; label: string; icon: React.ComponentType<any>; color: string }[] = [
@@ -659,7 +651,7 @@ function MainApp() {
                 )}
                 {mode === 'orchestrator' && (
                   <motion.div key="orchestrator" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <OrchestratorPane />
+                    <App6Reference />
                   </motion.div>
                 )}
                 {mode === 'plans' && (

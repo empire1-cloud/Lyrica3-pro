@@ -1152,26 +1152,26 @@ async def ws_royalties(ws: WebSocket):
 # ============================================================
 
 BILLING_PACKAGES = {
-    "soulfire": {
-        "amount": 19.00, "currency": "usd",
-        "label": "Soulfire", "tier": "soulfire",
-        "tagline": "$19/mo · unlimited stems · AI mastering · distribution",
+    "pro": {
+        "amount": 9.99, "currency": "usd",
+        "label": "Pro", "tier": "pro",
+        "tagline": "$9.99/mo · unlimited tracks · distribution-ready exports · full Soulfire",
         "mode": "subscription", "interval": "month",
-        "lookup_key": "lyrica3_soulfire_v1",
-        "product_name": "Lyrica3 — Soulfire",
+        "lookup_key": "lyrica3_pro_v1",
+        "product_name": "Lyrica3 — Pro",
     },
-    "maestro": {
-        "amount": 49.00, "currency": "usd",
-        "label": "Maestro", "tier": "maestro",
-        "tagline": "$49/mo · everything in Soulfire · video sync · collab rooms · analytics",
+    "empire": {
+        "amount": 24.99, "currency": "usd",
+        "label": "Empire", "tier": "empire",
+        "tagline": "$24.99/mo · multi-universe access · API · batch gen · remix economics",
         "mode": "subscription", "interval": "month",
-        "lookup_key": "lyrica3_maestro_v1",
-        "product_name": "Lyrica3 — Maestro",
+        "lookup_key": "lyrica3_empire_v1",
+        "product_name": "Lyrica3 — Empire",
     },
     "label": {
-        "amount": 149.00, "currency": "usd",
+        "amount": 49.99, "currency": "usd",
         "label": "Label", "tier": "label",
-        "tagline": "$149/mo · everything + white-label · unlimited seats · priority support",
+        "tagline": "$49.99/mo · team seats · white-label · bulk commercial licenses · analytics",
         "mode": "subscription", "interval": "month",
         "lookup_key": "lyrica3_label_v1",
         "product_name": "Lyrica3 — Label",
