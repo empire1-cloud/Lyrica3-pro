@@ -824,7 +824,27 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     except Exception as e:
         logger.warning(f"Soulfire agents failed — falling through: {e}")
 
-    # ── STEP 2: Lyria 2 — Full song stitching (multi-segment crossfade) ──
+    # ── STEP 2: Lyria 3 Pro — Full song stitching (multi-segment crossfade) ──
+    if VERTEX_AI_ENABLED and not synth_source_url and not stems:
+        try:
+            from vertex_lyria3 import vertex_lyria3_full_song
+            synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
+            full_song_gcs = await vertex_lyria3_full_song(
+                base_prompt=synth_prompt,
+                matrix=matrix,
+                mood_recipe=recipe,
+                out_dir=str(ROOT_DIR / "static" / "stems"),
+            )
+            if full_song_gcs:
+                from pathlib import Path as _Path
+                _fname = _Path(full_song_gcs).name
+                synth_source_url = f"/api/static/stems/{_fname}"
+                synth_provider = "vertex:lyria3-pro"
+                logger.info(f"Lyria 3 Pro song stitched: {synth_source_url}")
+        except Exception as e:
+            logger.warning(f"Lyria 3 Pro failed — falling through: {e}")
+
+    # ── STEP 3: Lyria 2 — Full song stitching (multi-segment crossfade) ──
     if VERTEX_AI_ENABLED and not synth_source_url and not stems:
         synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
         full_song_path = await vertex_lyria_full_song(
@@ -840,7 +860,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             synth_provider = "vertex:lyria2-full"
             logger.info(f"Lyria 2 full song stitched: {synth_source_url}")
 
-    # ── STEP 3: Replicate MusicGen fallback ─────────────────────────────
+    # ── STEP 4: Replicate MusicGen fallback ─────────────────────────────
     if not synth_source_url and not stems and REPLICATE_API_KEY:
         synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
         synth_source_url = await audio_synth(synth_prompt)
@@ -851,19 +871,72 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 out_dir=str(ROOT_DIR / "static" / "stems"),
             )
 
-    # ── STEP 4: Final fallback to SoundHelix ────────────────────────────
+    # ── STEP 5: Local MusicGen (audiocraft) — runs on Workbench GPU ────
+    if not synth_source_url and not stems:
+        try:
+            from local_musicgen import AUDIOCRAFT_AVAILABLE, generate_music_local
+            if AUDIOCRAFT_AVAILABLE:
+                synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
+                local_path = await generate_music_local(
+                    prompt=synth_prompt,
+                    duration=20,
+                    output_dir=str(ROOT_DIR / "static" / "stems"),
+                )
+                if local_path:
+                    from pathlib import Path as _Path
+                    fname = _Path(local_path).name
+                    synth_source_url = f"/api/static/stems/{fname}"
+                    synth_provider = "local:musicgen"
+                    stems = [
+                        {"name": "Raw Human Pipes", "src": None, "level": 0.0, "peak": 0.0},
+                        {"name": "Late-Pocket Drums", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+                        {"name": "Sub Bass / Acoustic Requinto", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+                        {"name": "Analog Melody", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+                    ]
+                    logger.info("Local MusicGen generated instrumental on Workbench GPU")
+        except Exception as e:
+            logger.warning(f"Local MusicGen failed — falling through: {e}")
+
+    # ── STEP 6: Procedural instrumental generator (no API keys needed) ──
+    if not synth_source_url and not stems:
+        try:
+            from procedural_instrumental import generate_instrumental_stems
+            proc_bpm = 90
+            if "g-funk" in matrix.lower() or "g funk" in matrix.lower():
+                proc_bpm = 92
+            elif "oldies" in matrix.lower() or "doo-wop" in matrix.lower():
+                proc_bpm = 88
+            proc_stems, proc_url = generate_instrumental_stems(
+                bpm=proc_bpm,
+                key="C",
+                cultural_matrix=matrix,
+                mood_recipe=recipe,
+                out_dir=str(ROOT_DIR / "static" / "stems"),
+                duration_beats=32,
+            )
+            if proc_stems:
+                stems = proc_stems
+                synth_source_url = proc_url
+                synth_provider = "procedural:python"
+                logger.info("Procedural instrumental generated — real audio, no SoundHelix")
+        except Exception as e:
+            logger.warning(f"Procedural instrumental failed — falling back to SoundHelix: {e}")
+
+    # ── STEP 7: Final fallback to SoundHelix ────────────────────────────
     if not synth_source_url and not stems:
         stems = fallback_stems()
         synth_provider = "fallback:soundhelix"
 
     # Build stems from Lyria 2 instrumental if we have one
-    if synth_source_url and synth_provider == "vertex:lyria2" and not stems:
+    if synth_source_url and synth_provider in ("vertex:lyria2", "vertex:lyria2-full") and not stems:
         stems = [
-            {"name": "Full Mix", "src": synth_source_url, "level": 1.0, "peak": 0.9},
             {"name": "Raw Human Pipes", "src": None, "level": 0.0, "peak": 0.0},
+            {"name": "Late-Pocket Drums", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+            {"name": "Sub Bass / Acoustic Requinto", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+            {"name": "Analog Melody", "src": synth_source_url, "level": 0.77, "peak": 0.55},
         ]
 
-    # ── STEP 5: Chirp 3 HD — Real vocal performance (primary) ──────────
+    # ── STEP 8: Chirp 3 HD — Real vocal performance (primary) ──────────
     if VERTEX_AI_ENABLED:
         text = _strip_lml(data["lml"])
         if text:
@@ -877,7 +950,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 voice_meta = chirp_result
                 logger.info(f"Chirp 3 HD vocal: {chirp_result['url']}")
 
-    # ── STEP 6: OpenAI TTS fallback for vocals ──────────────────────────
+    # ── STEP 9: OpenAI TTS fallback for vocals ──────────────────────────
     if voice_provider == "none":
         vp = await vocal_performance(
             lml=data["lml"], mood=req.mood,
@@ -887,7 +960,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             voice_provider = "openai:tts-1-hd"
             voice_meta = vp
 
-    # ── STEP 7: Soulfire Mastering — apply mastering preset ──────────────
+    # ── STEP 10: Soulfire Mastering — apply mastering preset ──────────────
     mastering_preset = "soulfire"
     try:
         from audio_engine import measure_loudness, MasteringChain
@@ -957,6 +1030,46 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     })
     track.pop("_id", None)
     return _sanitize_track(track)
+
+# ── Duet Generation ───────────────────────────────────────────────────────────
+
+DUET_PROFILES = [
+    {"id": "requinto_gold", "name": "Requinto Gold", "voice": "onyx", "style": "requinto guitar, warm tenor, Spanish/English bilingual"},
+    {"id": "dilla_west", "name": "Dilla West", "voice": "fable", "style": "late-pocket swing, baritone, street poet"},
+    {"id": "soulflower", "name": "Soulflower", "voice": "nova", "style": "neo-soul, alto, breathy, English/Spanish"},
+    {"id": "barrio_ghost", "name": "Barrio Ghost", "voice": "shimmer", "style": "corrido narrative, deep bass, raw"},
+]
+
+@api_router.get("/duet/profiles")
+async def duet_profiles():
+    return DUET_PROFILES
+
+class DuetGenerateRequest(BaseModel):
+    profile_1: str = "requinto_gold"
+    profile_2: str = "dilla_west"
+    genre: str = "SGV Oldies"
+    mood: str = "Late-Night Honesty"
+    topic: str = "late night cruise"
+
+@api_router.post("/duet/generate")
+async def duet_generate(req: DuetGenerateRequest, user: Dict = Depends(current_user)):
+    profile_1 = next((p for p in DUET_PROFILES if p["id"] == req.profile_1), DUET_PROFILES[0])
+    profile_2 = next((p for p in DUET_PROFILES if p["id"] == req.profile_2), DUET_PROFILES[1])
+    dna = f"duet_{uuid.uuid4().hex[:10]}"
+    return {
+        "status": "ok",
+        "dna_tag": dna,
+        "profiles": [profile_1, profile_2],
+        "title": f"{profile_1['name']} & {profile_2['name']} — {req.topic[:30]}",
+        "genre": req.genre,
+        "mood": req.mood,
+        "audio_url": None,
+        "vocal_plan": [
+            {"profile": profile_1["id"], "line": f"[{profile_1['name']}] ...", "order": 0},
+            {"profile": profile_2["id"], "line": f"[{profile_2['name']}] ...", "order": 1},
+        ],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
 
 @api_router.get("/vibes")
 async def vibes_catalog():
