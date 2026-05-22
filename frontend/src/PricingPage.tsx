@@ -1,13 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Music2, Flame, Crown, Building2, Check, X, Zap, Shield, Download,
   Dna, Radio, Users, Code2, Headphones, ArrowRight, Sparkles
 } from 'lucide-react';
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   LYRICA 3 PRO — PRICING PAGE
-   "You own everything you make. Period."
-   ═══════════════════════════════════════════════════════════════════════════ */
+const BACKEND = process.env.REACT_APP_BACKEND_URL || 'https://lyrica3-backend-e2q5oemapa-uw.a.run.app';
 
 interface Tier {
   id: string;
@@ -17,13 +15,14 @@ interface Tier {
   tagline: string;
   description: string;
   icon: React.ReactNode;
-  color: string;         // tailwind gradient classes
+  color: string;
   borderColor: string;
   glowColor: string;
   badge?: string;
   features: string[];
   cta: string;
   popular?: boolean;
+  packageId?: string;
 }
 
 const TIERS: Tier[] = [
@@ -72,6 +71,7 @@ const TIERS: Tier[] = [
     ],
     cta: 'Go Pro',
     popular: true,
+    packageId: 'pro',
   },
   {
     id: 'empire',
@@ -95,6 +95,7 @@ const TIERS: Tier[] = [
       'Early access to new engines',
     ],
     cta: 'Build Your Empire',
+    packageId: 'empire',
   },
   {
     id: 'label',
@@ -142,7 +143,42 @@ function CellIcon({ val }: { val: boolean | string }) {
 }
 
 export default function PricingPage() {
-  const [annual, setAnnual] = useState(false);
+  const navigate = useNavigate();
+
+  const handleCheckout = async (packageId: string) => {
+    const token = localStorage.getItem('e1_token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+    try {
+      const r = await fetch(`${BACKEND}/api/billing/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          package_id: packageId,
+          success_url: window.location.origin + '/studio',
+          cancel_url: window.location.origin + '/pricing',
+        }),
+      });
+      const data = await r.json();
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      }
+    } catch {
+      navigate('/');
+    }
+  };
+
+  const handleCta = (tier: Tier) => {
+    if (tier.id === 'creator') {
+      navigate('/');
+    } else if (tier.id === 'label') {
+      window.location.href = 'mailto:manda@empire1.cloud';
+    } else if (tier.packageId) {
+      handleCheckout(tier.packageId);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -221,6 +257,7 @@ export default function PricingPage() {
 
               {/* CTA */}
               <button
+                onClick={() => handleCta(tier)}
                 className={`w-full py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
                   tier.popular
                     ? 'bg-pink-500 text-black hover:bg-pink-400 shadow-lg shadow-pink-500/20'
@@ -424,7 +461,7 @@ export default function PricingPage() {
             Start free. Upgrade when you're ready. Keep everything you create.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button className="group px-10 py-4 bg-pink-500 text-black text-sm font-black uppercase tracking-[0.2em] rounded-xl transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-pink-500/30">
+            <button onClick={() => navigate('/')} className="group px-10 py-4 bg-pink-500 text-black text-sm font-black uppercase tracking-[0.2em] rounded-xl transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-pink-500/30">
               Start Creating Free
             </button>
             <a href="mailto:manda@empire1.cloud" className="px-10 py-4 border border-white/20 text-sm font-bold uppercase tracking-wider rounded-xl hover:bg-white/5 transition-all text-gray-300">

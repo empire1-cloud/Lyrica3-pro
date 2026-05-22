@@ -14,6 +14,7 @@ import SonanceProSection from './components/sections/SonancePro';
 import VulnerabilityPanel from './components/studio/VulnerabilityPanel';
 import LatePocketControl from './components/studio/LatePocketControl';
 import { VOCAL_PROFILES } from './components/studio/VoiceAuditionGallery';
+import App6Reference from './components/App6_reference';
 
 // Lazy-load heavy pages
 const FlipFeed       = lazy(() => import('./pages/FlipFeed'));
@@ -543,8 +544,7 @@ function SonanceStudioPanel() {
   );
 }
 
-// ─── Viktor's Generative Audio Suite (Orchestrator) ───────────────────────────
-import App6Reference from './components/App6_reference';
+// ─── Generative Audio Suite (Orchestrator) ──────────────────────────────────
 
 // ─── Main Nav + App Shell ────────────────────────────────────────────────────
 const NAV_TABS: { id: AppMode; label: string; icon: React.ComponentType<any>; color: string }[] = [
