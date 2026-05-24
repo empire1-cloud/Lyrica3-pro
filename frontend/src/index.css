@@ -10,42 +10,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&family=Instrument+Serif&display=swap');
 
 :root {
-    --ink:        #030303;
-    --ink-2:      #0a0a0b;
-    --ink-3:      #131316;
-    --ink-4:      #1c1c20;
-    --line:       #26262c;
-    --bone:       #f3ece1;
-    --bone-dim:   #b9b2a7;
-    --amber:      #f5a524;
-    --amber-hot:  #ffc857;
-    --gold:       #d9a441;
-    --tube:       #ff8a3d;
-    --pink:       #ff5eac;
-    --pink-haze:  #d98fd9;
-    --cyan:       #59d3ff;
-    --blue-haze:  #6a8cff;
-    --blood:      #d43a4a;
+    --ink:        #05060D;
+    --ink-2:      #0A0B14;
+    --ink-3:      #0E0F17;
+    --ink-4:      #12141E;
+    --line:       #1A1C2E;
+    --bone:       #F5F7FA;
+    --bone-dim:   #C8CCD8;
+    --amber:      #F5C542;
+    --amber-hot:  #FFD666;
+    --gold:       #F5C542;
+    --tube:       #FF2EBE;
+    --pink:       #FF2EBE;
+    --pink-haze:  #FF7AD3;
+    --cyan:       #00E6FF;
+    --blue-haze:  #00E6FF;
+    --blood:      #E84A5F;
 
-    --background: 0 0% 1.2%;
-    --foreground: 40 35% 92%;
-    --card: 240 6% 7%;
-    --card-foreground: 40 35% 92%;
-    --popover: 240 6% 7%;
-    --popover-foreground: 40 35% 92%;
-    --primary: 38 92% 56%;
+    --background: 233 44% 4%;
+    --foreground: 216 33% 97%;
+    --card: 233 24% 7%;
+    --card-foreground: 216 33% 97%;
+    --popover: 233 24% 7%;
+    --popover-foreground: 216 33% 97%;
+    --primary: 327 100% 59%;
     --primary-foreground: 0 0% 5%;
-    --secondary: 240 4% 12%;
-    --secondary-foreground: 40 35% 92%;
-    --muted: 240 4% 12%;
-    --muted-foreground: 40 8% 68%;
-    --accent: 330 90% 68%;
+    --secondary: 233 14% 14%;
+    --secondary-foreground: 216 33% 97%;
+    --muted: 233 14% 14%;
+    --muted-foreground: 216 10% 70%;
+    --accent: 42 89% 61%;
     --accent-foreground: 0 0% 5%;
     --destructive: 354 70% 52%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5% 17%;
-    --input: 240 5% 17%;
-    --ring: 38 92% 56%;
+    --border: 233 14% 14%;
+    --input: 233 14% 14%;
+    --ring: 327 100% 59%;
     --radius: 0.25rem;
 }
 
@@ -159,7 +159,7 @@ input[type=range].fader::-webkit-slider-runnable-track {
 input[type=range].fader::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
     width: 34px; height: 22px;
-    background: linear-gradient(180deg, #f5a524 0%, #8a5a10 100%);
+    background: linear-gradient(180deg, #F5C542 0%, #8a5a10 100%);
     border: 1px solid #1a1a1a;
     border-radius: 3px; margin-top: -9px;
     box-shadow: 0 0 14px rgba(245,165,36,0.55),
@@ -169,14 +169,14 @@ input[type=range].fader::-webkit-slider-thumb {
 }
 input[type=range].fader::-moz-range-thumb {
     width: 34px; height: 22px;
-    background: linear-gradient(180deg, #f5a524 0%, #8a5a10 100%);
+    background: linear-gradient(180deg, #F5C542 0%, #8a5a10 100%);
     border: 1px solid #1a1a1a; border-radius: 3px;
     box-shadow: 0 0 14px rgba(245,165,36,0.55);
 }
 
 /* tube / knob look */
 .tube-glow {
-    background: radial-gradient(circle at 50% 40%, #ffcf7a 0%, #f5a524 35%, #6a3a05 75%, #110802 100%);
+    background: radial-gradient(circle at 50% 40%, #ffcf7a 0%, #F5C542 35%, #6a3a05 75%, #110802 100%);
     box-shadow: 0 0 24px rgba(245,165,36,0.55), inset 0 2px 10px rgba(255,230,180,0.5), inset 0 -10px 18px rgba(0,0,0,0.8);
 }
 
@@ -189,7 +189,7 @@ input[type=range].fader::-moz-range-thumb {
 
 /* etched label */
 .etched {
-    color: #c9bfae;
+    color: #C8CCD8;
     text-shadow: 0 1px 0 rgba(0,0,0,0.8), 0 -1px 0 rgba(255,255,255,0.04);
     letter-spacing: 0.18em;
     text-transform: uppercase;

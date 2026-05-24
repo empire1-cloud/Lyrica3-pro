@@ -8,6 +8,7 @@ import {
 import BillingPage from './Billing';
 import PricingPage from './PricingPage';
 import LyricaPublicLanding from './LyricaPublicLanding';
+import ErrorBoundary from './components/ErrorBoundary';
 import BloodlineShareCard from './components/BloodlineShareCard';
 import OnboardingGuide from './components/OnboardingGuide';
 import SonanceProSection from './components/sections/SonancePro';
@@ -76,10 +77,10 @@ function LoginGate({ children }: { children: React.ReactNode }) {
   if (token) return <>{children}</>;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#030303', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'ui-monospace, monospace' }}>
-      <div style={{ width: 360, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 16, padding: 40 }}>
+    <div style={{ minHeight: '100vh', background: '#05060D', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'ui-monospace, monospace' }}>
+      <div style={{ width: 360, background: '#05060D', border: '1px solid #1a1a1a', borderRadius: 16, padding: 40 }}>
         <div style={{ marginBottom: 32, textAlign: 'center' }}>
-          <div style={{ fontSize: 11, color: '#ff1b8d', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 8 }}>Lyrica 3 Pro</div>
+          <div style={{ fontSize: 11, color: '#FF2EBE', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 8 }}>Lyrica 3 Pro</div>
           <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>EMPIRE 1</div>
           <div style={{ fontSize: 10, color: '#444', marginTop: 4, letterSpacing: '0.2em' }}>SOVEREIGN STUDIO ACCESS</div>
         </div>
@@ -94,13 +95,13 @@ function LoginGate({ children }: { children: React.ReactNode }) {
           </div>
           {error && <div style={{ color: '#ef4444', fontSize: 12, marginBottom: 14, textAlign: 'center' }}>{error}</div>}
           <button type="submit" disabled={loading}
-            style={{ width: '100%', background: '#ff1b8d', color: '#000', border: 'none', borderRadius: 8, padding: '13px 0', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+            style={{ width: '100%', background: '#FF2EBE', color: '#000', border: 'none', borderRadius: 8, padding: '13px 0', fontWeight: 900, fontSize: 13, letterSpacing: '0.15em', textTransform: 'uppercase', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
             {loading ? 'Authenticating...' : (isRegister ? 'Create Account' : 'Enter Studio')}
           </button>
           <div style={{ marginTop: 16, textAlign: 'center', fontSize: 12, color: '#666' }}>
             {isRegister ? 'Already have an account?' : 'Need an account?'}{' '}
             <button type="button" onClick={() => { setIsReg(!isRegister); setError(''); }}
-              style={{ background: 'none', border: 'none', color: '#ff1b8d', cursor: 'pointer', textDecoration: 'underline' }}>
+              style={{ background: 'none', border: 'none', color: '#FF2EBE', cursor: 'pointer', textDecoration: 'underline' }}>
               {isRegister ? 'Login' : 'Register'}
             </button>
           </div>
@@ -676,21 +677,25 @@ export default function App() {
 
   // Public pricing page — no login required
   if (location.pathname === '/pricing') {
-    return <PricingPage />;
+    return <ErrorBoundary><PricingPage /></ErrorBoundary>;
   }
 
   if (showStudio) {
     return (
-      <LoginGate>
-        <MainApp />
-      </LoginGate>
+      <ErrorBoundary>
+        <LoginGate>
+          <MainApp />
+        </LoginGate>
+      </ErrorBoundary>
     );
   }
 
   // Lyrica 3 Pro public landing — Viktor's design, ported to React
   return (
-    <div className="relative">
-      <LyricaPublicLanding onEnterStudio={() => setShowStudio(true)} />
-    </div>
+    <ErrorBoundary>
+      <div className="relative">
+        <LyricaPublicLanding onEnterStudio={() => setShowStudio(true)} />
+      </div>
+    </ErrorBoundary>
   );
 }

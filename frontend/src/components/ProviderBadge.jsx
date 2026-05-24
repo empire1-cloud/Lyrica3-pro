@@ -14,7 +14,7 @@ export default function ProviderBadge({ synth, voice, size = "md" }) {
   const isReplicate = (synth || "").startsWith("replicate");
   const primary = isReplicate
     ? { label: "Replicate", icon: Music, color: "#46d37e", bg: "rgba(70,211,126,0.12)", border: "rgba(70,211,126,0.5)" }
-    : { label: "Fallback",  icon: Sparkles, color: "#f5a524", bg: "rgba(245,165,36,0.12)", border: "rgba(245,165,36,0.45)" };
+    : { label: "Fallback",  icon: Sparkles, color: "#F5C542", bg: "rgba(245,165,36,0.12)", border: "rgba(245,165,36,0.45)" };
 
   const hasVoice = (voice || "").startsWith("openai:tts");
 
@@ -31,7 +31,7 @@ export default function ProviderBadge({ synth, voice, size = "md" }) {
       {hasVoice && (
         <span
           className={`inline-flex items-center gap-1 ${pad} rounded-full border font-mono uppercase tracking-[0.12em]`}
-          style={{ color: "#ff5eac", background: "rgba(255,94,172,0.10)", borderColor: "rgba(255,94,172,0.45)" }}
+          style={{ color: "#FF2EBE", background: "rgba(255,94,172,0.10)", borderColor: "rgba(255,94,172,0.45)" }}
           data-testid="badge-voice-openai">
           <Mic2 size={icon}/>
           <span>OpenAI TTS</span>

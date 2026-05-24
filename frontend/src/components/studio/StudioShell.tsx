@@ -134,7 +134,7 @@ export const StudioShell: React.FC = () => {
   return (
     <div className="flex h-screen bg-[#050505] text-white overflow-hidden font-sans">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/10 flex flex-col bg-[#0a0a0a]">
+      <aside className="w-64 border-r border-white/10 flex flex-col bg-[#05060D]">
         <div className="p-6 border-b border-white/10">
           <h1 className="text-xl font-display uppercase tracking-tighter text-accent flex items-center gap-2">
             <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-black">
@@ -194,7 +194,7 @@ export const StudioShell: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 relative overflow-hidden flex flex-col">
-        <header className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-[#0a0a0a]/50 backdrop-blur-xl z-20">
+        <header className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-[#05060D]/50 backdrop-blur-xl z-20">
           <div className="flex items-center gap-4">
             <h2 className="text-sm uppercase tracking-[0.3em] font-bold text-white/60">
               {navItems.find(i => i.id === activeTab)?.label}
@@ -293,7 +293,7 @@ export const StudioShell: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-3xl p-8 shadow-2xl"
+              className="relative w-full max-w-md bg-[#05060D] border border-white/10 rounded-3xl p-8 shadow-2xl"
             >
               <h2 className="text-2xl font-display uppercase tracking-tighter text-accent mb-6">Initialize New Project</h2>
               <div className="space-y-4">

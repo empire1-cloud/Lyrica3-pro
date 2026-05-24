@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BACKEND = process.env.REACT_APP_BACKEND_URL || "https://lyrica3.com";
+const BACKEND = process.env.REACT_APP_BACKEND_URL || "https://lyrica3-backend-e2q5oemapa-uw.a.run.app";
 
 export const API = `${BACKEND}/api`;
 export const WS_URL = `${BACKEND.replace(/^http/, "ws")}/api/ws/royalties`;
@@ -10,8 +10,26 @@ const authHeader = () => {
   return t ? { Authorization: `Bearer ${t}` } : {};
 };
 
-export const apiGet  = (p)       => axios.get(`${API}${p}`,  { headers: authHeader() }).then(r => r.data);
-export const apiPost = (p, body) => axios.post(`${API}${p}`, body, { headers: authHeader() }).then(r => r.data);
+const client = axios.create({
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' },
+});
+client.interceptors.response.use(
+  r => r,
+  async err => {
+    if (err.config && (!err.response || err.code === 'ECONNABORTED')) {
+      err.config.__retryCount = (err.config.__retryCount || 0) + 1;
+      if (err.config.__retryCount <= 2) {
+        await new Promise(r => setTimeout(r, 1000 * err.config.__retryCount));
+        return client(err.config);
+      }
+    }
+    return Promise.reject(err);
+  }
+);
+
+export const apiGet  = (p)       => client.get(`${API}${p}`,  { headers: authHeader() }).then(r => r.data);
+export const apiPost = (p, body) => client.post(`${API}${p}`, body, { headers: authHeader() }).then(r => r.data);
 
 export const registerUser = (handle, password) => apiPost("/auth/register", { handle, password });
 export const loginUser    = (handle, password) => apiPost("/auth/login",    { handle, password });
@@ -33,7 +51,8 @@ export const uploadForDemucs = (file) => {
   const form = new FormData();
   form.append("file", file);
   const t = localStorage.getItem("e1_token");
-  return axios.post(`${API}/demucs/separate`, form, {
+  return client.post(`${API}/demucs/separate`, form, {
+    timeout: 120000,
     headers: { Authorization: t ? `Bearer ${t}` : undefined },
   }).then(r => r.data);
 };
