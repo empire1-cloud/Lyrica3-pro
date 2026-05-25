@@ -1,0 +1,30 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Ignore virtual environments
+venv/
+env/
+ENV/
+
+# Ignore local env files
+.env
+.env.local
+
+# Ignore static generated files
+static/stems/*
+static/voices/*
+!static/.gitkeep
+
+# Ignore IDE
+.vscode/
+.idea/
+
+# Ignore logs
+*.log
+
+# Ignore test outputs
+LYRICA3_TEST_OUTPUT.json

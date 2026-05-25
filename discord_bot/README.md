@@ -14,8 +14,8 @@ cp ../.env.example .env
 # then fill in:
 DISCORD_BOT_TOKEN=MTxxx...your-bot-token...
 DISCORD_GUILD_ID=123456789012345678     # optional; speeds up /ignite registration during dev
-EMPIRE1_API_URL=https://api.lyrica3.com        # your deployed backend
-EMPIRE1_PUBLIC_URL=https://lyrica3.com         # your deployed frontend
+EMPIRE1_API_URL=https://api.lyrica3pro.com     # your deployed backend
+EMPIRE1_PUBLIC_URL=https://lyrica3pro.com      # your deployed frontend
 EMPIRE1_BOT_HANDLE=discord.empire1             # service account — auto-registered on first run
 EMPIRE1_BOT_PASS=change_me_please_12345
 ```

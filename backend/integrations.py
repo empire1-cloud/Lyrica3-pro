@@ -87,24 +87,44 @@ async def vocal_performance(
         return None
     chosen_voice = voice or _MOOD_VOICE.get(mood, "onyx")
     try:
-        from emergentintegrations.llm.openai import OpenAITextToSpeech
-    except Exception as e:
-        logger.warning(f"TTS import failed: {e}")
-        return None
-    try:
-        tts = OpenAITextToSpeech(api_key=EMERGENT_LLM_KEY)
-        audio_bytes = await tts.generate_speech(
-            text=text, model=model, voice=chosen_voice, response_format="mp3"
+        import openai as _openai
+        _client = _openai.AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url="https://api.openai.com/v1")
+        _resp = await _client.audio.speech.create(
+            model=model, voice=chosen_voice, input=text, response_format="mp3"
         )
+        audio_bytes = _resp.content
         Path(out_dir).mkdir(parents=True, exist_ok=True)
-        filename = f"voice_{uuid.uuid4().hex[:10]}.mp3"
-        dest = Path(out_dir) / filename
-        dest.write_bytes(audio_bytes)
+        uid = uuid.uuid4().hex[:10]
+
+        # ── Write raw TTS audio to a temp MP3 ───────────────────────────────
+        raw_path = Path(out_dir) / f"voice_raw_{uid}.mp3"
+        raw_path.write_bytes(audio_bytes)
+
+        # ── Acid Vocal Chain DSP post-processing ────────────────────────────
+        # Applies: HPF → pre-emphasis → tape saturation → acid delay
+        # Falls back to raw TTS if DSP chain fails (librosa/scipy unavailable)
+        processed_path = Path(out_dir) / f"voice_{uid}.wav"
+        dsp_applied = False
+        try:
+            from acid_vocal_chain import AcidVocalChain  # type: ignore
+            chain = AcidVocalChain(sample_rate=44100, bpm=72)
+            chain.process_vocal(str(raw_path), str(processed_path))
+            dsp_applied = True
+            # Remove the raw temp file; keep only the processed WAV
+            raw_path.unlink(missing_ok=True)
+        except Exception as dsp_err:
+            logger.warning(f"AcidVocalChain DSP skipped (non-fatal): {dsp_err}")
+            # DSP unavailable — serve the raw TTS MP3 directly
+            processed_path = raw_path
+
+        # Derive public URL from whichever file was kept
+        filename = processed_path.name
         return {
-            "url":    f"{public_base}/{filename}",
-            "voice":  chosen_voice,
-            "model":  model,
-            "chars":  len(text),
+            "url":         f"{public_base}/{filename}",
+            "voice":       chosen_voice,
+            "model":       model,
+            "chars":       len(text),
+            "dsp_applied": dsp_applied,
         }
     except Exception as e:
         logger.warning(f"vocal_performance error: {e}")
@@ -259,13 +279,15 @@ def build_synth_prompt(cultural_matrix: str, mood_recipe: tuple, lml: str) -> st
     """
     Builds the text prompt fed to MusicGen. Keeps the actual LML biometric
     tags out of the wire response but injects their vibe into the prompt.
+    cultural_matrix now contains the full Omni-Genre Matrix production descriptor
+    from _GENRE_MAP (e.g. "LA SGV Chicano Heritage, doo-wop strings, ...").
     """
     lung, throat, fry, crack = mood_recipe
     vibe_words = []
-    if fry >= 0.8:   vibe_words.append("close-mic vocal fry")
+    if fry >= 0.8:    vibe_words.append("close-mic vocal fry")
     if throat >= 0.8: vibe_words.append("deep throat resonance")
-    if crack >= 0.8: vibe_words.append("emotional vocal cracks")
-    if lung >= 0.85: vibe_words.append("long held breaths")
+    if crack >= 0.8:  vibe_words.append("emotional vocal cracks")
+    if lung >= 0.85:  vibe_words.append("long held breaths")
     vibe = ", ".join(vibe_words) or "intimate close-mic delivery"
 
     # extract an evocative line from LML (stripped of tags) to seed MusicGen
@@ -273,8 +295,9 @@ def build_synth_prompt(cultural_matrix: str, mood_recipe: tuple, lml: str) -> st
     clean = re.sub(r"<[^>]+>", "", lml or "").strip()
     hook = (clean.splitlines() or [""])[0][:120]
 
+    # cultural_matrix already contains rich production descriptors from _GENRE_MAP
     return (
         f"{cultural_matrix}, analog tape warmth, heavy 808 sub-bass, late-pocket drums dragging behind the beat, "
-        f"{vibe}, vinyl crackle, oldies soul sample pitched down, requinto guitar texture. "
-        f"Lyrical hook: \"{hook}\". 90 BPM. Cinematic, bruised, culturally authentic."
+        f"{vibe}, vinyl crackle, oldies soul sample pitched down. "
+        f'Lyrical hook: "{hook}". 90 BPM. Cinematic, bruised, culturally authentic.'
     )

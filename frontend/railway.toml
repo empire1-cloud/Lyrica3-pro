@@ -1,0 +1,27 @@
+# ============================================================
+# Lyrica 3 Pro · Empire 1 — Railway deploy spec (Frontend)
+# React PWA served via nginx  ·  /frontend service
+# ============================================================
+# In the Railway dashboard set Root Directory to "frontend".
+# Required env vars (set in Railway → Variables):
+#   REACT_APP_BACKEND_URL   e.g. https://lyrica3-backend.up.railway.app
+# ============================================================
+
+[build]
+builder        = "DOCKERFILE"
+dockerfilePath = "./Dockerfile"
+dockerContext  = "."
+
+# REACT_APP_BACKEND_URL is baked into the JS bundle at build time.
+# Add it as a Railway build variable so the Dockerfile ARG picks it up.
+[build.args]
+REACT_APP_BACKEND_URL = "${{REACT_APP_BACKEND_URL}}"
+
+[deploy]
+healthcheckPath    = "/"
+healthcheckTimeout = 60
+restartPolicyType  = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+[deploy.variables]
+PORT = "8080"

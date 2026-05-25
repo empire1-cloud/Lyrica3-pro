@@ -1,0 +1,80 @@
+{
+  "emotional_vector": {
+    "valence": 0.3,
+    "arousal": 0.6,
+    "cultural_resonance": 0.7,
+    "primary_label": "melancholic resilience",
+    "confidence": 0.85
+  },
+  "subtext": {
+    "literal_meaning": "We sleep on the floor when the rent's too high",
+    "metaphorical_meaning": "Economic hardship, resilience through adversity",
+    "cultural_references": [
+      "SGV Chicano Heritage"
+    ],
+    "emotional_subtext": "melancholic resilience",
+    "performance_implications": "late-pocket groove, breathy vocal, analog warmth"
+  },
+  "cultural_nodes": [
+    {
+      "id": "sgv_chicano_heritage",
+      "name": "SGV Chicano Heritage",
+      "cultural_significance": [
+        "East LA / SGV cultural identity",
+        "Chicano Soul tradition",
+        "Late-pocket groove (laid-back swing)",
+        "E\u266d Major / C Minor scale preference"
+      ],
+      "emotional_associations": [
+        "resilience",
+        "community pride",
+        "melancholic determination",
+        "nocturnal honesty"
+      ],
+      "behavior_trigger": "late_pocket_timing, analog_warmth, preserve_vocal_grit"
+    },
+    {
+      "id": "late_pocket_groove",
+      "name": "Late-Pocket Groove",
+      "cultural_significance": [
+        "Laid-back swing timing (behind the beat)",
+        "Trap Soul / 90s R&B influence",
+        "72 BPM sweet spot"
+      ],
+      "emotional_associations": [
+        "nocturnal",
+        "introspective",
+        "unhurried confidence"
+      ],
+      "behavior_trigger": "delay_vocal_timing_12ms, soft_quantize"
+    }
+  ],
+  "performance_directives": {
+    "vocal_timbre": "neutral",
+    "phrasing": "straight",
+    "articulation": "legato",
+    "breathiness": 0.3,
+    "intensity": 0.5,
+    "melodic_behavior": null
+  },
+  "respect_protocol": {
+    "activated": true,
+    "origin_acknowledgment": "SGV_Chicano_Soul_tradition",
+    "preserve_imperfections": true,
+    "autotune_amount": "low"
+  },
+  "vibe_check": {
+    "cultural_context": "SGV Oldies",
+    "emotional_goal": "melancholic resilience",
+    "respect_required": false,
+    "notes": null
+  },
+  "artifacts": [],
+  "dsp_modifiers": {
+    "saturation_drive": 0.3,
+    "delay_throw_targets": [],
+    "reverb_amount": 0.4,
+    "stereo_width": 0.5,
+    "humanization_ms": 12
+  }
+}

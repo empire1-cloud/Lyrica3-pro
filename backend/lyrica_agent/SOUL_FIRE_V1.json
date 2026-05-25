@@ -1,0 +1,783 @@
+{
+  "version": "SOUL_FIRE_V1",
+  "description": "Biometric Artifact Library - A lexicon of human vocal imperfection. Each artifact maps to emotional vectors and DSP chains. Agents use these to inject specific emotional textures into audio generation.",
+  "last_updated": "2026-05-17",
+  
+  "categories": {
+    "intimacy_vulnerability": {
+      "description": "Low arousal, high vulnerability. Conveys closeness, sadness, secret-sharing.",
+      "artifacts": [
+        {
+          "id": "dry_mouth_click_isolation",
+          "tag": "<dry_mouth_click>",
+          "label": "Dry Mouth Click (Isolated)",
+          "description": "The sticky separation of lips before speech. Indicates fatigue, dryness, or extreme proximity. Most human artifact - the sound of 4AM exhaustion.",
+          "emotional_shift": {
+            "valence_delta": -0.10,
+            "arousal_delta": -0.20,
+            "tension_delta": +0.20
+          },
+          "best_use_cases": [
+            "4AM confessional",
+            "emotional exhaustion",
+            "quiet endurance",
+            "post-midnight honesty"
+          ],
+          "vocal_context": {
+            "proximity": "extreme_close_up",
+            "recommended_vulnerability": 0.95,
+            "placement": "pre_phrase",
+            "mic_distance": "0-2 inches"
+          },
+          "dsp_chain": [
+            "multiband_compression_focus_1k_4k",
+            "subtle_transient_enhance",
+            "high_pass_filter_800hz",
+            "no_reverb",
+            "no_delay"
+          ],
+          "cultural_context": ["Trap Soul", "Neo-Soul", "Bedroom Pop", "Lo-Fi Hip-Hop"]
+        },
+        {
+          "id": "breathy_exhale_resignation",
+          "tag": "<breathy_exhale>",
+          "label": "Breathy Exhale (Resignation)",
+          "description": "A long, unvoiced exhale through the nose or mouth. Indicates relief, resignation, or preparation for difficult words.",
+          "emotional_shift": {
+            "valence_delta": +0.10,
+            "arousal_delta": -0.30,
+            "tension_delta": -0.15
+          },
+          "best_use_cases": [
+            "post-argument exhaustion",
+            "letting go",
+            "acceptance of loss",
+            "pre-confession"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.80,
+            "placement": "post_phrase_or_pre_bridge",
+            "mic_distance": "3-6 inches"
+          },
+          "dsp_chain": [
+            "low_pass_filter_2khz",
+            "short_plate_reverb_0.8s",
+            "gentle_compression_2_1"
+          ],
+          "cultural_context": ["R&B Ballad", "Indie Folk", "Singer-Songwriter"]
+        },
+        {
+          "id": "vocal_fry_crackle",
+          "tag": "<vocal_fry_crackle>",
+          "label": "Vocal Fry Crackle",
+          "description": "The low-frequency rattling of vocal cords at the end of a phrase. Indicates exhaustion, casualness, or millennial/Gen-Z conversational style.",
+          "emotional_shift": {
+            "valence_delta": 0.0,
+            "arousal_delta": -0.40,
+            "tension_delta": -0.20
+          },
+          "best_use_cases": [
+            "casual intimacy",
+            "too tired to care",
+            "Gen-Z confessional",
+            "bedroom recording aesthetic"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.70,
+            "placement": "end_of_phrase",
+            "mic_distance": "2-4 inches"
+          },
+          "dsp_chain": [
+            "tube_saturation",
+            "eq_boost_150hz",
+            "multiband_compression_low_freq"
+          ],
+          "cultural_context": ["Bedroom Pop", "Lo-Fi", "Indie", "TikTok Aesthetic"]
+        },
+        {
+          "id": "swallow_reflex_nervous",
+          "tag": "<swallow_reflex>",
+          "label": "Swallow Reflex (Nervous)",
+          "description": "The audible gulp before speaking. Indicates nervousness, hesitation, or holding back tears. Raw human vulnerability.",
+          "emotional_shift": {
+            "valence_delta": -0.30,
+            "arousal_delta": +0.10,
+            "tension_delta": +0.50
+          },
+          "best_use_cases": [
+            "pre-confession",
+            "holding back tears",
+            "fear before confrontation",
+            "emotional breakdown"
+          ],
+          "vocal_context": {
+            "proximity": "extreme_close_up",
+            "recommended_vulnerability": 0.98,
+            "placement": "pre_emotional_climax",
+            "mic_distance": "0-1 inch"
+          },
+          "dsp_chain": [
+            "no_processing",
+            "keep_raw_and_dry",
+            "optional_subtle_high_pass_200hz"
+          ],
+          "cultural_context": ["Any genre - universal human vulnerability"]
+        },
+        {
+          "id": "lip_smack_soft_contemplation",
+          "tag": "<lip_smack_soft>",
+          "label": "Lip Smack (Soft Contemplation)",
+          "description": "A subtle parting of lips. Indicates contemplation, a pause in thought, or searching for words.",
+          "emotional_shift": {
+            "valence_delta": 0.0,
+            "arousal_delta": -0.10,
+            "tension_delta": +0.05
+          },
+          "best_use_cases": [
+            "thoughtful pause",
+            "choosing words carefully",
+            "intimate conversation",
+            "ASMR-like proximity"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.60,
+            "placement": "mid_phrase_pause",
+            "mic_distance": "2-4 inches"
+          },
+          "dsp_chain": [
+            "gentle_de_esser",
+            "subtle_compression",
+            "optional_slight_low_pass_6khz"
+          ],
+          "cultural_context": ["Spoken Word", "ASMR", "Intimate Ballads"]
+        }
+      ]
+    },
+    
+    "tension_aggression": {
+      "description": "High arousal, negative valence. Conveys anger, urgency, defiance.",
+      "artifacts": [
+        {
+          "id": "sharp_inhale_shock",
+          "tag": "<sharp_inhale>",
+          "label": "Sharp Inhale (Shock/Pain)",
+          "description": "A quick, noisy intake of breath through teeth. Indicates shock, pain, sudden realization, or preparing for a shout.",
+          "emotional_shift": {
+            "valence_delta": -0.20,
+            "arousal_delta": +0.60,
+            "tension_delta": +0.70
+          },
+          "best_use_cases": [
+            "pre-scream",
+            "sudden pain",
+            "shocking revelation",
+            "anger buildup"
+          ],
+          "vocal_context": {
+            "proximity": "medium",
+            "recommended_vulnerability": 0.30,
+            "placement": "pre_aggressive_phrase",
+            "mic_distance": "4-8 inches"
+          },
+          "dsp_chain": [
+            "high_shelf_boost_5khz",
+            "fast_attack_compression_4_1",
+            "transient_designer_emphasis"
+          ],
+          "cultural_context": ["Rock", "Metal", "Drill", "Punk", "Emo Rap"]
+        },
+        {
+          "id": "glottal_stop_hard_cutoff",
+          "tag": "<glottal_stop_hard>",
+          "label": "Glottal Stop (Hard Cutoff)",
+          "description": "An abrupt cutoff of sound in the throat. Indicates suppressed anger, rhythmic emphasis (Hip-Hop), or physical restraint.",
+          "emotional_shift": {
+            "valence_delta": -0.50,
+            "arousal_delta": +0.40,
+            "tension_delta": +0.60
+          },
+          "best_use_cases": [
+            "suppressed rage",
+            "rhythmic punctuation",
+            "hip-hop flow emphasis",
+            "controlled fury"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.20,
+            "placement": "mid_phrase_emphasis",
+            "mic_distance": "3-6 inches"
+          },
+          "dsp_chain": [
+            "hard_clipper",
+            "transient_shaper_increase_attack",
+            "optional_slight_distortion"
+          ],
+          "cultural_context": ["Hip-Hop", "Drill", "Grime", "UK Rap"]
+        },
+        {
+          "id": "voice_crack_break_loss_of_control",
+          "tag": "<voice_crack_break>",
+          "label": "Voice Crack Break (Loss of Control)",
+          "description": "An unintentional shift from chest to falsetto (or vice versa). Indicates overwhelming emotion, loss of control, or teenage vulnerability.",
+          "emotional_shift": {
+            "valence_delta": -0.80,
+            "arousal_delta": +0.30,
+            "tension_delta": +0.90
+          },
+          "best_use_cases": [
+            "emotional breakdown",
+            "overwhelmed by grief/anger",
+            "loss of composure",
+            "raw teenage emotion"
+          ],
+          "vocal_context": {
+            "proximity": "any",
+            "recommended_vulnerability": 0.95,
+            "placement": "emotional_climax",
+            "mic_distance": "4-8 inches"
+          },
+          "dsp_chain": [
+            "pitch_correction_OFF",
+            "slight_distortion_add",
+            "no_smoothing"
+          ],
+          "cultural_context": ["Emo", "Pop Punk", "Singer-Songwriter", "Gospel"]
+        },
+        {
+          "id": "grit_growth_rising_anger",
+          "tag": "<grit_growth>",
+          "label": "Grit Growth (Rising Anger)",
+          "description": "The gradual introduction of raspiness into a clean tone. Indicates rising anger, effort, or emotional escalation.",
+          "emotional_shift": {
+            "valence_delta": -0.40,
+            "arousal_delta": +0.50,
+            "tension_delta": +0.40
+          },
+          "best_use_cases": [
+            "anger building",
+            "emotional escalation",
+            "physical strain",
+            "defiance growing"
+          ],
+          "vocal_context": {
+            "proximity": "medium",
+            "recommended_vulnerability": 0.40,
+            "placement": "progressive_through_verse",
+            "mic_distance": "4-8 inches"
+          },
+          "dsp_chain": [
+            "dynamic_saturation_input_driven",
+            "gradual_distortion_increase",
+            "multiband_compression_mid_range"
+          ],
+          "cultural_context": ["Rock", "Alternative", "Emo Rap", "Gospel (climax)"]
+        },
+        {
+          "id": "scream_tail_post_exertion",
+          "tag": "<scream_tail>",
+          "label": "Scream Tail (Post-Exertion)",
+          "description": "The ragged, breathy aftermath of a shout. Indicates exhaustion after exertion, vocal damage, or cathartic release.",
+          "emotional_shift": {
+            "valence_delta": -0.60,
+            "arousal_delta": -0.20,
+            "tension_delta": -0.30
+          },
+          "best_use_cases": [
+            "post-scream exhaustion",
+            "cathartic release aftermath",
+            "vocal breakdown",
+            "physical limits reached"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.85,
+            "placement": "post_climax",
+            "mic_distance": "3-6 inches"
+          },
+          "dsp_chain": [
+            "long_delay_throw_1_2s",
+            "low_pass_filter_3khz",
+            "subtle_reverb_tail"
+          ],
+          "cultural_context": ["Metal", "Hardcore", "Emo", "Screamo"]
+        }
+      ]
+    },
+    
+    "joy_euphoria": {
+      "description": "High arousal, positive valence. Conveys excitement, love, celebration.",
+      "artifacts": [
+        {
+          "id": "laugh_embedded_spontaneous",
+          "tag": "<laugh_embedded>",
+          "label": "Laugh Embedded (Spontaneous)",
+          "description": "A genuine laugh woven into the lyrics. Indicates spontaneity, joy, and authenticity. Cannot be faked - the listener knows.",
+          "emotional_shift": {
+            "valence_delta": +0.90,
+            "arousal_delta": +0.70,
+            "tension_delta": -0.50
+          },
+          "best_use_cases": [
+            "genuine joy",
+            "flirtation",
+            "carefree moment",
+            "spontaneous happiness"
+          ],
+          "vocal_context": {
+            "proximity": "medium",
+            "recommended_vulnerability": 0.50,
+            "placement": "mid_phrase_or_end",
+            "mic_distance": "6-10 inches"
+          },
+          "dsp_chain": [
+            "stereo_widener",
+            "bright_eq_boost_8khz",
+            "light_compression_preserve_dynamics"
+          ],
+          "cultural_context": ["Pop", "Afrobeat", "Reggae", "Soul", "R&B"]
+        },
+        {
+          "id": "melismatic_run_smooth_gospel",
+          "tag": "<melismatic_run>",
+          "label": "Melismatic Run (Smooth Gospel)",
+          "description": "A rapid, fluid series of notes on a single syllable. Indicates virtuosity, confidence, and spiritual release. Black Church Gospel tradition.",
+          "emotional_shift": {
+            "valence_delta": +0.60,
+            "arousal_delta": +0.50,
+            "tension_delta": -0.20
+          },
+          "best_use_cases": [
+            "emotional release",
+            "spiritual catharsis",
+            "vocal showmanship",
+            "celebratory moment"
+          ],
+          "vocal_context": {
+            "proximity": "medium",
+            "recommended_vulnerability": 0.40,
+            "placement": "climax_or_resolution",
+            "mic_distance": "6-10 inches"
+          },
+          "dsp_chain": [
+            "smooth_hall_reverb_2s",
+            "light_chorus",
+            "minimal_compression_preserve_dynamics"
+          ],
+          "cultural_context": ["Gospel", "R&B", "Soul", "Pop Ballad"]
+        },
+        {
+          "id": "whistle_tone_playful",
+          "tag": "<whistle_tone>",
+          "label": "Whistle Tone (Playful)",
+          "description": "A high-pitched, airy whistle at the end of a phrase. Indicates playfulness, flirtation, or lightheartedness. Mariah Carey signature.",
+          "emotional_shift": {
+            "valence_delta": +0.70,
+            "arousal_delta": +0.40,
+            "tension_delta": -0.30
+          },
+          "best_use_cases": [
+            "flirtation",
+            "playfulness",
+            "vocal signature",
+            "lighthearted joy"
+          ],
+          "vocal_context": {
+            "proximity": "medium",
+            "recommended_vulnerability": 0.30,
+            "placement": "end_of_phrase",
+            "mic_distance": "6-10 inches"
+          },
+          "dsp_chain": [
+            "pitch_shift_up_12_semitones",
+            "delay_1_4_note",
+            "bright_eq_10khz_boost"
+          ],
+          "cultural_context": ["Pop", "R&B", "Neo-Soul"]
+        },
+        {
+          "id": "group_harmony_oooh_community",
+          "tag": "<group_harmony_oooh>",
+          "label": "Group Harmony 'Oooh' (Community)",
+          "description": "Background vocals joining in on a vowel sound. Indicates community, support, and collective joy. You are not alone.",
+          "emotional_shift": {
+            "valence_delta": +0.80,
+            "arousal_delta": +0.30,
+            "tension_delta": -0.40
+          },
+          "best_use_cases": [
+            "communal celebration",
+            "support and solidarity",
+            "uplift and encouragement",
+            "collective voice"
+          ],
+          "vocal_context": {
+            "proximity": "far",
+            "recommended_vulnerability": 0.30,
+            "placement": "chorus_or_bridge",
+            "mic_distance": "10-20 inches"
+          },
+          "dsp_chain": [
+            "wide_stereo_spread",
+            "warm_saturation",
+            "group_vocal_layering"
+          ],
+          "cultural_context": ["Gospel", "Soul", "Afrobeat", "Pop Anthem"]
+        },
+        {
+          "id": "rhythmic_sigh_contentment",
+          "tag": "<rhythmic_sigh>",
+          "label": "Rhythmic Sigh (Contentment)",
+          "description": "A satisfied exhale in rhythm with the beat. Indicates contentment, groove, and being in the pocket. Funk/Soul signature.",
+          "emotional_shift": {
+            "valence_delta": +0.50,
+            "arousal_delta": -0.10,
+            "tension_delta": -0.30
+          },
+          "best_use_cases": [
+            "groove emphasis",
+            "contentment",
+            "in the pocket",
+            "funkiness"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.40,
+            "placement": "on_beat",
+            "mic_distance": "4-8 inches"
+          },
+          "dsp_chain": [
+            "subtle_compression",
+            "optional_delay_throw",
+            "rhythmic_gate"
+          ],
+          "cultural_context": ["Funk", "Soul", "Neo-Soul", "R&B"]
+        }
+      ]
+    },
+    
+    "cultural_stylistic": {
+      "description": "Genre-specific artifacts that anchor the agent in cultural/historical context.",
+      "artifacts": [
+        {
+          "id": "auto_tune_flutter_trap",
+          "tag": "<auto_tune_flutter>",
+          "label": "Auto-Tune Flutter (Trap Signature)",
+          "description": "Rapid, unnatural pitch correction artifacts. T-Pain/Future signature. Not a bug - it's the aesthetic.",
+          "emotional_shift": {
+            "valence_delta": 0.0,
+            "arousal_delta": +0.20,
+            "tension_delta": +0.10
+          },
+          "best_use_cases": [
+            "modern trap aesthetic",
+            "hyperpop futurism",
+            "robot-human hybrid",
+            "2010s nostalgia"
+          ],
+          "vocal_context": {
+            "proximity": "any",
+            "recommended_vulnerability": 0.40,
+            "placement": "sustained_notes",
+            "mic_distance": "any"
+          },
+          "dsp_chain": [
+            "hard_tune_retune_speed_0ms",
+            "optional_bitcrusher",
+            "formant_shift"
+          ],
+          "cultural_context": ["Trap", "Hyperpop", "Modern R&B", "SoundCloud Rap"]
+        },
+        {
+          "id": "gospel_shout_amen_church",
+          "tag": "<gospel_shout_amen>",
+          "label": "Gospel Shout 'Amen' (Black Church)",
+          "description": "A communal, responsive shout. Call-and-response tradition. The congregation affirms the truth.",
+          "emotional_shift": {
+            "valence_delta": +0.70,
+            "arousal_delta": +0.80,
+            "tension_delta": -0.20
+          },
+          "best_use_cases": [
+            "spiritual affirmation",
+            "communal worship",
+            "climactic resolution",
+            "truth-telling moment"
+          ],
+          "vocal_context": {
+            "proximity": "far_multiple_voices",
+            "recommended_vulnerability": 0.20,
+            "placement": "end_of_phrase_or_song",
+            "mic_distance": "10-30 inches"
+          },
+          "dsp_chain": [
+            "large_room_reverb_3s",
+            "distorted_bass_underpinning",
+            "group_vocal_saturation"
+          ],
+          "cultural_context": ["Gospel", "Soul", "R&B (spiritual moments)"]
+        },
+        {
+          "id": "rap_ad_lib_yeah_hype",
+          "tag": "<rap_ad_lib_yeah>",
+          "label": "Rap Ad-Lib 'Yeah' (Hype Man)",
+          "description": "A rhythmic, percussive interjection. Not a word - it's a drum hit. Hip-Hop DNA.",
+          "emotional_shift": {
+            "valence_delta": +0.40,
+            "arousal_delta": +0.60,
+            "tension_delta": 0.0
+          },
+          "best_use_cases": [
+            "rhythmic emphasis",
+            "hype/energy boost",
+            "call-and-response",
+            "confidence assertion"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.10,
+            "placement": "off_beat_or_end_of_bar",
+            "mic_distance": "2-4 inches"
+          },
+          "dsp_chain": [
+            "mono_center",
+            "heavy_compression_8_1",
+            "short_delay_1_16_note"
+          ],
+          "cultural_context": ["Hip-Hop", "Trap", "Drill", "Grime"]
+        },
+        {
+          "id": "indie_vocal_quiver_instability",
+          "tag": "<indie_vocal_quiver>",
+          "label": "Indie Vocal Quiver (Intentional Instability)",
+          "description": "A slight, intentional instability in pitch. Anti-perfection aesthetic. Bon Iver/Sufjan Stevens signature.",
+          "emotional_shift": {
+            "valence_delta": -0.20,
+            "arousal_delta": -0.30,
+            "tension_delta": +0.20
+          },
+          "best_use_cases": [
+            "vulnerability",
+            "anti-commercial aesthetic",
+            "emotional honesty",
+            "lo-fi charm"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.85,
+            "placement": "sustained_notes",
+            "mic_distance": "3-6 inches"
+          },
+          "dsp_chain": [
+            "tape_wow_flutter",
+            "vinyl_crackle_subtle",
+            "no_pitch_correction"
+          ],
+          "cultural_context": ["Indie Folk", "Lo-Fi", "Bedroom Pop", "Singer-Songwriter"]
+        },
+        {
+          "id": "chicano_soul_requinto_warmth",
+          "tag": "<chicano_requinto_rasp>",
+          "label": "Chicano Soul Requinto Warmth",
+          "description": "Warm, conversational mid-range with slight rasp. SGV/East LA Oldies tradition. Art Laboe cruising culture.",
+          "emotional_shift": {
+            "valence_delta": +0.30,
+            "arousal_delta": -0.20,
+            "tension_delta": -0.10
+          },
+          "best_use_cases": [
+            "nostalgic warmth",
+            "cultural pride",
+            "cruising aesthetic",
+            "late-pocket groove"
+          ],
+          "vocal_context": {
+            "proximity": "medium",
+            "recommended_vulnerability": 0.70,
+            "placement": "throughout",
+            "mic_distance": "6-10 inches"
+          },
+          "dsp_chain": [
+            "analog_tape_saturation",
+            "mid_range_warmth_boost_500hz_2khz",
+            "subtle_chorus"
+          ],
+          "cultural_context": ["Chicano Soul", "SGV Oldies", "Lowrider Soul"]
+        },
+        {
+          "id": "detroit_techno_mechanical_breath",
+          "tag": "<detroit_mechanical_breath>",
+          "label": "Detroit Techno Mechanical Breath",
+          "description": "Breath processed through vocoder or heavy filtering. Human-machine fusion. Detroit Techno's core philosophy.",
+          "emotional_shift": {
+            "valence_delta": 0.0,
+            "arousal_delta": +0.30,
+            "tension_delta": +0.20
+          },
+          "best_use_cases": [
+            "human-machine tension",
+            "industrial aesthetic",
+            "futurism",
+            "dystopian beauty"
+          ],
+          "vocal_context": {
+            "proximity": "any",
+            "recommended_vulnerability": 0.50,
+            "placement": "between_phrases",
+            "mic_distance": "any"
+          },
+          "dsp_chain": [
+            "vocoder_processing",
+            "heavy_low_pass_filter_1khz",
+            "mechanical_distortion"
+          ],
+          "cultural_context": ["Detroit Techno", "Industrial", "Electro"]
+        },
+        {
+          "id": "drill_monotone_menace",
+          "tag": "<drill_monotone_menace>",
+          "label": "Drill Monotone Menace",
+          "description": "Low, menacing monotone with minimal melodic variation. UK/Chicago Drill signature. Threat assessment.",
+          "emotional_shift": {
+            "valence_delta": -0.60,
+            "arousal_delta": +0.50,
+            "tension_delta": +0.80
+          },
+          "best_use_cases": [
+            "menace",
+            "controlled aggression",
+            "street reportage",
+            "nihilistic energy"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.10,
+            "placement": "throughout",
+            "mic_distance": "2-4 inches"
+          },
+          "dsp_chain": [
+            "low_register_emphasis",
+            "aggressive_consonants",
+            "minimal_pitch_variation"
+          ],
+          "cultural_context": ["Drill (Chicago/UK)", "Grime"]
+        },
+        {
+          "id": "afrobeat_polyrhythmic_shout",
+          "tag": "<afrobeat_poly_shout>",
+          "label": "Afrobeat Polyrhythmic Shout",
+          "description": "Call-and-response shouts layered in polyrhythmic patterns. Fela Kuti tradition. Multiple voices creating rhythm.",
+          "emotional_shift": {
+            "valence_delta": +0.80,
+            "arousal_delta": +0.70,
+            "tension_delta": -0.30
+          },
+          "best_use_cases": [
+            "collective celebration",
+            "political defiance",
+            "rhythmic complexity",
+            "communal energy"
+          ],
+          "vocal_context": {
+            "proximity": "far_multiple_voices",
+            "recommended_vulnerability": 0.20,
+            "placement": "polyrhythmic_against_beat",
+            "mic_distance": "10-20 inches"
+          },
+          "dsp_chain": [
+            "stereo_spread_wide",
+            "rhythmic_delay_synced",
+            "saturation_warmth"
+          ],
+          "cultural_context": ["Afrobeat", "Highlife", "Afro-Funk"]
+        },
+        {
+          "id": "bossa_nova_soft_consonant",
+          "tag": "<bossa_soft_consonant>",
+          "label": "Bossa Nova Soft Consonant",
+          "description": "Extremely soft, breathy consonants. Portuguese pronunciation aesthetic. Intimate late-night café.",
+          "emotional_shift": {
+            "valence_delta": +0.40,
+            "arousal_delta": -0.40,
+            "tension_delta": -0.30
+          },
+          "best_use_cases": [
+            "intimate romance",
+            "late-night atmosphere",
+            "sophisticated elegance",
+            "whispered seduction"
+          ],
+          "vocal_context": {
+            "proximity": "close",
+            "recommended_vulnerability": 0.60,
+            "placement": "throughout",
+            "mic_distance": "3-6 inches"
+          },
+          "dsp_chain": [
+            "gentle_de_esser_aggressive",
+            "soft_consonant_reduction",
+            "warm_reverb_small_room"
+          ],
+          "cultural_context": ["Bossa Nova", "Brazilian Jazz", "Latin Jazz"]
+        },
+        {
+          "id": "k_pop_precise_breath_control",
+          "tag": "<kpop_precise_breath>",
+          "label": "K-Pop Precise Breath Control",
+          "description": "Hyper-controlled breath placement. Choreography-synchronized. Perfect pop production aesthetic.",
+          "emotional_shift": {
+            "valence_delta": +0.60,
+            "arousal_delta": +0.50,
+            "tension_delta": -0.10
+          },
+          "best_use_cases": [
+            "dance-pop energy",
+            "synchronized performance",
+            "pop perfection",
+            "choreographed precision"
+          ],
+          "vocal_context": {
+            "proximity": "medium",
+            "recommended_vulnerability": 0.30,
+            "placement": "choreography_synced",
+            "mic_distance": "6-10 inches"
+          },
+          "dsp_chain": [
+            "precise_compression",
+            "breath_control_enhancement",
+            "bright_pop_eq"
+          ],
+          "cultural_context": ["K-Pop", "J-Pop", "Modern Pop"]
+        }
+      ]
+    }
+  },
+  
+  "usage_guidelines": {
+    "agent_selection_rules": [
+      "Select artifacts based on emotional_shift alignment with target emotional vector",
+      "Cultural context must match genre/CCNA constraints",
+      "Vulnerability level must align with vocal_context requirements",
+      "Never use more than 3-4 artifacts per track (over-use breaks immersion)",
+      "Intimacy artifacts require extreme_close_up mic positioning",
+      "Aggression artifacts require space to breathe (medium proximity)"
+    ],
+    "respect_protocol_overrides": [
+      "Gospel artifacts (<gospel_shout_amen>, <melismatic_run>) MUST activate Respect Protocol",
+      "Chicano Soul artifacts (<chicano_requinto_rasp>) MUST activate Respect Protocol",
+      "Afrobeat artifacts (<afrobeat_poly_shout>) MUST activate Respect Protocol",
+      "Never over-polish these artifacts - preserve imperfections",
+      "Origin acknowledgment required in metadata"
+    ],
+    "mixing_philosophy": [
+      "Artifacts are not decoration - they are emotional truth",
+      "DSP chain must enhance, not erase, the human imperfection",
+      "When in doubt, keep it dry - reverb is erasure",
+      "Compression brings intimacy forward; use wisely",
+      "The goal is not 'clean' - the goal is 'real'"
+    ]
+  }
+}

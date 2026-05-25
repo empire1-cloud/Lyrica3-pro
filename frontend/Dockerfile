@@ -6,23 +6,25 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# dep manifest first → docker cache on yarn.lock hits
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --network-timeout 600000
+# dep manifest first → docker cache on package.json hits
+COPY package.json ./
+RUN npm install --legacy-peer-deps && npm install ajv ajv-keywords --legacy-peer-deps
 
 COPY . ./
 
 # production flags — no sourcemaps, no inline runtime
 ENV GENERATE_SOURCEMAP=false \
     INLINE_RUNTIME_CHUNK=false \
-    DISABLE_ESLINT_PLUGIN=true
+    DISABLE_ESLINT_PLUGIN=true \
+    TSC_COMPILE_ON_ERROR=true \
+    ESLINT_NO_DEV_ERRORS=true
 
 # REACT_APP_BACKEND_URL is baked at build time.
 # Pass via `--build-arg REACT_APP_BACKEND_URL=https://api.lyrica3.com`
 ARG REACT_APP_BACKEND_URL
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
 
-RUN yarn build
+RUN npm run build
 
 # ------------------------------------------------------------
 FROM nginx:1.27-alpine AS serve

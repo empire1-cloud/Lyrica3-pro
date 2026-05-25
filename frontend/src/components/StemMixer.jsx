@@ -115,8 +115,8 @@ export default function StemMixer({ stems, onStemsChange, onPulse }) {
     <div className="panel rounded-[6px] p-4 md:p-6">
       <div className="flex items-center justify-between mb-5 md:mb-6 gap-3 flex-wrap">
         <div>
-          <div className="etched text-[#8a8278]">Console · 4-Track Stem Mixer</div>
-          <div className="font-display text-[#f3ece1] text-base md:text-lg mt-1 tracking-tight">
+          <div className="etched text-[#9CA3B0]">Console · 4-Track Stem Mixer</div>
+          <div className="font-display text-[#F5F7FA] text-base md:text-lg mt-1 tracking-tight">
             Sonance Pro · SSL-Rack I
           </div>
         </div>
@@ -126,8 +126,8 @@ export default function StemMixer({ stems, onStemsChange, onPulse }) {
           className={`group relative px-4 md:px-5 py-2.5 md:py-3 rounded-[3px] border flex items-center gap-2 uppercase text-[10px] md:text-[11px] tracking-[0.2em] transition-all
             ${
               playing
-                ? "bg-[#ff5eac]/15 border-[#ff5eac]/60 text-[#ffb3d5] animate-amber"
-                : "bg-[#f5a524]/10 border-[#f5a524]/50 text-[#ffd88a] hover:bg-[#f5a524]/20"
+                ? "bg-[#FF2EBE]/15 border-[#FF2EBE]/60 text-[#ffb3d5] animate-amber"
+                : "bg-[#F5C542]/10 border-[#F5C542]/50 text-[#F5C542] hover:bg-[#F5C542]/20"
             }`}
         >
           {playing ? <Pause size={14} /> : <Play size={14} />}
@@ -135,23 +135,23 @@ export default function StemMixer({ stems, onStemsChange, onPulse }) {
         </button>
       </div>
 
-      <div className="flex items-start justify-around gap-2 md:gap-4 pt-4 pb-2 border-t border-b border-[#1c1c22] overflow-x-auto">
+      <div className="flex items-start justify-around gap-2 md:gap-4 pt-4 pb-2 border-t border-b border-[#0E0F17] overflow-x-auto">
         {stems.map((s, i) => (
           <Fader
             key={s.name}
             label={s.name}
             value={s.level}
             peak={peaks[i] || 0.5}
-            color={["#f5a524", "#ff8a3d", "#ff5eac", "#6a8cff"][i]}
+            color={["#F5C542", "#FF2EBE", "#FF2EBE", "#00E6FF"][i]}
             onChange={(v) => setLevel(i, v)}
             testId={`fader-${i}`}
           />
         ))}
       </div>
 
-      <div className="flex items-center justify-between mt-4 text-[9px] md:text-[10px] font-mono text-[#6b6257] uppercase tracking-[0.18em] flex-wrap gap-2">
+      <div className="flex items-center justify-between mt-4 text-[9px] md:text-[10px] font-mono text-[#6B7280] uppercase tracking-[0.18em] flex-wrap gap-2">
         <span>◉ REC armed</span>
-        <span className={playing ? "text-[#ff5eac]" : ""}>◈ Bus · Master</span>
+        <span className={playing ? "text-[#FF2EBE]" : ""}>◈ Bus · Master</span>
         <span className="hidden sm:inline">◇ Tape · VHS-Sat</span>
         <span>⟡ 44.1 / 24b</span>
       </div>

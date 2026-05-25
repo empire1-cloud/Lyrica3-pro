@@ -1,0 +1,84 @@
+# SLA-113 Engine Interface Specification
+# Every engine in every universe MUST implement this contract.
+# SLA-113 only calls these methods — never accesses internals.
+#
+# Transport: gRPC (primary) / REST fallback
+# Schema version: 1.0.0
+
+syntax = "proto3";
+package sla113.engine.v1;
+
+// ─────────────────────────────────────────────
+// Core lifecycle methods every engine exposes
+// ─────────────────────────────────────────────
+
+service EngineService {
+  // Initialise engine with universe config + canon ruleset version
+  rpc Init      (InitRequest)      returns (InitResponse);
+
+  // Execute a workload payload — returns a job handle
+  rpc Invoke    (InvokeRequest)    returns (InvokeResponse);
+
+  // Stream telemetry / drift observations back to SLA-113
+  rpc Observe   (ObserveRequest)   returns (stream ObserveEvent);
+
+  // Graceful shutdown — flush buffers, release GPU/memory
+  rpc Terminate (TerminateRequest) returns (TerminateResponse);
+}
+
+// ─────────────────────────────────────────────
+// Messages
+// ─────────────────────────────────────────────
+
+message InitRequest {
+  string universe_id       = 1;   // e.g. "U1", "U4"
+  string engine_id         = 2;   // e.g. "ArtDirectionEngine"
+  string engine_version    = 3;   // semver e.g. "3.4.0"
+  string canon_ruleset_ref = 4;   // registry ref e.g. "canon/soulfire@1.0.0"
+  map<string,string> config = 5;  // universe-specific key/value config
+}
+
+message InitResponse {
+  bool   success    = 1;
+  string session_id = 2;
+  string error      = 3;
+}
+
+message InvokeRequest {
+  string session_id   = 1;
+  string pipeline_id  = 2;   // e.g. "studio_mix_v2"
+  string payload_json = 3;   // Soulfire schema or engine-specific JSON
+  int32  retry_count  = 4;
+  map<string,string> metadata = 5;
+}
+
+message InvokeResponse {
+  string job_id      = 1;
+  string status      = 2;   // QUEUED | RUNNING | COMPLETE | FAILED
+  string result_json = 3;
+  string error       = 4;
+}
+
+message ObserveRequest {
+  string session_id = 1;
+  repeated string metrics = 2; // which metrics to stream
+}
+
+message ObserveEvent {
+  string   engine_id   = 1;
+  string   metric_name = 2;
+  double   value       = 3;
+  int64    timestamp   = 4;  // unix ms
+  string   severity    = 5;  // INFO | WARN | DRIFT | CRITICAL
+  string   trace_id    = 6;  // OpenTelemetry trace
+}
+
+message TerminateRequest {
+  string session_id    = 1;
+  bool   flush_buffers = 2;
+}
+
+message TerminateResponse {
+  bool   success = 1;
+  string error   = 2;
+}

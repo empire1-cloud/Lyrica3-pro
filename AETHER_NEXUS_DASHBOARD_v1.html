@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER-NEXUS DASHBOARD v1.0 | Lyrica3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: 
+                radial-gradient(900px 600px at 88% -10%, rgba(255,94,172,0.10), transparent 60%),
+                radial-gradient(800px 500px at -10% 110%, rgba(106,140,255,0.09), transparent 60%),
+                radial-gradient(600px 400px at 50% 120%, rgba(245,165,36,0.06), transparent 60%),
+                #030303;
+            color: #f3ece1;
+            overflow: hidden;
+            letter-spacing: 0.01em;
+        }
+        
+        /* Analog grain overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.07;
+            mix-blend-mode: overlay;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.92  0 0 0 0 0.85  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            height: 100vh;
+            gap: 1px;
+            background: #0a0a0b;
+        }
+
+        /* ========================================
+           LEFT PANEL: HUMAN INPUT
+           ======================================== */
+        .left-panel {
+            background: #0a0a0b;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 2px solid #26262c;
+        }
+
+        .panel-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffc857;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #26262c;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            font-size: 12px;
+            color: #b9b2a7;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        textarea, input, select {
+            width: 100%;
+            background: #131316;
+            border: 1px solid #26262c;
+            color: #f3ece1;
+            padding: 10px;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 14px;
+            resize: none;
+        }
+
+        textarea:focus, input:focus, select:focus {
+            outline: none;
+            border-color: #ffc857;
+            box-shadow: 0 0 10px rgba(255, 200, 87, 0.3);
+        }
+
+        .cultural-lens-selector {
+            background: #131316;
+            color: #f3ece1;
+            padding: 10px;
+            border: 1px solid #26262c;
+            cursor: pointer;
+        }
+
+        .cultural-lens-selector:hover {
+            background: #1c1c20;
+            border-color: #ffc857;
+        }
+
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #f5a524 0%, #ff8a3d 100%);
+            color: #030303;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 20px;
+            transition: all 0.3s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .generate-btn:hover {
+            background: linear-gradient(135deg, #ffc857 0%, #ff8a3d 100%);
+            box-shadow: 0 0 20px rgba(255, 200, 87, 0.5);
+            transform: translateY(-1px);
+        }
+
+        /* ========================================
+           CENTER PANEL: THE AGENT'S BRAIN
+           ======================================== */
+        .center-panel {
+            background: #030303;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .vibe-compass-container {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            background: radial-gradient(circle, rgba(255, 200, 87, 0.1) 0%, rgba(3, 3, 3, 1) 100%);
+            border: 2px solid #26262c;
+            margin-bottom: 20px;
+        }
+
+        .vibe-compass {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .compass-axis {
+            position: absolute;
+            background: #ffc857;
+        }
+
+        .axis-horizontal {
+            width: 80%;
+            height: 1px;
+            top: 50%;
+        }
+
+        .axis-vertical {
+            width: 1px;
+            height: 80%;
+            left: 50%;
+        }
+
+        .compass-label {
+            position: absolute;
+            font-size: 10px;
+            color: #b9b2a7;
+            text-transform: uppercase;
+        }
+
+        .label-top { top: 10px; left: 50%; transform: translateX(-50%); }
+        .label-bottom { bottom: 10px; left: 50%; transform: translateX(-50%); }
+        .label-left { left: 10px; top: 50%; transform: translateY(-50%); }
+        .label-right { right: 10px; top: 50%; transform: translateY(-50%); }
+
+        .vibe-point {
+            width: 20px;
+            height: 20px;
+            background: #ff5eac;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px rgba(255, 94, 172, 0.8);
+            cursor: move;
+            z-index: 10;
+        }
+
+        .emotional-vector-display {
+            background: #0a0a0b;
+            padding: 20px;
+            border: 1px solid #26262c;
+            margin-bottom: 20px;
+        }
+
+        .vector-stat {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .stat-label {
+            color: #b9b2a7;
+        }
+
+        .stat-value {
+            color: #59d3ff;
+            font-weight: bold;
+        }
+
+        .ai-chat-box {
+            background: #0a0a0b;
+            border: 1px solid #26262c;
+            padding: 15px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .ai-message {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255, 200, 87, 0.05);
+            border-left: 3px solid #ffc857;
+        }
+
+        .ai-message-timestamp {
+            color: #555;
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+
+        /* ========================================
+           RIGHT PANEL: AUDIO OUTPUT
+           ======================================== */
+        .right-panel {
+            background: #0a0a0b;
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 2px solid #26262c;
+        }
+
+        .artifact-timeline {
+            background: #131316;
+            border: 1px solid #26262c;
+            padding: 15px;
+            margin-bottom: 20px;
+            min-height: 150px;
+        }
+
+        .artifact-item {
+            display: inline-block;
+            background: #ff8a3d;
+            color: #030303;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .artifact-item:hover {
+            background: #ffc857;
+            box-shadow: 0 0 10px rgba(255, 200, 87, 0.5);
+        }
+
+        .resonance-meter-container {
+            background: #131316;
+            border: 1px solid #26262c;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .resonance-meter {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .meter-label {
+            font-size: 12px;
+            color: #b9b2a7;
+            margin-bottom: 5px;
+        }
+
+        .meter-bar-container {
+            width: 100%;
+            height: 20px;
+            background: #0a0a0b;
+            border: 1px solid #26262c;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .meter-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #d43a4a 0%, #ff8a3d 50%, #ffc857 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .meter-value {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 10px;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .waveform-display {
+            background: #131316;
+            border: 1px solid #26262c;
+            padding: 15px;
+            height: 150px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #waveform-canvas {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+        }
+
+        #waveform-placeholder {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stem-control {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #0a0a0b;
+            border: 1px solid #26262c;
+        }
+
+        .stem-control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .stem-name {
+            color: #ffc857;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .stem-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .stem-btn {
+            background: #ff8a3d;
+            color: #030303;
+            border: none;
+            padding: 3px 8px;
+            font-size: 10px;
+            cursor: pointer;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .stem-btn:hover {
+            background: #ffc857;
+        }
+
+        .stem-btn.playing {
+            background: #ff5eac;
+            color: #fff;
+        }
+
+        .stem-volume {
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        /* ========================================
+           FOOTER STATUS BAR
+           ======================================== */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #0a0a0b;
+            border-top: 2px solid #26262c;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            z-index: 100;
+        }
+
+        .status-item {
+            color: #b9b2a7;
+        }
+
+        .status-value {
+            color: #ffc857;
+            font-weight: bold;
+        }
+
+        /* ========================================
+           ANIMATIONS
+           ======================================== */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .processing {
+            animation: pulse 1.5s infinite;
+        }
+
+        /* ========================================
+           SCROLLBAR STYLING
+           ======================================== */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ffc857;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff8a3d;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <!-- ========================================
+             LEFT PANEL: HUMAN INPUT
+             ======================================== -->
+        <div class="left-panel">
+            <div class="panel-header">🎤 Human Input</div>
+            
+            <!-- Authentication Section -->
+            <div id="auth-section" style="margin-bottom: 20px; padding: 15px; background: #131316; border: 1px solid #d43a4a;">
+                <div style="font-size: 12px; margin-bottom: 10px; color: #d43a4a;">
+                    <strong>⚠️ Authentication Required</strong>
+                </div>
+                <div class="input-group">
+                    <div class="input-label">Handle</div>
+                    <input type="text" id="auth-handle" placeholder="Your handle (3-32 chars)">
+                </div>
+                <div class="input-group">
+                    <div class="input-label">Password</div>
+                    <input type="password" id="auth-password" placeholder="Your password (6+ chars)">
+                </div>
+                <button class="generate-btn" id="login-btn" style="background: linear-gradient(135deg, #d43a4a 0%, #ff5eac 100%); margin-top: 10px;">
+                    🔐 LOGIN
+                </button>
+                <button class="generate-btn" id="register-btn" style="background: linear-gradient(135deg, #59d3ff 0%, #6a8cff 100%); margin-top: 10px;">
+                    📝 REGISTER NEW ACCOUNT
+                </button>
+            </div>
+            
+            <div id="auth-success" style="display: none; margin-bottom: 20px; padding: 10px; background: #131316; border: 1px solid #ffc857; font-size: 11px; color: #ffc857;">
+                ✅ Authenticated as: <span id="auth-handle-display"></span>
+            </div>
+            
+            <div class="input-group">
+                <div class="input-label">Lyrics</div>
+                <textarea id="lyrics-input" rows="5" placeholder="Enter lyrics or theme...">Yeah homeboy, we gonna roll outta here right now</textarea>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">Vibe / Emotional Goal</div>
+                <input type="text" id="vibe-input" placeholder="e.g., melancholic resilience, late-night honesty" value="melancholic resilience, late-pocket groove">
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">Cultural Lens (VICS v3.0 + Barrio Phonetics)</div>
+                <select id="cultural-lens" class="cultural-lens-selector">
+                    <option value="chicano_soul" selected>🌵 Chicano Soul (SGV Oldies, homeboy/ese slang)</option>
+                    <option value="trap_soul">🌙 Trap Soul (Late-night honesty, finna/tryna slang)</option>
+                    <option value="boom_bap">🎤 Boom Bap (NYC 90s hip-hop, yo/aight slang)</option>
+                    <option value="afrobeat_lagos">🌍 Lagos Pulse Leader (Afrobeat, wetin/oya Pidgin)</option>
+                    <option value="kpop_seoul">✨ Seoul Shine Idol (K-Pop, saranghae/oppa Korean)</option>
+                    <option value="uk_drill_london">🌫️ London Fog Driller (UK Drill, innit/bruv MLE)</option>
+                    <option value="neo_soul">🔥 Neo-Soul (D'Angelo/Erykah, soulful slang)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">Quick Start Examples</div>
+                <select id="example-lyrics" class="cultural-lens-selector" style="font-size: 12px;">
+                    <option value="">-- Load Example Lyrics --</option>
+                    <optgroup label="🌵 Chicano Soul">
+                        <option value="chicano_1">Homeboy & Ese (SGV Oldies)</option>
+                        <option value="chicano_2">Late-night cruising (lowrider vibe)</option>
+                    </optgroup>
+                    <optgroup label="🌙 Trap Soul">
+                        <option value="trap_1">Finna & Tryna (late-night honesty)</option>
+                        <option value="trap_2">2AM feelings (Bryson Tiller style)</option>
+                    </optgroup>
+                    <optgroup label="🎤 Boom Bap">
+                        <option value="boom_1">Yo & Aight (NYC 90s)</option>
+                        <option value="boom_2">Street cipher (park jam vibe)</option>
+                    </optgroup>
+                    <optgroup label="🌍 Lagos Pulse">
+                        <option value="lagos_1">Wetin & Oya (Pidgin English)</option>
+                        <option value="lagos_2">Afrobeat celebration (Fela style)</option>
+                    </optgroup>
+                    <optgroup label="✨ Seoul Shine">
+                        <option value="kpop_1">Saranghae & Oppa (Korean)</option>
+                        <option value="kpop_2">K-Pop perfection (IU style)</option>
+                    </optgroup>
+                    <optgroup label="🌫️ London Fog">
+                        <option value="drill_1">Innit & Bruv (MLE slang)</option>
+                        <option value="drill_2">UK Drill streets (Headie One style)</option>
+                    </optgroup>
+                    <optgroup label="🔥 Neo-Soul">
+                        <option value="neo_1">Soulful groove (D'Angelo style)</option>
+                        <option value="neo_2">Erykah Badu vibes (organic soul)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">Max Arousal (0.0 - 1.0)</div>
+                <input type="number" id="max-arousal" min="0" max="1" step="0.05" value="0.65">
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">Vocal Proximity</div>
+                <select id="vocal-proximity">
+                    <option value="far">Far (10-30 inches)</option>
+                    <option value="medium">Medium (6-10 inches)</option>
+                    <option value="close" selected>Close (3-6 inches)</option>
+                    <option value="extreme_close_up">Extreme Close-Up (0-2 inches)</option>
+                </select>
+            </div>
+
+            <button class="generate-btn" id="generate-btn">⚡ IGNITE AETHER-NEXUS</button>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #333;">
+                <div style="font-size: 10px; color: #555; line-height: 1.6;">
+                    <strong>SYSTEM:</strong> AETHER-NEXUS v1.0<br>
+                    <strong>ENGINE:</strong> VICS v3.0 + ARRE + CSN + Barrio Phonetics<br>
+                    <strong>STATUS:</strong> <span style="color: #00ff88;">ONLINE</span><br>
+                    <strong>CULTURAL LENSES:</strong> 7 Global Archetypes<br>
+                    <strong>SLANG DICT:</strong> v2.0.0 (40+ entries)
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================
+             CENTER PANEL: THE AGENT'S BRAIN
+             ======================================== -->
+        <div class="center-panel">
+            <div class="panel-header">🧠 Agent's Brain (Real-Time)</div>
+
+            <!-- Vibe Compass (3D Emotional Vector Visualizer) -->
+            <div class="vibe-compass-container">
+                <div class="vibe-compass">
+                    <!-- Axes -->
+                    <div class="compass-axis axis-horizontal"></div>
+                    <div class="compass-axis axis-vertical"></div>
+                    
+                    <!-- Labels -->
+                    <div class="compass-label label-top">High Arousal (1.0)</div>
+                    <div class="compass-label label-bottom">Low Arousal (0.0)</div>
+                    <div class="compass-label label-left">Negative (-1.0)</div>
+                    <div class="compass-label label-right">Positive (+1.0)</div>
+
+                    <!-- Vibe Point (draggable) -->
+                    <div class="vibe-point" id="vibe-point"></div>
+                </div>
+            </div>
+
+            <!-- Emotional Vector Display -->
+            <div class="emotional-vector-display">
+                <div class="panel-header" style="margin-bottom: 15px;">📊 Emotional Vector</div>
+                
+                <div class="vector-stat">
+                    <span class="stat-label">Valence:</span>
+                    <span class="stat-value" id="valence-value">0.30</span>
+                </div>
+                <div class="vector-stat">
+                    <span class="stat-label">Arousal:</span>
+                    <span class="stat-value" id="arousal-value">0.60</span>
+                </div>
+                <div class="vector-stat">
+                    <span class="stat-label">Tension:</span>
+                    <span class="stat-value" id="tension-value">0.50</span>
+                </div>
+                <div class="vector-stat">
+                    <span class="stat-label">Cultural Resonance:</span>
+                    <span class="stat-value" id="cultural-resonance-value">0.70</span>
+                </div>
+                <div class="vector-stat">
+                    <span class="stat-label">Primary Label:</span>
+                    <span class="stat-value" id="primary-label">Melancholic Resilience</span>
+                </div>
+            </div>
+
+            <!-- AI Chat Box (Explainable AI) -->
+            <div class="ai-chat-box" id="ai-chat">
+                <div class="ai-message">
+                    <div class="ai-message-timestamp">[00:00:01] SYSTEM BOOT</div>
+                    <div>✅ AETHER-NEXUS initialized. Waiting for human input...</div>
+                </div>
+                <div class="ai-message">
+                    <div class="ai-message-timestamp">[00:00:02] VICS READY</div>
+                    <div>🧠 VICS v3.0 (Vibe Interpretation & Cultural Synthesis) + Barrio Phonetics Engine online. Ready to detect emotional subtext, cultural roots, and slang-to-IPA transformations.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================
+             RIGHT PANEL: AUDIO OUTPUT
+             ======================================== -->
+        <div class="right-panel">
+            <div class="panel-header">🎛️ Audio Output</div>
+
+            <!-- Artifact Timeline -->
+            <div class="artifact-timeline">
+                <div style="font-size: 12px; margin-bottom: 10px; color: #888;">
+                    <strong>Biometric Artifacts:</strong> (Click to hear in isolation)
+                </div>
+                <div id="artifact-container">
+                    <div class="artifact-item">&lt;dry_mouth_click&gt;</div>
+                    <div class="artifact-item">&lt;breathy_exhale&gt;</div>
+                    <div class="artifact-item">&lt;vocal_fry_crackle&gt;</div>
+                </div>
+            </div>
+
+            <!-- Resonance Meter -->
+            <div class="resonance-meter-container">
+                <div style="font-size: 12px; margin-bottom: 15px; color: #888;">
+                    <strong>Resonance Metrics:</strong> How well does the output match your intent?
+                </div>
+
+                <div class="resonance-meter">
+                    <div style="width: 100%;">
+                        <div class="meter-label">Cultural Accuracy</div>
+                        <div class="meter-bar-container">
+                            <div class="meter-bar-fill" id="cultural-accuracy-bar" style="width: 85%;"></div>
+                            <div class="meter-value">85%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="resonance-meter">
+                    <div style="width: 100%;">
+                        <div class="meter-label">Emotional Alignment</div>
+                        <div class="meter-bar-container">
+                            <div class="meter-bar-fill" id="emotional-alignment-bar" style="width: 92%;"></div>
+                            <div class="meter-value">92%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="resonance-meter">
+                    <div style="width: 100%;">
+                        <div class="meter-label">Lyrical Cohesion</div>
+                        <div class="meter-bar-container">
+                            <div class="meter-bar-fill" id="lyrical-cohesion-bar" style="width: 78%;"></div>
+                            <div class="meter-value">78%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px; font-size: 11px; color: #888;">
+                    <strong>GOAL:</strong> Get all meters to 100%. Refine using Vibe Compass.
+                </div>
+            </div>
+
+            <!-- Audio Stem Player (NEW) -->
+            <div style="background: #000; border: 1px solid #00ff88; padding: 15px; margin-bottom: 20px;">
+                <div style="font-size: 12px; margin-bottom: 15px; color: #888;">
+                    <strong>🎵 Audio Stem Player:</strong>
+                </div>
+                <div id="stem-player-container" style="font-size: 11px; color: #888;">
+                    No stems loaded. Generate a track to play audio.
+                </div>
+            </div>
+
+            <!-- Waveform Display -->
+            <div class="waveform-display" id="waveform-display">
+                <canvas id="waveform-canvas" width="320" height="120"></canvas>
+                <div id="waveform-placeholder" style="color: #555; font-size: 12px;">
+                    [Waveform visualization - play audio to see waveform]
+                </div>
+            </div>
+
+            <!-- Slang Detection Panel (NEW - VICS v3.0 Barrio Phonetics) -->
+            <div style="background: #0f0f1e; border: 1px solid #00ff88; padding: 15px; font-size: 11px; line-height: 1.6; margin-bottom: 20px;">
+                <div style="font-size: 12px; margin-bottom: 10px; color: #888;">
+                    <strong>🗣️ Slang Detection (Barrio Phonetics Engine):</strong>
+                </div>
+                <div id="slang-detection-output" style="color: #00ff88;">
+                    Waiting for generation... Barrio Phonetics will detect slang terms and show IPA transformations in real-time.
+                </div>
+            </div>
+
+            <!-- CSN Justification Excerpt -->
+            <div style="background: #0f0f1e; border: 1px solid #00ff88; padding: 15px; font-size: 11px; line-height: 1.6;">
+                <div style="font-size: 12px; margin-bottom: 10px; color: #888;">
+                    <strong>CSN Justification (Excerpt):</strong>
+                </div>
+                <div id="csn-justification-output" style="color: #00ff88;">
+                    "SGV Chicano Heritage requires late-pocket groove (72 BPM, laid-back swing), E♭ Major/C Minor scale preference, and preservation of vocal imperfections. Fender Rhodes +6ms late-pocket creates human resistance to machine. Respect Protocol ACTIVE: low autotune, preserve vocal grit."
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================================
+         FOOTER STATUS BAR
+         ======================================== -->
+    <div class="status-bar">
+        <div class="status-item">
+            <span>SERVICE:</span> <span class="status-value" id="service-url">https://lyrica3-backend-e2q5oemapa-uw.a.run.app</span>
+        </div>
+        <div class="status-item">
+            <span>LATENCY:</span> <span class="status-value" id="latency">0ms</span>
+        </div>
+        <div class="status-item">
+            <span>AGENT:</span> <span class="status-value">SL Audio Master (agent_1778921386550)</span>
+        </div>
+        <div class="status-item">
+            <span>MODE:</span> <span class="status-value">AETHER-NEXUS</span>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // AUTHENTICATION
+        // ========================================
+        let authToken = localStorage.getItem('lyrica3_token');
+        let authHandle = localStorage.getItem('lyrica3_handle');
+        
+        if (authToken && authHandle) {
+            document.getElementById('auth-section').style.display = 'none';
+            document.getElementById('auth-success').style.display = 'block';
+            document.getElementById('auth-handle-display').textContent = authHandle;
+        }
+        
+        document.getElementById('login-btn').addEventListener('click', async () => {
+            const handle = document.getElementById('auth-handle').value;
+            const password = document.getElementById('auth-password').value;
+            
+            if (!handle || !password) {
+                addAIMessage('❌ Please enter handle and password');
+                return;
+            }
+            
+            try {
+                const response = await fetch('https://lyrica3-backend-e2q5oemapa-uw.a.run.app/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ handle, password })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Login failed');
+                }
+                
+                const data = await response.json();
+                authToken = data.token;
+                authHandle = data.handle;
+                
+                localStorage.setItem('lyrica3_token', authToken);
+                localStorage.setItem('lyrica3_handle', authHandle);
+                
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('auth-success').style.display = 'block';
+                document.getElementById('auth-handle-display').textContent = authHandle;
+                
+                addAIMessage(`✅ Login successful: ${authHandle}`);
+            } catch (error) {
+                addAIMessage(`❌ Login failed: ${error.message}`);
+            }
+        });
+        
+        document.getElementById('register-btn').addEventListener('click', async () => {
+            const handle = document.getElementById('auth-handle').value;
+            const password = document.getElementById('auth-password').value;
+            
+            if (!handle || !password) {
+                addAIMessage('❌ Please enter handle and password');
+                return;
+            }
+            
+            if (handle.length < 3 || handle.length > 32) {
+                addAIMessage('❌ Handle must be 3-32 characters');
+                return;
+            }
+            
+            if (password.length < 6) {
+                addAIMessage('❌ Password must be at least 6 characters');
+                return;
+            }
+            
+            try {
+                const response = await fetch('https://lyrica3-backend-e2q5oemapa-uw.a.run.app/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ handle, password })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Registration failed');
+                }
+                
+                const data = await response.json();
+                authToken = data.token;
+                authHandle = data.handle;
+                
+                localStorage.setItem('lyrica3_token', authToken);
+                localStorage.setItem('lyrica3_handle', authHandle);
+                
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('auth-success').style.display = 'block';
+                document.getElementById('auth-handle-display').textContent = authHandle;
+                
+                addAIMessage(`✅ Registration successful: ${authHandle}`);
+                addAIMessage(`🎉 Wallet: ${data.wallet}`);
+            } catch (error) {
+                addAIMessage(`❌ Registration failed: ${error.message}`);
+            }
+        });
+        
+        // ========================================
+        // VIBE COMPASS INTERACTION (Drag to Shift Mood)
+        // ========================================
+        const vibePoint = document.getElementById('vibe-point');
+        let isDragging = false;
+        let currentValence = 0.30;
+        let currentArousal = 0.60;
+
+        vibePoint.addEventListener('mousedown', (e) => {
+            isDragging = true;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            const compass = document.querySelector('.vibe-compass-container');
+            const rect = compass.getBoundingClientRect();
+            
+            // Calculate relative position within compass
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+
+            // Map to valence (-1 to +1) and arousal (0 to 1)
+            currentValence = (x * 2) - 1; // -1 (left) to +1 (right)
+            currentArousal = 1 - y; // 1 (top) to 0 (bottom)
+
+            // Clamp values
+            currentValence = Math.max(-1, Math.min(1, currentValence));
+            currentArousal = Math.max(0, Math.min(1, currentArousal));
+
+            // Update point position
+            vibePoint.style.left = `${x * 100}%`;
+            vibePoint.style.top = `${y * 100}%`;
+
+            // Update emotional vector display
+            updateEmotionalVector();
+
+            // Log to AI chat
+            addAIMessage(`User dragged vibe point: Valence=${currentValence.toFixed(2)}, Arousal=${currentArousal.toFixed(2)}. Recalculating music_generation_config...`);
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        function updateEmotionalVector() {
+            document.getElementById('valence-value').textContent = currentValence.toFixed(2);
+            document.getElementById('arousal-value').textContent = currentArousal.toFixed(2);
+
+            // Calculate primary label based on valence/arousal
+            let label = '';
+            if (currentValence < -0.5 && currentArousal < 0.4) {
+                label = 'Melancholic Introspection';
+            } else if (currentValence < -0.5 && currentArousal > 0.6) {
+                label = 'Intense Anger';
+            } else if (currentValence > 0.4 && currentArousal > 0.6) {
+                label = 'Euphoric Joy';
+            } else if (currentValence > 0.4 && currentArousal < 0.4) {
+                label = 'Peaceful Contentment';
+            } else {
+                label = 'Resilient Determination';
+            }
+
+            document.getElementById('primary-label').textContent = label;
+        }
+
+        // ========================================
+        // GENERATE BUTTON (Trigger API Call)
+        // ========================================
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            const lyrics = document.getElementById('lyrics-input').value;
+            const vibe = document.getElementById('vibe-input').value;
+            const culturalLens = document.getElementById('cultural-lens').value;
+            const maxArousal = parseFloat(document.getElementById('max-arousal').value);
+            const vocalProximity = document.getElementById('vocal-proximity').value;
+
+            addAIMessage(`🔥 GENERATION REQUEST RECEIVED`);
+            addAIMessage(`Lyrics: "${lyrics}"`);
+            addAIMessage(`Vibe: "${vibe}"`);
+            addAIMessage(`Cultural Lens: "${culturalLens}"`);
+            addAIMessage(`Analyzing emotional subtext...`);
+
+            // Simulate processing
+            setTimeout(() => {
+                addAIMessage(`✅ Emotional Vector computed: Valence=${currentValence.toFixed(2)}, Arousal=${currentArousal.toFixed(2)}`);
+            }, 1000);
+
+            setTimeout(() => {
+                addAIMessage(`✅ Cultural nodes activated: SGV Chicano Heritage, Late-Pocket Groove`);
+            }, 2000);
+
+            setTimeout(() => {
+                addAIMessage(`✅ ARRE rhythmic mapping: 72 BPM, late-pocket groove (+6ms offset on Rhodes)`);
+            }, 3000);
+
+            setTimeout(() => {
+                addAIMessage(`✅ Vocal archetype selected: Chicano Soul Requinto Voice`);
+            }, 4000);
+
+            setTimeout(() => {
+                addAIMessage(`🛡️ RESPECT PROTOCOL ACTIVE: SGV_Chicano_Soul_tradition`);
+            }, 5000);
+
+            // REAL API CALL TO CLOUD RUN (VICS v3.0 with Barrio Phonetics)
+            try {
+                const startTime = Date.now();
+                const response = await fetch('https://lyrica3-backend-e2q5oemapa-uw.a.run.app/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        lyrics, 
+                        mood: vibe, 
+                        genre: culturalLens,
+                        max_arousal: maxArousal,
+                        vocal_proximity: vocalProximity
+                    })
+                });
+                
+                const latency = Date.now() - startTime;
+                document.getElementById('latency').textContent = `${latency}ms`;
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update emotional vector from VICS response
+                if (data.vics_blueprint && data.vics_blueprint.emotional_vector) {
+                    const ev = data.vics_blueprint.emotional_vector;
+                    currentValence = ev.valence || currentValence;
+                    currentArousal = ev.arousal || currentArousal;
+                    updateEmotionalVector();
+                    
+                    document.getElementById('tension-value').textContent = (ev.tension || 0.5).toFixed(2);
+                    document.getElementById('cultural-resonance-value').textContent = (ev.cultural_resonance || 0.7).toFixed(2);
+                }
+                
+                // Display Slang Detection results
+                if (data.vics_blueprint && data.vics_blueprint.vocal_blueprint && data.vics_blueprint.vocal_blueprint.slang_phonetics) {
+                    const slangData = data.vics_blueprint.vocal_blueprint.slang_phonetics;
+                    let slangHTML = `<strong>Cultural Lens:</strong> ${slangData.cultural_lens}<br><br>`;
+                    
+                    if (slangData.transformations && slangData.transformations.length > 0) {
+                        slangHTML += `<strong>${slangData.transformations.length} Slang Term(s) Detected:</strong><br>`;
+                        slangData.transformations.forEach((t, i) => {
+                            slangHTML += `<br>${i + 1}. <strong>"${t.term}"</strong><br>`;
+                            slangHTML += `   IPA: ${t.ipa_target}<br>`;
+                            slangHTML += `   Formant Shift: ${t.formant_shift !== undefined ? t.formant_shift.toFixed(2) : '0.00'}<br>`;
+                            if (t.timing_offset_ms) {
+                                slangHTML += `   Timing Offset: ${t.timing_offset_ms.toFixed(0)}ms<br>`;
+                            }
+                            if (t.biometric_artifacts && t.biometric_artifacts.length > 0) {
+                                slangHTML += `   Artifacts: ${t.biometric_artifacts.map(a => `<${a}>`).join(', ')}<br>`;
+                            }
+                            if (t.compression_ratio) {
+                                slangHTML += `   Compression: ${(t.compression_ratio * 100).toFixed(0)}%<br>`;
+                            }
+                        });
+                    } else {
+                        slangHTML += `<em>No slang detected in lyrics.</em>`;
+                    }
+                    
+                    if (slangData.cultural_gatekeeping_warnings && slangData.cultural_gatekeeping_warnings.length > 0) {
+                        slangHTML += `<br><br><strong style="color: #ff6b6b;">⚠️ Cultural Gatekeeping Warnings:</strong><br>`;
+                        slangData.cultural_gatekeeping_warnings.forEach(w => {
+                            slangHTML += `<span style="color: #ff6b6b;">${w}</span><br>`;
+                        });
+                    }
+                    
+                    document.getElementById('slang-detection-output').innerHTML = slangHTML;
+                } else {
+                    document.getElementById('slang-detection-output').innerHTML = '<em>No slang phonetics data available.</em>';
+                }
+                
+                // Display CSN justification
+                if (data.vics_blueprint && data.vics_blueprint.csn_justification) {
+                    document.getElementById('csn-justification-output').textContent = data.vics_blueprint.csn_justification;
+                }
+                
+                // Display artifacts
+                if (data.vics_blueprint && data.vics_blueprint.vocal_blueprint && data.vics_blueprint.vocal_blueprint.biometric_artifacts) {
+                    const artifacts = data.vics_blueprint.vocal_blueprint.biometric_artifacts;
+                    const container = document.getElementById('artifact-container');
+                    container.innerHTML = '';
+                    artifacts.forEach(artifact => {
+                        const div = document.createElement('div');
+                        div.className = 'artifact-item';
+                        div.textContent = `<${artifact}>`;
+                        container.appendChild(div);
+                    });
+                }
+                
+                addAIMessage(`✅ GENERATION COMPLETE. Track ID: ${data.track_id || 'N/A'}`);
+                addAIMessage(`🧬 VICS v3.0 Blueprint: ${data.vics_blueprint ? 'LOADED' : 'UNAVAILABLE'}`);
+                
+                if (data.stems) {
+                    addAIMessage(`🎵 Stems Generated: ${Object.keys(data.stems).join(', ')}`);
+                }
+                
+            } catch (error) {
+                addAIMessage(`❌ ERROR: ${error.message}`);
+                console.error('Generation error:', error);
+            }
+        });
+
+        function addAIMessage(text) {
+            const chatBox = document.getElementById('ai-chat');
+            const timestamp = new Date().toLocaleTimeString();
+            const message = document.createElement('div');
+            message.className = 'ai-message';
+            message.innerHTML = `
+                <div class="ai-message-timestamp">[${timestamp}]</div>
+                <div>${text}</div>
+            `;
+            chatBox.appendChild(message);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // ========================================
+        // EXAMPLE LYRICS LOADER
+        // ========================================
+        const EXAMPLE_LYRICS = {
+            chicano_1: {
+                lyrics: "Yeah homeboy, we gonna roll outta here right now\nMy ese said let's bounce, we cruising through the barrio tonight",
+                vibe: "laid-back resilience, late-pocket groove",
+                lens: "chicano_soul"
+            },
+            chicano_2: {
+                lyrics: "Low and slow, that's how we roll\nCruising down Whittier Boulevard at midnight\nThe homies in the back, oldies on the radio",
+                vibe: "nostalgic cruising, warm melancholy",
+                lens: "chicano_soul"
+            },
+            trap_1: {
+                lyrics: "I'm finna tell you how I really feel right now\nWe tryna make it through the night, just us two\nAin't nobody gotta know what we been through",
+                vibe: "late-night honesty, intimate confession",
+                lens: "trap_soul"
+            },
+            trap_2: {
+                lyrics: "2AM and I'm thinking bout you again\nFinna call but I know I shouldn't\nWe tryna act like we don't care but we do",
+                vibe: "nocturnal vulnerability, suppressed longing",
+                lens: "trap_soul"
+            },
+            boom_1: {
+                lyrics: "Yo, check the rhyme, aight?\nWe came from the bottom, now we on top\nThe beats keep knockin' while the cipher don't stop",
+                vibe: "raw confidence, street authenticity",
+                lens: "boom_bap"
+            },
+            boom_2: {
+                lyrics: "Summer in the park, the DJ spins that boom bap\nYo, we gather round the speaker, aight let's bring it back\nTo the golden era when the beats were raw",
+                vibe: "nostalgic celebration, park jam energy",
+                lens: "boom_bap"
+            },
+            lagos_1: {
+                lyrics: "Wetin be this thing wey dey make me feel so?\nOya come dance with me, make we celebrate tonight\nNa jare, this life too short abeg",
+                vibe: "joyful celebration, communal energy",
+                lens: "afrobeat_lagos"
+            },
+            lagos_2: {
+                lyrics: "From Lagos to the world, we dey carry the fire\nWetin dey happen? We rising higher and higher\nOya dance, oya move, make the rhythm take control",
+                vibe: "triumphant pride, infectious groove",
+                lens: "afrobeat_lagos"
+            },
+            kpop_1: {
+                lyrics: "Saranghae, you know it's true\nOppa, you're my shining star tonight\nDaebak! This feeling is so bright",
+                vibe: "crystalline perfection, radiant joy",
+                lens: "kpop_seoul"
+            },
+            kpop_2: {
+                lyrics: "Every moment with you feels like a dream\nSaranghae, oppa, you're my everything\nWe shine together under city lights so clean",
+                vibe: "pristine emotion, manufactured beauty",
+                lens: "kpop_seoul"
+            },
+            drill_1: {
+                lyrics: "Wagwan bruv, mandem on the block innit\nWe run these streets, peng ting by my side\nNo cap, we the realest in the ends, you get me?",
+                vibe: "menacing confidence, cold determination",
+                lens: "uk_drill_london"
+            },
+            drill_2: {
+                lyrics: "London fog, we moving through the night innit\nBruv said pull up, mandem ready for whatever\nThis life ain't easy but we hold it down proper",
+                vibe: "gritty resilience, street survival",
+                lens: "uk_drill_london"
+            },
+            neo_1: {
+                lyrics: "The groove is deeper than words can say\nFeel it in your soul, let it guide the way\nOrganic, authentic, nothing manufactured here",
+                vibe: "deep sensuality, organic groove",
+                lens: "neo_soul"
+            },
+            neo_2: {
+                lyrics: "Brown sugar sweetness mixed with pain\nWe finding truth in the rhythm and the rain\nThis is real love, unfiltered and free",
+                vibe: "earthy intimacy, conscious vulnerability",
+                lens: "neo_soul"
+            }
+        };
+
+        document.getElementById('example-lyrics').addEventListener('change', (e) => {
+            const exampleKey = e.target.value;
+            if (!exampleKey) return;
+            
+            const example = EXAMPLE_LYRICS[exampleKey];
+            if (example) {
+                document.getElementById('lyrics-input').value = example.lyrics;
+                document.getElementById('vibe-input').value = example.vibe;
+                document.getElementById('cultural-lens').value = example.lens;
+                
+                addAIMessage(`📝 Loaded example: ${e.target.options[e.target.selectedIndex].text}`);
+                addAIMessage(`   Cultural Lens: ${example.lens}`);
+                addAIMessage(`   Vibe: ${example.vibe}`);
+                
+                // Reset dropdown
+                e.target.value = '';
+            }
+        });
+
+        // ========================================
+        // ARTIFACT INTERACTION
+        // ========================================
+        // GENERATE BUTTON (Trigger API Call)
+        // ========================================
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            if (!authToken) {
+                addAIMessage('❌ Please login or register first');
+                return;
+            }
+            
+            const lyrics = document.getElementById('lyrics-input').value;
+            const vibe = document.getElementById('vibe-input').value;
+            const culturalLens = document.getElementById('cultural-lens').value;
+            const maxArousal = parseFloat(document.getElementById('max-arousal').value);
+            const vocalProximity = document.getElementById('vocal-proximity').value;
+
+            addAIMessage(`🔥 GENERATION REQUEST RECEIVED`);
+            addAIMessage(`Lyrics: "${lyrics}"`);
+            addAIMessage(`Vibe: "${vibe}"`);
+            addAIMessage(`Cultural Lens: "${culturalLens}"`);
+            addAIMessage(`Analyzing emotional subtext...`);
+
+            // REAL API CALL TO CLOUD RUN (VICS v3.0 with Barrio Phonetics)
+            try {
+                const startTime = Date.now();
+                const response = await fetch('https://lyrica3-backend-e2q5oemapa-uw.a.run.app/api/generate', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ 
+                        lyrics, 
+                        mood: vibe, 
+                        genre: culturalLens,
+                        max_arousal: maxArousal,
+                        vocal_proximity: vocalProximity
+                    })
+                });
+                
+                const latency = Date.now() - startTime;
+                document.getElementById('latency').textContent = `${latency}ms`;
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || `API Error: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Update emotional vector from VICS response
+                if (data.vics_blueprint && data.vics_blueprint.emotional_vector) {
+                    const ev = data.vics_blueprint.emotional_vector;
+                    currentValence = ev.valence || currentValence;
+                    currentArousal = ev.arousal || currentArousal;
+                    updateEmotionalVector();
+                    
+                    document.getElementById('tension-value').textContent = (ev.tension || 0.5).toFixed(2);
+                    document.getElementById('cultural-resonance-value').textContent = (ev.cultural_resonance || 0.7).toFixed(2);
+                }
+                
+                // Display Slang Detection results
+                if (data.vics_blueprint && data.vics_blueprint.vocal_blueprint && data.vics_blueprint.vocal_blueprint.slang_phonetics) {
+                    const slangData = data.vics_blueprint.vocal_blueprint.slang_phonetics;
+                    let slangHTML = `<strong>Cultural Lens:</strong> ${slangData.cultural_lens}<br><br>`;
+                    
+                    if (slangData.transformations && slangData.transformations.length > 0) {
+                        slangHTML += `<strong>${slangData.transformations.length} Slang Term(s) Detected:</strong><br>`;
+                        slangData.transformations.forEach((t, i) => {
+                            slangHTML += `<br>${i + 1}. <strong>"${t.term}"</strong><br>`;
+                            slangHTML += `   IPA: ${t.ipa_target}<br>`;
+                            slangHTML += `   Formant Shift: ${t.formant_shift !== undefined ? t.formant_shift.toFixed(2) : '0.00'}<br>`;
+                            if (t.timing_offset_ms) {
+                                slangHTML += `   Timing Offset: ${t.timing_offset_ms.toFixed(0)}ms<br>`;
+                            }
+                            if (t.biometric_artifacts && t.biometric_artifacts.length > 0) {
+                                slangHTML += `   Artifacts: ${t.biometric_artifacts.map(a => `<${a}>`).join(', ')}<br>`;
+                            }
+                            if (t.compression_ratio) {
+                                slangHTML += `   Compression: ${(t.compression_ratio * 100).toFixed(0)}%<br>`;
+                            }
+                        });
+                    } else {
+                        slangHTML += `<em>No slang detected in lyrics.</em>`;
+                    }
+                    
+                    if (slangData.cultural_gatekeeping_warnings && slangData.cultural_gatekeeping_warnings.length > 0) {
+                        slangHTML += `<br><br><strong style="color: #ff6b6b;">⚠️ Cultural Gatekeeping Warnings:</strong><br>`;
+                        slangData.cultural_gatekeeping_warnings.forEach(w => {
+                            slangHTML += `<span style="color: #ff6b6b;">${w}</span><br>`;
+                        });
+                    }
+                    
+                    document.getElementById('slang-detection-output').innerHTML = slangHTML;
+                } else {
+                    document.getElementById('slang-detection-output').innerHTML = '<em>No slang phonetics data available.</em>';
+                }
+                
+                // Display CSN justification
+                if (data.vics_blueprint && data.vics_blueprint.csn_justification) {
+                    document.getElementById('csn-justification-output').textContent = data.vics_blueprint.csn_justification;
+                }
+                
+                // Display artifacts
+                if (data.vics_blueprint && data.vics_blueprint.vocal_blueprint && data.vics_blueprint.vocal_blueprint.biometric_artifacts) {
+                    const artifacts = data.vics_blueprint.vocal_blueprint.biometric_artifacts;
+                    const container = document.getElementById('artifact-container');
+                    container.innerHTML = '';
+                    artifacts.forEach(artifact => {
+                        const div = document.createElement('div');
+                        div.className = 'artifact-item';
+                        div.textContent = `<${artifact}>`;
+                        container.appendChild(div);
+                    });
+                }
+                
+                addAIMessage(`✅ GENERATION COMPLETE. Track ID: ${data.track_id || 'N/A'}`);
+                addAIMessage(`🧬 VICS v3.0 Blueprint: ${data.vics_blueprint ? 'LOADED' : 'UNAVAILABLE'}`);
+                
+                // Load stems into audio player
+                if (data.stems && data.stems.length > 0) {
+                    addAIMessage(`🎵 Stems Generated: ${data.stems.length} stems`);
+                    loadStemPlayer(data.stems);
+                } else {
+                    addAIMessage(`⚠️ No stems available`);
+                }
+                
+            } catch (error) {
+                addAIMessage(`❌ ERROR: ${error.message}`);
+                console.error('Generation error:', error);
+            }
+        });
+
+        // ========================================
+        // AUDIO STEM PLAYER & WAVEFORM
+        // ========================================
+        let audioContext = null;
+        let analyser = null;
+        let activeAudioElements = {};
+
+        function loadStemPlayer(stems) {
+            const container = document.getElementById('stem-player-container');
+            container.innerHTML = '';
+            
+            stems.forEach((stem, index) => {
+                const stemDiv = document.createElement('div');
+                stemDiv.className = 'stem-control';
+                
+                const stemId = `stem-${index}`;
+                const audio = new Audio();
+                audio.src = stem.src;
+                audio.volume = stem.level || 0.8;
+                activeAudioElements[stemId] = audio;
+                
+                stemDiv.innerHTML = `
+                    <div class="stem-control-header">
+                        <span class="stem-name">${stem.name}</span>
+                        <div class="stem-buttons">
+                            <button class="stem-btn" data-stem="${stemId}" data-action="play">▶ PLAY</button>
+                            <button class="stem-btn" data-stem="${stemId}" data-action="download">💾 DL</button>
+                        </div>
+                    </div>
+                    <input type="range" class="stem-volume" min="0" max="100" value="${(stem.level * 100).toFixed(0)}" data-stem="${stemId}">
+                    <div style="font-size: 10px; color: #555; margin-top: 5px;">Level: <span id="${stemId}-level">${(stem.level * 100).toFixed(0)}%</span> | Peak: ${(stem.peak * 100).toFixed(0)}%</div>
+                `;
+                
+                container.appendChild(stemDiv);
+            });
+            
+            // Attach event listeners
+            document.querySelectorAll('.stem-btn[data-action="play"]').forEach(btn => {
+                btn.addEventListener('click', () => toggleStemPlayback(btn.dataset.stem, btn));
+            });
+            
+            document.querySelectorAll('.stem-btn[data-action="download"]').forEach(btn => {
+                btn.addEventListener('click', () => downloadStem(btn.dataset.stem));
+            });
+            
+            document.querySelectorAll('.stem-volume').forEach(slider => {
+                slider.addEventListener('input', (e) => {
+                    const stemId = e.target.dataset.stem;
+                    const volume = e.target.value / 100;
+                    if (activeAudioElements[stemId]) {
+                        activeAudioElements[stemId].volume = volume;
+                    }
+                    document.getElementById(`${stemId}-level`).textContent = `${e.target.value}%`;
+                });
+            });
+            
+            addAIMessage(`🎵 Loaded ${stems.length} stems into player`);
+        }
+
+        function toggleStemPlayback(stemId, button) {
+            const audio = activeAudioElements[stemId];
+            if (!audio) return;
+            
+            if (audio.paused) {
+                audio.play();
+                button.textContent = '⏸ PAUSE';
+                button.classList.add('playing');
+                
+                // Initialize waveform visualization
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 2048;
+                }
+                
+                const source = audioContext.createMediaElementSource(audio);
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                
+                drawWaveform();
+            } else {
+                audio.pause();
+                button.textContent = '▶ PLAY';
+                button.classList.remove('playing');
+            }
+        }
+
+        function downloadStem(stemId) {
+            const audio = activeAudioElements[stemId];
+            if (!audio) return;
+            
+            const stemName = document.querySelector(`[data-stem="${stemId}"][data-action="play"]`)
+                .closest('.stem-control')
+                .querySelector('.stem-name').textContent;
+            
+            // Create download link
+            const a = document.createElement('a');
+            a.href = audio.src;
+            a.download = `${stemName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.wav`;
+            a.click();
+            
+            addAIMessage(`💾 Downloading: ${stemName}`);
+        }
+
+        function drawWaveform() {
+            if (!analyser) return;
+            
+            const canvas = document.getElementById('waveform-canvas');
+            const canvasCtx = canvas.getContext('2d');
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            document.getElementById('waveform-placeholder').style.display = 'none';
+            
+            function draw() {
+                requestAnimationFrame(draw);
+                
+                analyser.getByteTimeDomainData(dataArray);
+                
+                canvasCtx.fillStyle = '#131316';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = '#ff5eac';
+                canvasCtx.beginPath();
+                
+                const sliceWidth = canvas.width / bufferLength;
+                let x = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+                    
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+                    
+                    x += sliceWidth;
+                }
+                
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+            }
+            
+            draw();
+        }
+        });
+
+        // ========================================
+        // INITIALIZATION
+        // ========================================
+        updateEmotionalVector();
+    </script>
+
+</body>
+</html>

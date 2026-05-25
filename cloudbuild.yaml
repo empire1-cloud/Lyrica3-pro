@@ -7,12 +7,16 @@
 substitutions:
   _REGION: us-central1
   _REPO:   lyrica3
-  _API_URL: https://api.lyrica3.com   # baked into the frontend bundle
+  _API_URL: https://api.lyrica3.com
+  _CULTURA_API_URL: https://cultura-backend-339698334666.us-central1.run.app
 
 options:
   machineType: E2_HIGHCPU_8
   logging: CLOUD_LOGGING_ONLY
 
+# $BUILD_ID is always set (manual `gcloud builds submit` and repo triggers). Do not
+# use $SHORT_SHA here — it is only populated for source-linked triggers, so a local
+# submit leaves an empty tag and Cloud Build errors: invalid image name ".../backend:".
 steps:
   # ------ backend (FastAPI + Demucs-ready) ------
   - id: build-backend
@@ -20,7 +24,7 @@ steps:
     args:
       - build
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$SHORT_SHA
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$BUILD_ID
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:latest
       - -f
@@ -32,10 +36,11 @@ steps:
     name: gcr.io/cloud-builders/docker
     args:
       - build
+      - --no-cache
       - --build-arg
       - REACT_APP_BACKEND_URL=${_API_URL}
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:$SHORT_SHA
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:$BUILD_ID
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:latest
       - -f
@@ -48,17 +53,65 @@ steps:
     args:
       - build
       - -t
-      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:$SHORT_SHA
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:$BUILD_ID
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:latest
       - -f
       - discord_bot/Dockerfile
       - discord_bot
 
+  # ------ Cultura Vibe Forge — frontend ------
+  - id: build-cultura-frontend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --no-cache
+      - --build-arg
+      - REACT_APP_BACKEND_URL=${_CULTURA_API_URL}
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-frontend:$BUILD_ID
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-frontend:latest
+      - -f
+      - cultura/frontend/Dockerfile
+      - cultura/frontend
+
+  # ------ Cultura Vibe Forge — backend ------
+  - id: build-cultura-backend
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-backend:$BUILD_ID
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-backend:latest
+      - -f
+      - cultura/backend/Dockerfile
+      - cultura/backend
+
+  # ------ Empire 1 Ledger — provenance + royalty microservice ------
+  - id: build-empire1-ledger
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/empire1-ledger:$BUILD_ID
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/empire1-ledger:latest
+      - -f
+      - empire1_ledger_service/Dockerfile
+      - .
+
 images:
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:$BUILD_ID
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/backend:latest
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:$BUILD_ID
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/frontend:latest
-  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:$BUILD_ID
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/discord-bot:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-frontend:$BUILD_ID
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-frontend:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-backend:$BUILD_ID
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/cultura-backend:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/empire1-ledger:$BUILD_ID
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/empire1-ledger:latest

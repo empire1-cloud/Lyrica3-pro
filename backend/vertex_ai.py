@@ -49,13 +49,13 @@ VERTEX_LOCATION   = os.environ.get("VERTEX_LOCATION",   "us-central1").strip()
 
 # Model IDs — override in env to pin a specific version
 VERTEX_GEMINI_MODEL = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-2.5-pro")
-VERTEX_LYRIA_MODEL  = os.environ.get("VERTEX_LYRIA_MODEL",  "lyria-002")
+VERTEX_LYRIA_MODEL  = os.environ.get("VERTEX_LYRIA_MODEL",  "lyria-003")
 VERTEX_CHIRP_VOICE  = os.environ.get("VERTEX_CHIRP_VOICE",  "en-US-Chirp3-HD-Orus")
 
 
 # Full-song composition knobs
 LYRIA_SEGMENT_SECONDS = int(os.environ.get("LYRIA_SEGMENT_SECONDS", "30"))  # per-call max
-LYRIA_SEGMENTS        = int(os.environ.get("LYRIA_SEGMENTS", "6"))           # 6×30 = 3 min
+LYRIA_SEGMENTS        = int(os.environ.get("LYRIA_SEGMENTS", "10"))          # 10×30 = 5 min (default)
 LYRIA_CROSSFADE_MS    = int(os.environ.get("LYRIA_CROSSFADE_MS", "1500"))
 
 
@@ -175,12 +175,18 @@ async def vertex_lyria_full_song(base_prompt: str, matrix: str, mood_recipe: tup
 
     # section-aware prompt variants — keeps the song from sounding like a loop
     sections = [
-        ("intro",   "tape hiss intro, ambient room tone, soft arrival"),
-        ("verse",   "full arrangement, steady groove, late-pocket drums"),
-        ("prechorus","building tension, ride cymbal, rising bass"),
-        ("chorus",  "climactic hook, layered vocals, wide stereo"),
-        ("verse2",  "stripped verse, minimal, intimate close-mic"),
-        ("outro",   "fade out, tape slow, final vinyl crackle"),
+        ("intro",      "tape hiss intro, ambient room tone, soft arrival"),
+        ("verse1",     "full arrangement, steady groove, late-pocket drums"),
+        ("prechorus1", "building tension, ride cymbal, rising bass"),
+        ("chorus1",    "climactic hook, layered instrumentation, wide stereo"),
+        ("verse2",     "stripped verse, minimal, intimate close-mic"),
+        ("prechorus2", "rebuilding energy, snare rolls, harmonic lift"),
+        ("chorus2",    "full power hook, doubled layers, maximum width"),
+        ("bridge",     "key change or breakdown, sparse then swelling"),
+        ("guitar_solo","melodic lead, emotional peak, analog warmth"),
+        ("chorus3",    "final chorus, all elements, gospel energy"),
+        ("outro",      "fade out, tape slow, final vinyl crackle"),
+        ("post_outro", "ambient tail, room tone, distant echo"),
     ][:n]
 
     prompts = [
@@ -265,3 +271,4 @@ async def vertex_chirp_tts(text: str, voice_name: Optional[str] = None,
     except Exception as e:
         logger.warning("vertex_chirp_tts error: %s", e)
         return None
+

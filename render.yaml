@@ -16,14 +16,14 @@ services:
       - key: DB_NAME
         value: lyrica3_prod
       - key: CORS_ORIGINS
-        value: https://lyrica3.com,https://www.lyrica3.com
+        value: https://lyrica3pro.com,https://www.lyrica3pro.com
       - key: JWT_SECRET
         generateValue: true        # Render auto-generates a 32-char secret
       - key: EMERGENT_LLM_KEY      # paste from Emergent dashboard
         sync: false
       - key: PORT
         value: "8001"
-    healthCheckPath: /api/
+    healthCheckPath: /health
     autoDeploy: true
 
 # Notes

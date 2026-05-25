@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "framework": "create-react-app",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "outputDirectory": "build",
+  "build": {
+    "env": {
+      "GENERATE_SOURCEMAP": "false",
+      "INLINE_RUNTIME_CHUNK": "false",
+      "DISABLE_ESLINT_PLUGIN": "true",
+      "TSC_COMPILE_ON_ERROR": "true"
+    }
+  }
+}

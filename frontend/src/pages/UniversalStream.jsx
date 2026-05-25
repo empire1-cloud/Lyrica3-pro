@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getBloodlines, getLedger, WS_URL } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { Globe, Radio, TrendingUp, Fingerprint, Zap, Repeat2, Crown, Share2 } from "lucide-react";
-import BloodlineShareCard from "../components/BloodlineShareCard";
+import { Globe, Radio, TrendingUp, Fingerprint, Zap, Repeat2, Crown } from "lucide-react";
 
-const COLOR_RING = ["#f5a524", "#ff5eac", "#59d3ff", "#6a8cff", "#ffd88a"];
+const COLOR_RING = ["#F5C542", "#FF2EBE", "#00E6FF", "#00E6FF", "#F5C542"];
 
-function BloodlineCard({ bl, rank, accent, onShare }) {
+function BloodlineCard({ bl, rank, accent }) {
   return (
     <div className="panel rounded-[6px] p-4 md:p-5 relative overflow-hidden" data-testid={`bloodline-${bl.root_dna}`}>
       <div className="absolute -top-16 -right-16 w-[200px] h-[200px] rounded-full blur-3xl pointer-events-none"
@@ -18,34 +17,25 @@ function BloodlineCard({ bl, rank, accent, onShare }) {
                  style={{ background: `${accent}33`, color: accent, border: `1px solid ${accent}66` }}>
               {rank}
             </div>
-            <div className="etched text-[#8a8278]">{bl.root_matrix}</div>
+            <div className="etched text-[#9CA3B0]">{bl.root_matrix}</div>
           </div>
-          <h3 className="font-display text-[20px] md:text-[24px] text-[#f3ece1] mt-1.5 tracking-tight leading-tight">
+          <h3 className="font-display text-[20px] md:text-[24px] text-[#F5F7FA] mt-1.5 tracking-tight leading-tight">
             {bl.root_title}
-            {rank === 1 && <Crown size={16} className="inline ml-2 -translate-y-[2px] text-[#ffd88a]"/>}
+            {rank === 1 && <Crown size={16} className="inline ml-2 -translate-y-[2px] text-[#F5C542]"/>}
           </h3>
-          <div className="text-[11px] md:text-[12px] font-mono text-[#8a8278] mt-1">
-            root: <span className="text-[#ffd88a]">{bl.root_creator}</span>
+          <div className="text-[11px] md:text-[12px] font-mono text-[#9CA3B0] mt-1">
+            root: <span className="text-[#F5C542]">{bl.root_creator}</span>
             <span className="mx-2">·</span>
-            <span className="text-[#59d3ff]">{bl.depth} node{bl.depth === 1 ? "" : "s"}</span>
+            <span className="text-[#00E6FF]">{bl.depth} node{bl.depth === 1 ? "" : "s"}</span>
           </div>
         </div>
         <div className="text-right shrink-0">
           <div className="font-display text-[22px] md:text-[28px] tabular-nums" style={{ color: accent }}>
             ${bl.total_earnings_usd.toFixed(2)}
           </div>
-          <div className="text-[10px] font-mono text-[#6b6257] uppercase tracking-[0.16em]">
+          <div className="text-[10px] font-mono text-[#6B7280] uppercase tracking-[0.16em]">
             {bl.total_streams.toLocaleString()} streams · {bl.total_flips} flips
           </div>
-          <button
-            onClick={() => onShare && onShare(bl)}
-            data-testid={`share-bloodline-btn-${bl.root_dna}`}
-            className="mt-2 px-2.5 py-1 rounded-[3px] border border-[#59d3ff]/50 bg-[#59d3ff]/10
-                       text-[#59d3ff] uppercase text-[9px] tracking-[0.2em] font-medium
-                       hover:bg-[#59d3ff]/20 transition-all inline-flex items-center gap-1.5">
-            <Share2 size={10}/>
-            Share Bloodline
-          </button>
         </div>
       </div>
 
@@ -54,29 +44,29 @@ function BloodlineCard({ bl, rank, accent, onShare }) {
         <div className="flex items-center gap-0 overflow-x-auto pb-1 relative">
           {bl.chain.map((c, i) => {
             const isRoot = c.is_root;
-            const nodeColor = isRoot ? accent : "#59d3ff";
+            const nodeColor = isRoot ? accent : "#00E6FF";
             return (
               <React.Fragment key={c.dna_tag}>
                 {i > 0 && (
                   <div className="flex-1 min-w-[24px] h-[2px] mx-1 relative"
-                       style={{ background: `linear-gradient(90deg, ${isRoot ? accent : "#59d3ff"}66, ${accent}66)` }}>
-                    <Repeat2 size={10} className="absolute left-1/2 -translate-x-1/2 -top-[5px] text-[#ff5eac] bg-[#0a0a0c] px-[1px]"/>
+                       style={{ background: `linear-gradient(90deg, ${isRoot ? accent : "#00E6FF"}66, ${accent}66)` }}>
+                    <Repeat2 size={10} className="absolute left-1/2 -translate-x-1/2 -top-[5px] text-[#FF2EBE] bg-[#0a0a0c] px-[1px]"/>
                   </div>
                 )}
-                <div className="shrink-0 min-w-[130px] md:min-w-[150px] max-w-[180px] bg-[#0d0d10] border rounded-[4px] px-2.5 py-2"
+                <div className="shrink-0 min-w-[130px] md:min-w-[150px] max-w-[180px] bg-[#0E0F17] border rounded-[4px] px-2.5 py-2"
                      style={{ borderColor: `${nodeColor}55`, boxShadow: `inset 0 0 10px ${nodeColor}22` }}>
                   <div className="flex items-center gap-1.5">
                     <Fingerprint size={10} style={{ color: nodeColor }}/>
-                    <span className="etched text-[#8a8278] text-[9px] truncate">
+                    <span className="etched text-[#9CA3B0] text-[9px] truncate">
                       {isRoot ? "ROOT" : `FLIP ${i}`}
                     </span>
                   </div>
-                  <div className="font-display text-[12px] md:text-[13px] text-[#f3ece1] mt-1 truncate leading-tight">
+                  <div className="font-display text-[12px] md:text-[13px] text-[#F5F7FA] mt-1 truncate leading-tight">
                     {c.title}
                   </div>
-                  <div className="font-mono text-[9px] text-[#6b6257] truncate mt-0.5">{c.creator}</div>
+                  <div className="font-mono text-[9px] text-[#6B7280] truncate mt-0.5">{c.creator}</div>
                   <div className="flex items-center justify-between mt-1.5 font-mono">
-                    <span className="text-[9px] text-[#6b6257]">{c.streams.toLocaleString()}</span>
+                    <span className="text-[9px] text-[#6B7280]">{c.streams.toLocaleString()}</span>
                     <span className="text-[10px]" style={{ color: nodeColor }}>
                       ${c.earnings_usd.toFixed(2)}
                     </span>
@@ -99,10 +89,10 @@ function NetworkGravityOrbit({ bloodlines }) {
   return (
     <div className="panel rounded-[6px] p-4 md:p-5" data-testid="network-gravity">
       <div className="flex items-center gap-2 mb-2">
-        <Globe size={14} className="text-[#59d3ff]"/>
-        <span className="etched text-[#59d3ff]">Network Gravity</span>
+        <Globe size={14} className="text-[#00E6FF]"/>
+        <span className="etched text-[#00E6FF]">Network Gravity</span>
       </div>
-      <div className="text-[10px] font-mono text-[#6b6257] uppercase tracking-[0.18em] mb-3">
+      <div className="text-[10px] font-mono text-[#6B7280] uppercase tracking-[0.18em] mb-3">
         Cultural bloodline mass · last 24h
       </div>
       <div className="relative w-full aspect-square max-w-[320px] mx-auto">
@@ -110,13 +100,13 @@ function NetworkGravityOrbit({ bloodlines }) {
           {/* orbits */}
           {[0.32, 0.56, 0.82].map((r, i) => (
             <circle key={i} cx={cx} cy={cy} r={r * (size/2 - 8)}
-                    fill="none" stroke="#22222a" strokeDasharray="2 4"/>
+                    fill="none" stroke="#0E0F17" strokeDasharray="2 4"/>
           ))}
           {/* center star */}
-          <circle cx={cx} cy={cy} r="16" fill="#f5a524" opacity="0.25"/>
-          <circle cx={cx} cy={cy} r="6"  fill="#ffd88a"/>
+          <circle cx={cx} cy={cy} r="16" fill="#F5C542" opacity="0.25"/>
+          <circle cx={cx} cy={cy} r="6"  fill="#F5C542"/>
           <text x={cx} y={cy + 28} textAnchor="middle" fontFamily="JetBrains Mono" fontSize="8"
-                fill="#8a8278" style={{ letterSpacing: "0.14em" }}>EMPIRE 1</text>
+                fill="#9CA3B0" style={{ letterSpacing: "0.14em" }}>EMPIRE 1</text>
           {bloodlines.slice(0, 8).map((b, i) => {
             const angle = (i / Math.min(8, bloodlines.length)) * Math.PI * 2 - Math.PI / 2;
             const r = (0.42 + (1 - b.total_earnings_usd / maxEarn) * 0.38) * (size/2 - 10);
@@ -130,7 +120,7 @@ function NetworkGravityOrbit({ bloodlines }) {
                 <circle cx={x} cy={y} r={rad} fill={c} fillOpacity="0.22"
                         stroke={c} strokeWidth="1.5" style={{ filter: `drop-shadow(0 0 6px ${c})` }}/>
                 <text x={x} y={y + rad + 10} textAnchor="middle" fontFamily="Unbounded" fontSize="8"
-                      fill="#f3ece1">
+                      fill="#F5F7FA">
                   {(b.root_title || "").slice(0, 16)}
                 </text>
               </g>
@@ -147,7 +137,6 @@ export default function UniversalStream() {
   const [bloodlines, setBloodlines] = useState([]);
   const [ledger, setLedger] = useState([]);
   const [live, setLive] = useState([]);
-  const [shareOpen, setShareOpen] = useState(null);
   const wsRef = useRef(null);
 
   const refresh = () => {
@@ -177,19 +166,19 @@ export default function UniversalStream() {
     <div className="min-h-screen p-4 md:p-8 lg:p-12">
       <div className="flex items-start justify-between mb-6 md:mb-8 gap-3 flex-wrap">
         <div>
-          <div className="etched text-[#8a8278]">// UNIVERSAL STREAM</div>
-          <h2 className="font-display text-[26px] md:text-[40px] text-[#f3ece1] tracking-tight leading-[1.05] mt-1">
-            Bloodline <span className="text-[#ff5eac]">Remix</span> Leaderboard
+          <div className="etched text-[#9CA3B0]">// UNIVERSAL STREAM</div>
+          <h2 className="font-display text-[26px] md:text-[40px] text-[#F5F7FA] tracking-tight leading-[1.05] mt-1">
+            Bloodline <span className="text-[#FF2EBE]">Remix</span> Leaderboard
           </h2>
-          <p className="font-serif italic text-[#8a8278] mt-1 md:mt-2 text-[12px] md:text-[14px]">
+          <p className="font-serif italic text-[#9CA3B0] mt-1 md:mt-2 text-[12px] md:text-[14px]">
             Rolling 24h rank · whose cultural bloodline is generating the most micro-royalties globally
           </p>
         </div>
         <div className="panel rounded-[6px] px-4 py-3 flex items-center gap-3">
-          <Radio size={14} className="text-[#59d3ff] animate-pulse"/>
+          <Radio size={14} className="text-[#00E6FF] animate-pulse"/>
           <div>
-            <div className="etched text-[#c9bfae]">Live events</div>
-            <div className="font-mono text-[#ffd88a] text-[14px]">{live.length}</div>
+            <div className="etched text-[#C8CCD8]">Live events</div>
+            <div className="font-mono text-[#F5C542] text-[14px]">{live.length}</div>
           </div>
         </div>
       </div>
@@ -198,13 +187,12 @@ export default function UniversalStream() {
         {/* leaderboard */}
         <div className="col-span-12 lg:col-span-8 space-y-4 md:space-y-5" data-testid="bloodline-list">
           {bloodlines.length === 0 && (
-            <div className="panel rounded-[6px] p-6 text-center text-[#8a8278] font-mono text-[12px]">
+            <div className="panel rounded-[6px] p-6 text-center text-[#9CA3B0] font-mono text-[12px]">
               No bloodlines yet · flip a track to seed the lineage graph
             </div>
           )}
           {bloodlines.map((bl, i) => (
-            <BloodlineCard key={bl.root_dna} bl={bl} rank={i + 1} accent={COLOR_RING[i % COLOR_RING.length]}
-                           onShare={(b) => setShareOpen(b)}/>
+            <BloodlineCard key={bl.root_dna} bl={bl} rank={i + 1} accent={COLOR_RING[i % COLOR_RING.length]}/>
           ))}
         </div>
 
@@ -214,49 +202,27 @@ export default function UniversalStream() {
 
           <div className="panel rounded-[6px] p-4 md:p-5">
             <div className="flex items-center gap-2 mb-3">
-              <Zap size={14} className="text-[#ffd88a]"/>
-              <span className="etched text-[#ffd88a]">Immutable Ledger · Last Events</span>
+              <Zap size={14} className="text-[#F5C542]"/>
+              <span className="etched text-[#F5C542]">Immutable Ledger · Last Events</span>
             </div>
             <div className="space-y-2 max-h-[320px] overflow-hidden">
-              {ledger.length === 0 && <div className="text-[#6b6257] font-mono text-[11px]">Ledger idle…</div>}
+              {ledger.length === 0 && <div className="text-[#6B7280] font-mono text-[11px]">Ledger idle…</div>}
               {ledger.slice(0, 10).map((e) => (
-                <div key={e.id} className="bg-[#0d0d10] border border-[#1c1c22] rounded-[3px] p-2.5 flex items-center justify-between">
+                <div key={e.id} className="bg-[#0E0F17] border border-[#0E0F17] rounded-[3px] p-2.5 flex items-center justify-between">
                   <div className="min-w-0">
                     <div className="font-mono text-[10px] uppercase tracking-[0.14em]"
-                         style={{ color: e.kind === "mint" ? "#ffd88a" : e.kind === "flip" ? "#ff5eac" : "#59d3ff" }}>
+                         style={{ color: e.kind === "mint" ? "#F5C542" : e.kind === "flip" ? "#FF2EBE" : "#00E6FF" }}>
                       {e.kind}
                     </div>
-                    <div className="font-mono text-[10px] text-[#c9bfae] truncate mt-0.5">{e.dna_tag?.slice(0,18)}…</div>
+                    <div className="font-mono text-[10px] text-[#C8CCD8] truncate mt-0.5">{e.dna_tag?.slice(0,18)}…</div>
                   </div>
-                  <div className="text-[10px] font-mono text-[#6b6257] shrink-0 ml-2">{e.actor?.slice(0,14)}</div>
+                  <div className="text-[10px] font-mono text-[#6B7280] shrink-0 ml-2">{e.actor?.slice(0,14)}</div>
                 </div>
               ))}
             </div>
           </div>
         </div>
       </div>
-
-      {shareOpen && (
-        <BloodlineShareCard
-          track={{
-            dna_tag: shareOpen.root_dna,
-            title: shareOpen.root_title,
-            creator: shareOpen.root_creator,
-            cultural_matrix: shareOpen.root_matrix,
-            streams: shareOpen.total_streams,
-            earnings_usd: shareOpen.total_earnings_usd,
-            flips: shareOpen.total_flips,
-            parent_dna: null,
-          }}
-          chain={(shareOpen.chain || []).map((c, idx) => ({
-            dna_tag: c.dna_tag,
-            title: c.title,
-            creator: c.creator,
-            is_root: c.is_root || idx === 0,
-          }))}
-          onClose={() => setShareOpen(null)}
-        />
-      )}
     </div>
   );
 }
