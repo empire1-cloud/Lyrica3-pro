@@ -55,9 +55,12 @@ export enum OperationType {
   READ = 'READ',
   WRITE = 'WRITE',
   DELETE = 'DELETE',
+  LIST = 'LIST',
+  CREATE = 'CREATE',
+  GET = 'GET',
 }
 
-export function handleFirestoreError(error: unknown, operation: OperationType): void {
+export function handleFirestoreError(error: unknown, operation: OperationType, context?: string): void {
   const msg = error instanceof Error ? error.message : String(error);
-  console.error(`[Firestore ${operation}] ${msg}`);
+  console.error(`[Firestore ${operation}]${context ? ` ${context}` : ''} ${msg}`);
 }

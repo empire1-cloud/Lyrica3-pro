@@ -3,15 +3,14 @@ import { GoogleGenAI } from "@google/genai";
 // Gemini client retained for generateMusicStream (Lyria Realtime streaming).
 // translateVibeToParams is now routed through the backend so the key is never
 // exposed in the browser bundle.
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY || "" });
+const ai = new GoogleGenAI({ apiKey: process.env.REACT_APP_GEMINI_API_KEY || "" });
 
 const BACKEND_URL: string =
-  (process.env.REACT_APP_BACKEND_URL as string) ||
-  (import.meta.env.VITE_BACKEND_URL as string) ||
-  "";
+  (process.env.REACT_APP_BACKEND_URL as string) || "";
 
 export interface VibeParams {
   style: string;
+  genre?: string;
   mood: string;
   tempo: number;
   key: string;
@@ -99,7 +98,7 @@ export async function generateMusicStream(params: VibeParams) {
     console.warn("Lyria model access denied or failed. Falling back to simulated stream with audible preview.");
     
     // Return a mock async iterable with a real audible fallback URL
-    async function* mockStream() {
+    const mockStream = async function* () {
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       yield {
@@ -123,7 +122,7 @@ export async function generateMusicStream(params: VibeParams) {
           }
         }]
       };
-    }
+    };
     
     return mockStream();
   }

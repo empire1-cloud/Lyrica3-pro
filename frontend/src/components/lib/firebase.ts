@@ -8,8 +8,11 @@ export enum OperationType {
   READ = 'READ',
   WRITE = 'WRITE',
   DELETE = 'DELETE',
+  LIST = 'LIST',
+  CREATE = 'CREATE',
+  GET = 'GET',
 }
 
-export const handleFirestoreError = (err: unknown, op?: OperationType) => {
-  console.warn('Firebase stub — operation not supported:', op, err);
+export const handleFirestoreError = (err: unknown, op?: OperationType, context?: string) => {
+  console.warn('Firebase stub — operation not supported:', op, context, err);
 };

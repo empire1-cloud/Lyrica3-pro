@@ -1,10 +1,10 @@
-// Stub assetLibrary — legacy studio component reference
+export const CATEGORIES: Record<string, string> = {
+  AI_STYLE_MODEL: 'AI Style Model',
+  PROCEDURAL_FX: 'Procedural FX Engine',
+  AI_UTILITY: 'AI Utility Engine',
+  VOCAL_ENGINE: 'Vocal-Lyrical Engine',
+  PRODUCER_KIT: 'Producer Kit',
+  FX_PACK: 'FX Pack',
+};
 
-export const CATEGORIES = [
-  'Vocals',
-  'Beats',
-  'SFX',
-  'Ambient',
-];
-
-export const assetProductionList: Array<{ id: string; name: string; category: string }> = [];
+export const assetProductionList: Record<string, Array<{ id: string; name: string; category: string; description?: string; features?: string[] }>> = {};

@@ -759,7 +759,7 @@ Constraint: Low-frequency stabilization for cinematic sub-bass.`;
                   {PRESETS.map((p, i) => (
                     <button 
                       key={i}
-                      onClick={() => setMusicConfig({ style: p.style, structure: p.structure, tempoKey: p.tempoKey, vocal: p.vocal })}
+                      onClick={() => setMusicConfig({ ...musicConfig, style: p.style, structure: p.structure, tempoKey: p.tempoKey, vocal: p.vocal })}
                       className="w-full text-left px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-400 hover:bg-indigo-500/20 hover:text-indigo-300 border-b border-white/5 last:border-0 transition-colors"
                     >
                       {p.name}

@@ -437,7 +437,7 @@ export default function Mixer({ audioBlob }: MixerProps) {
       await ctx.suspend();
       setIsPlaying(false);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      setMeters([0,0,0,0,0]);
+      setMeters(Array(5).fill({ level: 0, gr: 0 }));
     }
   };
 
@@ -830,7 +830,7 @@ export default function Mixer({ audioBlob }: MixerProps) {
                           onChange={e => updateTrack(i, 'volume', parseFloat(e.target.value))}
                           onMouseUp={handleTrackChangeEnd}
                           className="absolute inset-0 w-8 h-full opacity-0 cursor-pointer z-10 writing-mode-vertical"
-                          style={{ appearance: 'slider-vertical' }}
+style={{ appearance: 'slider-vertical' as any }}
                         />
                         <motion.div 
                           className={`absolute w-10 h-14 rounded-lg shadow-2xl border-2 border-white/10 flex flex-col items-center justify-center cursor-pointer transition-colors ${state.volume > 1.0 ? 'bg-red-600' : 'bg-[#2a2a35] group-hover/fader:bg-[#3a3a45]'}`}
@@ -931,7 +931,7 @@ export default function Mixer({ audioBlob }: MixerProps) {
                         value={masterVolume}
                         onChange={e => setMasterVolume(parseFloat(e.target.value))}
                         className="absolute inset-0 w-10 h-full opacity-0 cursor-pointer z-10 writing-mode-vertical"
-                        style={{ appearance: 'slider-vertical' }}
+                        style={{ appearance: 'slider-vertical' as any }}
                       />
                       <motion.div 
                         className={`absolute w-12 h-16 rounded-xl shadow-[0_20px_40px_rgba(0,0,0,0.6)] border-2 border-white/20 flex flex-col items-center justify-center cursor-pointer transition-colors ${masterVolume > 1.0 ? 'bg-red-600' : 'bg-studio-accent group-hover/fader:bg-studio-yellow'}`}

@@ -16,12 +16,12 @@ import {
 } from 'lucide-react';
 import { useStudioStore } from '@/store/useStudioStore';
 import MusicEngine from './MusicEngine';
-import VocalEngine from './VocalEngine';
+import { VocalEngine } from './VocalEngine';
 import MixerEngine from './MixerEngine';
 import AssetBrowser from './AssetBrowser';
 import { SfxEngine } from './SfxEngine';
 import { AmbientEngine } from './AmbientEngine';
-import { DuoSoulEngine } from './DuoSoulEngine';
+import DuoSoulEngine from './DuoSoulEngine';
 import { Project, MusicAsset, VocalAsset } from '../types';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, orderBy } from 'firebase/firestore';
@@ -99,6 +99,7 @@ export const StudioShell: React.FC = () => {
       const projectId = Math.random().toString(36).substring(7);
       const projectData = {
         id: projectId,
+        name: newProjectTitle,
         title: newProjectTitle,
         ownerId: auth.currentUser.uid,
         createdAt: new Date().toISOString(),
@@ -267,7 +268,7 @@ export const StudioShell: React.FC = () => {
               )}
 
               {activeTab === 'music' && activeProject && <MusicEngine />}
-              {activeTab === 'vocal' && activeProject && <VocalEngine />}
+              {activeTab === 'vocal' && activeProject && <VocalEngine user={auth.currentUser} />}
               {activeTab === 'duo-soul' && activeProject && <DuoSoulEngine />}
               {activeTab === 'sfx' && activeProject && <SfxEngine />}
               {activeTab === 'ambient' && activeProject && <AmbientEngine />}

@@ -17,6 +17,10 @@ interface StudioStore {
   vocalAssets: VocalAsset[];
   sfxAssets: SfxAsset[];
   ambientAssets: AmbientAsset[];
+  addMusicAsset: (asset: MusicAsset) => void;
+  addVocalAsset: (asset: VocalAsset) => void;
+  addSfxAsset: (asset: SfxAsset) => void;
+  addAmbientAsset: (asset: AmbientAsset) => void;
   setMusicAssets: (assets: MusicAsset[]) => void;
   setVocalAssets: (assets: VocalAsset[]) => void;
   setSfxAssets: (assets: SfxAsset[]) => void;
@@ -39,6 +43,10 @@ export const useStudioStore = create<StudioStore>((set) => ({
   vocalAssets: [],
   sfxAssets: [],
   ambientAssets: [],
+  addMusicAsset: (asset) => set((s) => ({ musicAssets: [...s.musicAssets, asset] })),
+  addVocalAsset: (asset) => set((s) => ({ vocalAssets: [...s.vocalAssets, asset] })),
+  addSfxAsset: (asset) => set((s) => ({ sfxAssets: [...s.sfxAssets, asset] })),
+  addAmbientAsset: (asset) => set((s) => ({ ambientAssets: [...s.ambientAssets, asset] })),
   setMusicAssets: (assets) => set({ musicAssets: assets }),
   setVocalAssets: (assets) => set({ vocalAssets: assets }),
   setSfxAssets: (assets) => set({ sfxAssets: assets }),
