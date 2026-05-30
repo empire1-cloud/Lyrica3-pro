@@ -5,10 +5,29 @@ export default function S2MutationEngine() {
   const [baseGenre, setBaseGenre] = useState('Drill');
   const [mutationGenre, setMutationGenre] = useState('Chicano Soul');
   
+  const [loading, setLoading] = useState(false);
+  
   const handleExecute = async () => {
-    // In a real implementation, this would trigger an API call
-    console.log(`Executing Metamorphic Blend: ${baseGenre} + ${mutationGenre}`);
-    alert(`Triggering S2 Serendipity Synthesizer:\nBase: ${baseGenre}\nMutation: ${mutationGenre}`);
+    setLoading(true);
+    try {
+      const BACKEND = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+      const token = localStorage.getItem('e1_token');
+      const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      
+      const r = await fetch(`${BACKEND}/api/s2/mutate`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ base_genre: baseGenre, mutation_genre: mutationGenre }),
+      });
+      const data = await r.json();
+      console.log(`[S2 Blueprint Payload]:`, data);
+      alert(`S2 Serendipity Synthesizer Blueprint Generated!\n\nTitle: ${data.track_metadata?.title}\nActive Agents: ${data.track_metadata?.active_agents?.join(', ')}\nDelivery: ${data.epd_vocal_blueprint?.delivery_style}`);
+    } catch (e) {
+      console.error(e);
+      alert("Failed to execute metamorphic blend.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -81,9 +100,9 @@ export default function S2MutationEngine() {
       </div>
 
       {/* Action Button */}
-      <button onClick={handleExecute} className="w-full bg-[#1a1a4e] border border-[#ff1493] hover:bg-[#2d2d6b] text-white font-black text-lg py-5 rounded-lg shadow-[0_0_30px_rgba(255,20,147,0.2)] transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01]">
+      <button onClick={handleExecute} disabled={loading} className="w-full bg-[#1a1a4e] border border-[#ff1493] hover:bg-[#2d2d6b] text-white font-black text-lg py-5 rounded-lg shadow-[0_0_30px_rgba(255,20,147,0.2)] transition-all flex justify-center items-center gap-3 transform hover:scale-[1.01] disabled:opacity-50">
         <Zap size={24} className="text-[#ff1493]" fill="currentColor" />
-        EXECUTE METAMORPHIC BLEND (48kHz STEMS)
+        {loading ? 'FUSING METADATA...' : 'EXECUTE METAMORPHIC BLEND (48kHz STEMS)'}
       </button>
 
     </div>

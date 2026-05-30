@@ -1221,6 +1221,61 @@ async def vibes_catalog():
         ],
     }
 
+class S2MutateRequest(BaseModel):
+    base_genre: str
+    mutation_genre: str
+
+@api_router.post("/s2/mutate")
+@limiter.limit("10/minute")
+async def s2_mutate(request: Request, req: S2MutateRequest, user: Dict = Depends(current_user)):
+    try:
+        from s2_synthesizer import S2SerendipitySynthesizer
+        blueprint = S2SerendipitySynthesizer.execute_metamorphic_blend(req.base_genre, req.mutation_genre)
+        
+        # Log this event in the ledger
+        dna = f"trk_s2_{uuid.uuid4().hex[:10]}"
+        now = datetime.now(timezone.utc).isoformat()
+        
+        # Save to track DB as a pending blueprint to be fully synthesized later
+        track = {
+            "id": str(uuid.uuid4()),
+            "dna_tag": dna,
+            "title": blueprint["track_metadata"]["title"],
+            "creator": user["handle"],
+            "cultural_matrix": f"S2 Fusion: {req.base_genre} x {req.mutation_genre}",
+            "stems": [], # stems will be generated asynchronously
+            "biometrics": {
+                "vulnerability_index": 0.8,
+                "phonation_type": "Metamorphic Hybrid",
+                "swing_delay_ms": 15,
+                "lung_capacity": 0.8,
+                "throat_resonance": 0.8,
+                "emotional_cracks": 5,
+                "aether_voice_map": "◈◉◇⟡",
+            },
+            "splits": {"beat_maker": 0.5, "vocalist": 0.3, "lyricist": 0.2},
+            "streams": 0, "flips": 0, "earnings_usd": 0.0, "stream_rate_usd": 0.004,
+            "parent_dna": None,
+            "s2_blueprint": blueprint,
+            "created_at": now,
+        }
+        
+        from vics_ledger import sign_track
+        track = sign_track(track)
+        await db.tracks.insert_one(track)
+        
+        await db.ledger.insert_one({
+            "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": dna,
+            "actor": user["handle"], "amount_usd": 0.0,
+            "note": f"S2 Metamorphic Blend Blueprint created: {req.base_genre} x {req.mutation_genre}",
+            "timestamp": now,
+        })
+        
+        return blueprint
+    except Exception as e:
+        logger.exception("S2 Mutation failed")
+        raise HTTPException(500, str(e))
+
 # ============================================================
 # DEMUCS SEPARATION (simulated) — S2 Stem Upload
 # ============================================================
@@ -1290,6 +1345,48 @@ async def demucs_separate(request: Request, file: UploadFile = File(...), user: 
         "timestamp": datetime.now(timezone.utc).isoformat(),
     })
     return {"job": job, "source_url": public, "stems": stems, "engine": "htdemucs-v4"}
+
+# ============================================================
+# VICS PERSONA VAULT (Empire 1 Ledger)
+# ============================================================
+
+class PersonaCreateRequest(BaseModel):
+    name: str
+    royalty_rate: float
+
+@api_router.post("/vics/personas")
+@limiter.limit("5/minute")
+async def create_persona(request: Request, req: PersonaCreateRequest, user: Dict = Depends(current_user)):
+    dna = f"vics_paipds_{uuid.uuid4().hex[:16]}"
+    now = datetime.now(timezone.utc).isoformat()
+    
+    persona = {
+        "id": str(uuid.uuid4()),
+        "creator": user["handle"],
+        "name": req.name,
+        "royalty_rate": req.royalty_rate,
+        "paipds_tag": dna,
+        "flips_accumulated": 0,
+        "revenue_earned": 0.0,
+        "status": "active_on_universal",
+        "created_at": now
+    }
+    
+    await db.personas.insert_one(persona)
+    await db.ledger.insert_one({
+        "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": dna,
+        "actor": user["handle"], "amount_usd": 0.0,
+        "note": f"VICS Persona DNA created: {req.name}",
+        "timestamp": now,
+    })
+    
+    persona.pop("_id", None)
+    return persona
+
+@api_router.get("/vics/personas")
+async def get_personas(user: Dict = Depends(current_user)):
+    docs = await db.personas.find({"creator": user["handle"]}, {"_id": 0}).to_list(100)
+    return docs
 
 # ============================================================
 # BLOODLINE LEADERBOARD (Universal Stream)
