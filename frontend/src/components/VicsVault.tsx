@@ -32,7 +32,7 @@ export default function VicsVault() {
             <h3 className="text-lg font-bold text-[#eee] flex items-center gap-2 mb-4">
               <Upload size={18} className="text-[#ff1493]" /> Clone Your DNA
             </h3>
-            <p className="text-xs text-[#888] mb-6">Upload raw acapella stems. The EPD will map your micro-tremors and emotional breaks.</p>
+            <p className="text-xs text-[#888] mb-6">Upload a short reference audio. Our Dual Vertex Agents instantly extract your Voice DNA using zero-shot cloning—no training required.</p>
             
             <div className="space-y-4">
               <div>
@@ -62,7 +62,7 @@ export default function VicsVault() {
 
               <div className="border-2 border-dashed border-[#2d2d6b] p-6 text-center cursor-pointer hover:border-[#00ffcc] transition-colors bg-[#050505]">
                 <Fingerprint size={24} className="mx-auto text-[#666] mb-2" />
-                <p className="text-xs text-[#888]">Drop .WAV Stems Here</p>
+                <p className="text-xs text-[#888]">Drop Reference Audio Here</p>
               </div>
             </div>
           </div>
