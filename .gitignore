@@ -78,6 +78,11 @@ agenthub/agents/youtube/db
 
 memory/test_credentials.md
 
+# Generated audio artifacts
+backend/static/voices/
+backend/static/uploads/
+backend/static/stems/
+
 # Mobile development
 android-sdk/-e 
 # Environment and credential files

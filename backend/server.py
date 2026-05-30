@@ -363,7 +363,7 @@ async def current_user(creds: Optional[HTTPAuthorizationCredentials] = Depends(s
     if not creds:
         raise HTTPException(401, "Unauthenticated — Empire 1 Ledger access denied.")
     try:
-        data = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGO])
+        data = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGO], options={"verify_aud": False})
     except jwt.PyJWTError:
         raise HTTPException(401, "Invalid token.")
     user = await db.users.find_one({"handle": data["handle"]}, {"_id": 0, "password_hash": 0})
