@@ -255,9 +255,10 @@ class FlipRequest(BaseModel):
 class GenerateRequest(BaseModel):
     """Consumer-safe request. No LML, no decimals, no persona.
     Backend maps genre+mood → internal cultural_matrix and biometric dials."""
-    lyrics: str
+    lyrics: Optional[str] = None
     genre: str = "SGV Oldies"
     mood: str = "Late-Night Honesty"
+    instrument: Optional[str] = None
     title: Optional[str] = None
     ghost_audio_name: Optional[str] = None
     # Studio control overrides — sent from VulnerabilityPanel + LatePocketControl
@@ -656,6 +657,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         swing_note = f"\nLate-Pocket Swing: {req.swing_ms}ms snare drag — encode this groove into the drum descriptor tags."
     user_text = (
         f"Cultural Matrix: {matrix}\n"
+        f"Core Instrument: {req.instrument or 'Auto'}\n"
         f"Biometric dials — lung_capacity={eff_lung:.3f}, throat_resonance={throat:.2f}, "
         f"vocal_fry={fry:.2f}, emotional_cracks={eff_crack:.3f}\n"
         f"Ghost audio artifact: {req.ghost_audio_name or 'none'}{swing_note}\n"
@@ -731,6 +733,30 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
                 f"<emotional_crack intensity='{crack:.2f}'>carry the name like a prayer</emotional_crack>\n"
                 f"<tape_hiss level='subtle'/>"),
     }
+
+@api_router.post("/generate_lyrics")
+@limiter.limit("10/minute")
+async def generate_lyrics_endpoint(request: Request, req: GenerateRequest, user: Dict = Depends(current_user)):
+    # Generate seed lyrics based on genre and mood
+    instrument_str = f" featuring {req.instrument}" if req.instrument else ""
+    prompt = f"Write exactly 8 lines of deeply emotional {req.genre} lyrics for a {req.mood} vibe{instrument_str}. No chorus/verse labels. Just the raw lyrics."
+    
+    try:
+        from google import genai
+        _vx_project = os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8")
+        _vx_location = os.environ.get("VERTEX_LOCATION", "us-west1")
+        _client = genai.Client(vertexai=True, project=_vx_project, location=_vx_location)
+        def _sync():
+            resp = _client.models.generate_content(
+                model="gemini-1.5-pro-002",
+                contents=prompt,
+            )
+            return resp.text or ""
+        txt = await asyncio.to_thread(_sync)
+        return {"lyrics": txt.strip()}
+    except Exception as e:
+        logger.warning(f"Failed to generate lyrics: {e}")
+        return {"lyrics": "I'm cruising down the boulevard\nThe neon lights are fading out\nMy heart is heavy in this car\nBut I still remember what you said\nThe radio is playing our song\nBut you're a thousand miles away\nI keep on driving through the dawn\nHoping tomorrow brings a better day"}
 
 @api_router.post("/generate")
 @limiter.limit("10/minute")
@@ -811,7 +837,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 data["lml"] = soulfire_lml
                 if soulfire_result.get("sl_audio_master_payload", {}).get("cultural_matrix"):
                     data["cultural_subtext"] = soulfire_result["sl_audio_master_payload"]["cultural_matrix"]
-            if "stems" in soulfire_result:
+            if "stems" in soulfire_result and isinstance(soulfire_result["stems"], list) and len(soulfire_result["stems"]) > 0 and isinstance(soulfire_result["stems"][0], dict) and "src" in soulfire_result["stems"][0]:
                 stems = soulfire_result["stems"]
                 synth_provider = "vertex:soulfire"
             elif "audio_url" in soulfire_result or "instrumental_url" in soulfire_result:
@@ -828,7 +854,14 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     if VERTEX_AI_ENABLED and not synth_source_url and not stems:
         try:
             from vertex_lyria3 import vertex_lyria3_full_song
-            synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
+            
+            # Use Beast's prompt if available
+            beast_prompt = None
+            if 'soulfire_result' in locals() and soulfire_result:
+                beast_prompt = soulfire_result.get("instrumental_prompt")
+                
+            synth_prompt = beast_prompt or build_synth_prompt(matrix, recipe, data["lml"])
+            
             full_song_gcs = await vertex_lyria3_full_song(
                 base_prompt=synth_prompt,
                 matrix=matrix,
