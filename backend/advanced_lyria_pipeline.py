@@ -26,6 +26,7 @@ def master_lyria_audio(
     preset="soulfire",
     out_path="soulfire_mastered_output.wav",
     dna_tag="Lyrica-AI-Gen-v1",
+    vision_metadata: dict = None,
 ):
     """
     Full pipeline: Lyria bytes → NumPy → Soulfire Mastering → DNA Watermark → WAV.
@@ -35,6 +36,8 @@ def master_lyria_audio(
     print(f"[Lyrica] Applying MasteringChain (preset: {preset})...")
     chain = MasteringChain(preset=preset, sr=sr)
     mastered = chain.process(audio)
+    
+    mastered = apply_image_driven_harmonic_physics(mastered, vision_metadata, sr)
 
     if dna_tag is not None:
         print(f"[Lyrica Identity Layer] Sealing audio with birthmark: {dna_tag}")
@@ -45,7 +48,7 @@ def master_lyria_audio(
     return out_path
 
 
-def process_stems_with_soulfire(wave: np.ndarray, sr: int) -> np.ndarray:
+def process_stems_with_soulfire(wave: np.ndarray, sr: int, vision_metadata: dict = None) -> np.ndarray:
     if not DEMUCS_AVAILABLE:
         raise RuntimeError("Demucs is required for stem processing but is not available.")
 
@@ -65,20 +68,34 @@ def process_stems_with_soulfire(wave: np.ndarray, sr: int) -> np.ndarray:
 
     print("[Lyrica Emotional Anatomy] Reconstructing emotional organs...")
     
+    # --- VISION-AWARE EMOTIONAL ANATOMY ROUTING ---
+    energy = 0.5
+    brightness = 0.5
+    if vision_metadata:
+        energy = float(vision_metadata.get("energy_level", 0.5))
+        brightness = float(vision_metadata.get("brightness", 0.5))
+        print(f"[Lyrica Vision] Routing Anatomy. Energy: {energy:.2f}, Brightness: {brightness:.2f}")
+
     # Vocals: Heart
-    vocal_eq = ParametricEQ(bands=[(8000, 3.0, 0.7), (200, -2.0, 0.5)], sr=sr)
+    # If bright image, add more high shelf to vocals
+    vocal_high_boost = 3.0 + (brightness - 0.5) * 4.0 
+    vocal_eq = ParametricEQ(bands=[(8000, vocal_high_boost, 0.7), (200, -2.0, 0.5)], sr=sr)
     vocal_l = vocal_eq.process(vocals[0])
     vocal_r = vocal_eq.process(vocals[1])
     vocals_processed = np.stack([vocal_l, vocal_r], axis=0)
 
     # Drums: Pulse
-    drum_comp = Compressor(threshold_db=-20.0, ratio=4.0, attack_ms=5.0, release_ms=50.0, sr=sr)
+    # If high energy image, push compressor harder
+    drum_ratio = 4.0 + (energy - 0.5) * 4.0
+    drum_comp = Compressor(threshold_db=-20.0, ratio=drum_ratio, attack_ms=5.0, release_ms=50.0, sr=sr)
     drum_l = drum_comp.process(drums[0])
     drum_r = drum_comp.process(drums[1])
     drums_processed = np.stack([drum_l, drum_r], axis=0)
 
     # Other: Aura
-    imager = StereoImager(width=1.4)
+    # If wide energy, increase stereo width
+    aura_width = 1.4 + (energy - 0.5) * 0.5
+    imager = StereoImager(width=aura_width)
     other_l, other_r = imager.process(other[0], other[1])
     other_processed = np.stack([other_l, other_r], axis=0)
     
@@ -88,20 +105,43 @@ def process_stems_with_soulfire(wave: np.ndarray, sr: int) -> np.ndarray:
     mix = vocals_processed + drums_processed + bass_processed + other_processed 
     return mix.T  
 
+def apply_image_driven_harmonic_physics(audio: np.ndarray, vision_metadata: dict, sr: int) -> np.ndarray:
+    """Image-Driven Harmonic Physics (brightness -> EQ tilt)"""
+    if not vision_metadata:
+        return audio
+        
+    brightness = float(vision_metadata.get("brightness", 0.5))
+    print(f"[Lyrica Vision] Applying Harmonic Physics. Brightness Tilt: {brightness:.2f}")
+    
+    # If brightness > 0.6, boost highs. If < 0.4, boost lows and cut highs.
+    if brightness > 0.6:
+        tilt_eq = ParametricEQ(bands=[(10000, 2.0, 0.5), (150, -1.0, 0.5)], sr=sr)
+    elif brightness < 0.4:
+        tilt_eq = ParametricEQ(bands=[(10000, -2.0, 0.5), (150, 2.0, 0.5)], sr=sr)
+    else:
+        return audio
+
+    if audio.ndim == 2:
+        return np.column_stack([tilt_eq.process(audio[:, 0]), tilt_eq.process(audio[:, 1])])
+    return tilt_eq.process(audio)
+
 
 def master_lyria_with_stems(
     audio_bytes,
     preset="soulfire",
     out_path="soulfire_stems_mastered.wav",
     dna_tag="Lyrica-AI-Gen-v1",
+    vision_metadata: dict = None,
 ):
     wave, sr = lyria_bytes_to_numpy(audio_bytes)
 
-    mix = process_stems_with_soulfire(wave, sr)
+    mix = process_stems_with_soulfire(wave, sr, vision_metadata)
 
     print(f"[Lyrica] Applying Master Bus (preset: {preset})...")
     chain = MasteringChain(preset=preset, sr=sr)
     mastered = chain.process(mix)
+    
+    mastered = apply_image_driven_harmonic_physics(mastered, vision_metadata, sr)
 
     if dna_tag:
         print(f"[Lyrica Identity Layer] Sealing audio with birthmark: {dna_tag}")
@@ -157,6 +197,7 @@ def adaptive_master_lyria_audio(
     out_path="adaptive_mastered.wav",
     dna_tag="Lyrica-AI-Gen-v1",
     use_stems=None, # if None, Lyrica decides
+    vision_metadata: dict = None,
 ):
     preset = select_mastering_preset(meta)
     
@@ -172,6 +213,7 @@ def adaptive_master_lyria_audio(
             preset=preset,
             out_path=out_path,
             dna_tag=dna_tag,
+            vision_metadata=vision_metadata,
         )
     else:
         return master_lyria_audio(
@@ -179,6 +221,7 @@ def adaptive_master_lyria_audio(
             preset=preset,
             out_path=out_path,
             dna_tag=dna_tag,
+            vision_metadata=vision_metadata,
         )
 
 
