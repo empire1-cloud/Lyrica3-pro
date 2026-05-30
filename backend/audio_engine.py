@@ -273,6 +273,18 @@ class MasteringChain:
             "limiter": {"threshold_db": -1.0},
             "target_lufs": -13.0,
         },
+        "warm_soft": {
+            "eq_bands": [(300, 2.0, 0.5), (5000, -2.0, 0.5), (10000, -4.0, 0.5)],
+            "compressor": {"threshold_db": -24, "ratio": 1.5},
+            "limiter": {"threshold_db": -2.0},
+            "target_lufs": -16.0,
+        },
+        "trap_soul": {
+            "eq_bands": [(60, 4.0, 0.7), (250, -1.0, 0.7), (12000, 3.0, 0.7)],
+            "compressor": {"threshold_db": -18, "ratio": 3.0},
+            "limiter": {"threshold_db": -0.5},
+            "target_lufs": -12.0,
+        },
     }
 
     def __init__(self, preset: str = "soulfire", sr: int = SAMPLE_RATE):
