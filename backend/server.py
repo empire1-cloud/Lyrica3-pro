@@ -261,6 +261,7 @@ class GenerateRequest(BaseModel):
     instrument: Optional[str] = None
     key_scale: Optional[str] = None
     title: Optional[str] = None
+    reference_image_b64: Optional[str] = None
     ghost_audio_name: Optional[str] = None
     # Studio control overrides — sent from VulnerabilityPanel + LatePocketControl
     vulnerability_override: Optional[float] = None  # 0.0-1.0 aggregate from UI sliders
@@ -852,6 +853,58 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         logger.warning("Soulfire modules not found")
     except Exception as e:
         logger.warning(f"Soulfire agents failed — falling through: {e}")
+
+    # ── STEP 1.5: Multimodal Image-to-Audio via Lyria 3 Pro (google-genai) ──
+    if req.reference_image_b64 and not synth_source_url and not stems:
+        try:
+            from google import genai
+            
+            genai_key = os.environ.get("GEMINI_API_KEY")
+            if genai_key:
+                logger.info("🖼️ Using multimodal image-to-audio via Lyria 3 Pro (google-genai) - LIMITED TO 1 IMAGE PER TRACK")
+                _client = genai.Client(api_key=genai_key)
+                
+                interaction = _client.interactions.create(
+                    model="lyria-3-pro-preview",
+                    input=[
+                        {
+                            "type": "text",
+                            "text": f"An atmospheric track inspired by the mood and colors in this image. Genre: {req.genre}. Mood: {req.mood}.",
+                        },
+                        {
+                            "type": "image",
+                            "mime_type": "image/jpeg",
+                            "data": req.reference_image_b64,
+                        },
+                    ],
+                )
+                
+                audio_data = None
+                for output in interaction.outputs:
+                    if output.inline_data:
+                        audio_data = output.inline_data.data
+                        break
+                        
+                if audio_data:
+                    out_dir = ROOT_DIR / "static" / "stems"
+                    out_dir.mkdir(parents=True, exist_ok=True)
+                    fname = f"lyria3_multimodal_{uuid.uuid4().hex[:10]}.mp3"
+                    out_path = out_dir / fname
+                    with open(out_path, "wb") as f:
+                        f.write(audio_data)
+                        
+                    synth_source_url = f"/api/static/stems/{fname}"
+                    synth_provider = "lyria3-multimodal"
+                    
+                    stems = [
+                        {"name": "Raw Human Pipes", "src": None, "level": 0.0, "peak": 0.0},
+                        {"name": "Image-Inspired Atmosphere", "src": synth_source_url, "level": 0.85, "peak": 0.65},
+                        {"name": "Sub Bass / Acoustic Requinto", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+                        {"name": "Analog Melody", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+                    ]
+                    logger.info(f"✅ Multimodal image-to-audio successful: {synth_source_url}")
+        except Exception as e:
+            logger.warning(f"Multimodal Lyria 3 failed — falling through: {e}")
 
     # ── STEP 2: Lyria 3 Pro — Full song stitching (multi-segment crossfade) ──
     if VERTEX_AI_ENABLED and not synth_source_url and not stems:

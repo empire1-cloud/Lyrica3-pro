@@ -175,6 +175,21 @@ export default function ProStudio({ onLogout }: { onLogout?: () => void }) {
   const [mood, setMood] = useState('Ambient');
   const [instrument, setInstrument] = useState('Auto');
   const [trackKey, setTrackKey] = useState('SCALE_UNSPECIFIED');
+  const [imageBase64, setImageBase64] = useState<string>('');
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        // Strip the data URI prefix (e.g., data:image/jpeg;base64,)
+        const base64Data = base64String.split(',')[1];
+        setImageBase64(base64Data);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const [vulnerabilityAgg, setVulnAgg] = useState(0.54);
   const [swingMs, setSwingMs] = useState(12);
@@ -244,7 +259,7 @@ export default function ProStudio({ onLogout }: { onLogout?: () => void }) {
     try {
       const r = await fetch(`${BACKEND}/api/generate`, {
         method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ lyrics, genre, mood, title: title || undefined, vulnerability_override: vulnerabilityAgg, swing_ms: swingMs, instrument: instrument === 'Auto' ? undefined : instrument, key_scale: trackKey === 'SCALE_UNSPECIFIED' ? undefined : trackKey }),
+        body: JSON.stringify({ lyrics, genre, mood, title: title || undefined, vulnerability_override: vulnerabilityAgg, swing_ms: swingMs, instrument: instrument === 'Auto' ? undefined : instrument, key_scale: trackKey === 'SCALE_UNSPECIFIED' ? undefined : trackKey, reference_image_b64: imageBase64 || undefined }),
       });
       clearInterval(interval);
       setOrchestratorLog(prev => [...prev, "> Operation complete. Unpacking stems."]);
@@ -393,10 +408,16 @@ export default function ProStudio({ onLogout }: { onLogout?: () => void }) {
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <label className="text-[9px] uppercase text-[#888] font-mono">Lyric Seed Input</label>
-                  <button onClick={generateLyrics} disabled={lyricsLoading}
-                    className="text-[9px] text-[#ff1493] hover:text-white uppercase tracking-widest font-bold disabled:opacity-50 transition-colors">
-                    {lyricsLoading ? 'Generating...' : 'Auto-Generate Lyrics'}
-                  </button>
+                  <div className="flex items-center gap-4">
+                    <label className="cursor-pointer text-[9px] text-[#ff1493] hover:text-white uppercase tracking-widest font-bold transition-colors">
+                      {imageBase64 ? 'Image Attached ✓' : '+ Attach Inspiration Image'}
+                      <input type="file" accept="image/jpeg, image/png" className="hidden" onChange={handleImageUpload} />
+                    </label>
+                    <button onClick={generateLyrics} disabled={lyricsLoading}
+                      className="text-[9px] text-[#ff1493] hover:text-white uppercase tracking-widest font-bold disabled:opacity-50 transition-colors">
+                      {lyricsLoading ? 'Generating...' : 'Auto-Generate Lyrics'}
+                    </button>
+                  </div>
                 </div>
                 <textarea value={lyrics} onChange={e => setLyrics(e.target.value)} rows={6} 
                   className="w-full bg-[#0a0a14] border border-[#2d2d6b] text-[#eee] px-3 py-2 text-sm focus:border-[#ff1493] focus:outline-none font-mono resize-y rounded-none" />
