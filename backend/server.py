@@ -259,6 +259,7 @@ class GenerateRequest(BaseModel):
     genre: str = "SGV Oldies"
     mood: str = "Late-Night Honesty"
     instrument: Optional[str] = None
+    key_scale: Optional[str] = None
     title: Optional[str] = None
     ghost_audio_name: Optional[str] = None
     # Studio control overrides — sent from VulnerabilityPanel + LatePocketControl
@@ -658,6 +659,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
     user_text = (
         f"Cultural Matrix: {matrix}\n"
         f"Core Instrument: {req.instrument or 'Auto'}\n"
+        f"Musical Key/Scale: {req.key_scale or 'Auto'}\n"
         f"Biometric dials — lung_capacity={eff_lung:.3f}, throat_resonance={throat:.2f}, "
         f"vocal_fry={fry:.2f}, emotional_cracks={eff_crack:.3f}\n"
         f"Ghost audio artifact: {req.ghost_audio_name or 'none'}{swing_note}\n"
@@ -739,7 +741,8 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
 async def generate_lyrics_endpoint(request: Request, req: GenerateRequest, user: Dict = Depends(current_user)):
     # Generate seed lyrics based on genre and mood
     instrument_str = f" featuring {req.instrument}" if req.instrument else ""
-    prompt = f"Write exactly 8 lines of deeply emotional {req.genre} lyrics for a {req.mood} vibe{instrument_str}. No chorus/verse labels. Just the raw lyrics."
+    key_str = f" in the key of {req.key_scale}" if req.key_scale else ""
+    prompt = f"Write exactly 8 lines of deeply emotional {req.genre} lyrics for a {req.mood} vibe{instrument_str}{key_str}. No chorus/verse labels. Just the raw lyrics."
     
     try:
         from google import genai

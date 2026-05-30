@@ -153,12 +153,28 @@ export default function ProStudio({ onLogout }: { onLogout?: () => void }) {
   const [genres, setGenres] = useState<string[]>(['Acid Jazz', 'Afrobeat', 'Alternative Country', 'Baroque', 'Bengal Baul', 'Bhangra', 'Bluegrass', 'Blues Rock', 'Bossa Nova', 'Breakbeat', 'Celtic Folk', 'Chillout', 'Chiptune', 'Classic Rock', 'Contemporary R&B', 'Cumbia', 'Deep House', 'Disco Funk', 'Drum & Bass', 'Dubstep', 'EDM', 'Electro Swing', 'Funk Metal', 'G-funk', 'Garage Rock', 'Glitch Hop', 'Grime', 'Hyperpop', 'Indian Classical', 'Indie Electronic', 'Indie Folk', 'Indie Pop', 'Irish Folk', 'Jam Band', 'Jamaican Dub', 'Jazz Fusion', 'Latin Jazz', 'Lo-Fi Hip Hop', 'Marching Band', 'Merengue', 'New Jack Swing', 'Minimal Techno', 'Moombahton', 'Neo-Soul', 'Orchestral Score', 'Piano Ballad', 'Polka', 'Post-Punk', '60s Psychedelic Rock', 'Psytrance', 'R&B', 'Reggae', 'Reggaeton', 'Renaissance Music', 'Salsa', 'Shoegaze', 'Ska', 'Surf Rock', 'Synthpop', 'Techno', 'Trance', 'Trap Beat', 'Trip Hop', 'Vaporwave', 'Witch house', 'SGV Oldies', 'Trap Soul', 'Drill']);
   const [moods, setMoods] = useState<string[]>(['Acoustic Instruments', 'Ambient', 'Bright Tones', 'Chill', 'Crunchy Distortion', 'Danceable', 'Dreamy', 'Echo', 'Emotional', 'Ethereal Ambience', 'Experimental', 'Fat Beats', 'Funky', 'Glitchy Effects', 'Huge Drop', 'Live Performance', 'Lo-fi', 'Ominous Drone', 'Psychedelic', 'Rich Orchestration', 'Saturated Tones', 'Subdued Melody', 'Sustained Chords', 'Swirling Phasers', 'Tight Groove', 'Unsettling', 'Upbeat', 'Virtuoso', 'Weird Noises', 'Late-Night Honesty', 'Street Resilience', 'Defiant Bloom']);
   const [instruments, setInstruments] = useState<string[]>(['303 Acid Bass', '808 Hip Hop Beat', 'Accordion', 'Alto Saxophone', 'Bagpipes', 'Balalaika Ensemble', 'Banjo', 'Bass Clarinet', 'Bongos', 'Boomy Bass', 'Bouzouki', 'Buchla Synths', 'Cello', 'Charango', 'Clavichord', 'Conga Drums', 'Didgeridoo', 'Dirty Synths', 'Djembe', 'Drumline', 'Dulcimer', 'Fiddle', 'Flamenco Guitar', 'Funk Drums', 'Glockenspiel', 'Guitar', 'Hang Drum', 'Harmonica', 'Harp', 'Harpsichord', 'Hurdy-gurdy', 'Kalimba', 'Koto', 'Lyre', 'Mandolin', 'Maracas', 'Marimba', 'Mbira', 'Mellotron', 'Metallic Twang', 'Moog Oscillations', 'Ocarina', 'Persian Tar', 'Pipa', 'Precision Bass', 'Ragtime Piano', 'Rhodes Piano', 'Shamisen', 'Shredding Guitar', 'Sitar', 'Slide Guitar', 'Smooth Pianos', 'Spacey Synths', 'Steel Drum', 'Synth Pads', 'Tabla', 'TR-909 Drum Machine', 'Trumpet', 'Tuba', 'Vibraphone', 'Viola Ensemble', 'Warm Acoustic Guitar', 'Woodwinds', 'Auto']);
+  const [keys, setKeys] = useState<{value: string, label: string}[]>([
+    {value: 'SCALE_UNSPECIFIED', label: 'Auto (Model Decides)'},
+    {value: 'C_MAJOR_A_MINOR', label: 'C major / A minor'},
+    {value: 'D_FLAT_MAJOR_B_FLAT_MINOR', label: 'D♭ major / B♭ minor'},
+    {value: 'D_MAJOR_B_MINOR', label: 'D major / B minor'},
+    {value: 'E_FLAT_MAJOR_C_MINOR', label: 'E♭ major / C minor'},
+    {value: 'E_MAJOR_D_FLAT_MINOR', label: 'E major / C♯/D♭ minor'},
+    {value: 'F_MAJOR_D_MINOR', label: 'F major / D minor'},
+    {value: 'G_FLAT_MAJOR_E_FLAT_MINOR', label: 'G♭ major / E♭ minor'},
+    {value: 'G_MAJOR_E_MINOR', label: 'G major / E minor'},
+    {value: 'A_FLAT_MAJOR_F_MINOR', label: 'A♭ major / F minor'},
+    {value: 'A_MAJOR_G_FLAT_MINOR', label: 'A major / F♯/G♭ minor'},
+    {value: 'B_FLAT_MAJOR_G_MINOR', label: 'B♭ major / G minor'},
+    {value: 'B_MAJOR_A_FLAT_MINOR', label: 'B major / G♯/A♭ minor'},
+  ]);
   
   const [lyrics, setLyrics] = useState('');
   const [title, setTitle] = useState('');
   const [genre, setGenre] = useState('Acid Jazz');
   const [mood, setMood] = useState('Ambient');
   const [instrument, setInstrument] = useState('Auto');
+  const [trackKey, setTrackKey] = useState('SCALE_UNSPECIFIED');
   
   const [vulnerabilityAgg, setVulnAgg] = useState(0.54);
   const [swingMs, setSwingMs] = useState(12);
@@ -228,7 +244,7 @@ export default function ProStudio({ onLogout }: { onLogout?: () => void }) {
     try {
       const r = await fetch(`${BACKEND}/api/generate`, {
         method: 'POST', headers: authHeaders(),
-        body: JSON.stringify({ lyrics, genre, mood, title: title || undefined, vulnerability_override: vulnerabilityAgg, swing_ms: swingMs, instrument: instrument === 'Auto' ? undefined : instrument }),
+        body: JSON.stringify({ lyrics, genre, mood, title: title || undefined, vulnerability_override: vulnerabilityAgg, swing_ms: swingMs, instrument: instrument === 'Auto' ? undefined : instrument, key_scale: trackKey === 'SCALE_UNSPECIFIED' ? undefined : trackKey }),
       });
       clearInterval(interval);
       setOrchestratorLog(prev => [...prev, "> Operation complete. Unpacking stems."]);
@@ -338,7 +354,7 @@ export default function ProStudio({ onLogout }: { onLogout?: () => void }) {
           <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
             <div className="max-w-3xl mx-auto space-y-4">
               
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-5 gap-4">
                 <div className="col-span-1 space-y-1">
                   <label className="text-[9px] uppercase text-[#888] font-mono">Track ID / Title</label>
                   <input value={title} onChange={e => setTitle(e.target.value)} 
@@ -363,6 +379,13 @@ export default function ProStudio({ onLogout }: { onLogout?: () => void }) {
                   <select value={instrument} onChange={e => setInstrument(e.target.value)} 
                     className="w-full bg-[#13132b] border border-[#2d2d6b] text-[#eee] px-2 py-1.5 text-xs focus:border-[#ff1493] focus:outline-none rounded-none appearance-none cursor-pointer">
                     {instruments.map(i => <option key={i} value={i}>{i}</option>)}
+                  </select>
+                </div>
+                <div className="col-span-1 space-y-1">
+                  <label className="text-[9px] uppercase text-[#888] font-mono">Key / Scale</label>
+                  <select value={trackKey} onChange={e => setTrackKey(e.target.value)} 
+                    className="w-full bg-[#13132b] border border-[#2d2d6b] text-[#eee] px-2 py-1.5 text-xs focus:border-[#ff1493] focus:outline-none rounded-none appearance-none cursor-pointer">
+                    {keys.map(k => <option key={k.value} value={k.value}>{k.label}</option>)}
                   </select>
                 </div>
               </div>
