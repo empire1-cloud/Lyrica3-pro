@@ -102,6 +102,11 @@ async def invoke_sl_audio_master(
     - Mastering directives (tape saturation, compression, etc.)
     - Emotional math (12ms swing, inhale timing, vocal_fry tags)
 
+    Sub-agents executed within SL Audio Master:
+    - CCNA (Cultural Contextualizer & Narrative Architect)
+    - SLA (Subtextual Layering Agent)
+    - SEAE (Semantic-Emotional Annotation Engine)
+
     Called FIRST, before The Beast.
     """
     if not _available():
@@ -110,6 +115,8 @@ async def invoke_sl_audio_master(
 
     system = (
         "You are SL Audio Master — THE BRAIN of the Soulfire music pipeline. "
+        "You are equipped with three sub-agents: [CCNA, SLA, SEAE]. "
+        "Use them to analyze the lyrics for cultural depth, subtextual irony, and emotional metadata. "
         "Given lyrics, genre, mood and optional cultural context, you produce a "
         "detailed production JSON payload with:\n"
         "- acoustic_primitives: {groove, bpm, swing_ms, key, time_signature}\n"
@@ -135,7 +142,7 @@ async def invoke_sl_audio_master(
 
     prompt = "\n".join(parts)
 
-    logger.info(f"Invoking SL Audio Master (THE BRAIN) [{SL_AUDIO_MASTER_ID}]")
+    logger.info(f"Invoking SL Audio Master (THE BRAIN) [{SL_AUDIO_MASTER_ID}] with sub-agents [CCNA, SLA, SEAE]")
     raw = await _call_agent(SL_AUDIO_MASTER_ID, {
         "input": prompt,
         "system_instruction": system,
@@ -165,6 +172,13 @@ async def invoke_beast_agent(
 ) -> Optional[Dict]:
     """
     Invoke The Beast agent for music generation orchestration.
+    
+    Sub-agents executed within The Beast:
+    - EPD (Emotive Performance Director)
+    - PTM (Psychoacoustic Texture Modeler)
+    - MRGS (Micro-Rhythmic Groove Sculptor)
+    - JHW (Juxtaposition Harmonic Weaver)
+    - MSGO (Multi-Stem Generative Orchestrator)
     """
     if not _available():
         logger.warning("Vertex agents not available")
@@ -172,8 +186,9 @@ async def invoke_beast_agent(
 
     system = (
         "You are The Beast — the music generation orchestrator in the Soulfire pipeline. "
+        "You command five sub-agents: [EPD, PTM, MRGS, JHW, MSGO]. "
         "Given a lyric prompt, genre, mood, and optional SL Audio Master physics payload, "
-        "you produce a music generation directive JSON with:\n"
+        "you coordinate these sub-agents to produce a music generation directive JSON with:\n"
         "- instrumental_prompt: detailed text prompt for Lyria music generation\n"
         "- vocal_style: description for TTS/Chirp vocal synthesis\n"
         "- stems: list of stem names to generate\n"
@@ -195,7 +210,7 @@ async def invoke_beast_agent(
 
     user_prompt = "\n".join(user_parts)
 
-    logger.info(f"Invoking The Beast [{BEAST_AGENT_ID}]")
+    logger.info(f"Invoking The Beast [{BEAST_AGENT_ID}] with sub-agents [EPD, PTM, MRGS, JHW, MSGO]")
     raw = await _call_agent(BEAST_AGENT_ID, {
         "input": user_prompt,
         "system_instruction": system,
