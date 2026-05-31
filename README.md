@@ -1,4 +1,4 @@
-# Lyrica 3 Pro
+# Lyrica 3 SOULFIRE 
 
 **Creator-Owned AI Music — Soulfire Ecosystem**
 
