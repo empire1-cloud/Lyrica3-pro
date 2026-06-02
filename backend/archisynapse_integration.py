@@ -105,7 +105,9 @@ class ArchisynapseClient:
     # -- Health --
 
     def health(self) -> Dict:
-        return self._get("/health")
+        url = self.base_url.replace("/api/v1", "/health")
+        r = requests.get(url, headers=self._headers(), timeout=self.timeout)
+        return r.json()
 
     def ready(self) -> Dict:
         return self._get("/ready")
