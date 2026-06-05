@@ -1,0 +1,15 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY lyrica3_soulfire/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY lyrica3_soulfire/ lyrica3_soulfire/
+COPY soulfire_kernel/ soulfire_kernel/
+
+ENV PYTHONPATH=/app
+
+EXPOSE 7860
+
+CMD ["python", "-m", "lyrica3_soulfire.gradio_soulcard_ui"]

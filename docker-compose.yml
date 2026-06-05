@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: duo_soul
+      POSTGRES_USER: duosoul
+      POSTGRES_PASSWORD: duosoul_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U duosoul"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  duo-soul-api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      POSTGRES_URL: postgresql+asyncpg://duosoul:duosoul_dev@postgres:5432/duo_soul
+      REDIS_URL: redis://redis:6379/0
+      MONGO_URL: mongodb://${MONGO_URL:-host.docker.internal:27017}
+      DB_NAME: lyrica3_dev
+      JWT_SECRET: ${JWT_SECRET:-dev_secret_change_me}
+      EMERGENT_LLM_KEY: ${EMERGENT_LLM_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  gradio-soulcard-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.gradio
+    ports:
+      - "7860:7860"
+    environment:
+      DUO_SOUL_API_URL: http://duo-soul-api:8003
+    depends_on:
+      - duo-soul-api
+
+volumes:
+  pgdata:
