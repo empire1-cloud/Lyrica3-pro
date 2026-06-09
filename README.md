@@ -1,10 +1,15 @@
-# Lyrica 3 SOULFIRE 
+# Lyrica 3 PRO
 
-**Creator-Owned AI Music — Soulfire Ecosystem**
+**Hybrid Intelligence Core · Universe U1 — AI Music Studio**
 
-Lyrica 3 Pro establishes the "Creator-Owned AI Music" category. A distributed infrastructure layer embedded where creators live — Discord, TikTok, and professional studios — backed by blockchain-verified creator equity and proprietary emotional intelligence.
+**Status: LIVE on Railway** · Backend deployed, FastAPI serving at Railway endpoint. Frontend ready for Vercel deploy.
 
-> SLA-113 Universe: **U1 — LYRICA3**  
+Built on **Emergent DNA** — the reference implementation architecture. Lyrica 3 Pro is the AI Music Studio universe within the 6-universe Empire-1 federation. 19 shared engines, federated revenue, one HIC control plane.
+
+**Visual Identity:** Black (`#050508`) · Pink (`#ff1493`) · Obsidian Blue (`#111827`) — matching the Empire-1 landing page at `empire-1.vercel.app`. UI design spec in Figma, aligned to the HYBRID-AI-CORE reference implementation positioning.
+
+> Empire-1 Universe: **U1 — LYRICA3**  
+> Part of the HYBRID-AI-CORE reference implementation  
 > Sonance Pro + SL Universal + Discord Bot + TikTok Card are **one business, one stack.**
 
 ---
@@ -116,6 +121,15 @@ Sonance Pro is the dominant revenue driver. Discord Premium is the highest margi
 
 ---
 
+## Deployment Status
+
+| Component | Status | Platform |
+|---|---|---|
+| FastAPI Backend | ✅ LIVE | Railway (GitHub auto-deploy) |
+| React Frontend | 🔜 Ready | Vercel (pending deploy) |
+| Discord Bot | 🔧 In progress | — |
+| Empire-1 Landing | ✅ LIVE | `empire-1.vercel.app` (HYBRID-AI-CORE positioning) |
+
 ## Deployment Roadmap
 
 | Months | Milestone |
@@ -188,11 +202,25 @@ npm start
 
 ---
 
+## Ecosystem
+
+```
+EMPIRE-1 (HYBRID-AI-CORE) — Federal Control Plane
+  ├── U0: SLA-113  · Control Plane (Private)
+  ├── U1: LYRICA3  · AI Music Studio       ← YOU ARE HERE
+  ├── U2: Cultura Vibe · Cultural OS
+  ├── U3: Southern · Lifestyle Engine
+  ├── U4: Soulfire · Ecosystem OS
+  └── U5: Archisynapse · Payment Ledger
+```
+
+**Landing page:** `empire-1.vercel.app` — HYBRID-AI-CORE reference implementation, Emergent DNA methodology, black/pink/obsidian blue.
+
 ## Governance
 
-Part of the SLA-113 Multiverse — U1 (LYRICA3).  
+Part of the HYBRID-AI-CORE federation — U1 (LYRICA3).  
 All boundary changes require ADR. All track releases require a release receipt.  
-See `SHARED/universe_registry.yaml` in the Empire-1 repo.
+See `Empire-1` repo for universe registry and architecture docs.
 
 ## Legal
 
