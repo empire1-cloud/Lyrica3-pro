@@ -30,6 +30,8 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'dev_secret_change_me')
 JWT_ALGO   = "HS256"
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+# Skip Vertex/Soulfire when GCP billing locks agents — use local engines only.
+LOCAL_AUDIO_MODE = os.environ.get('LOCAL_AUDIO_MODE', 'false').lower() == 'true'
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
@@ -527,12 +529,43 @@ def _sanitize_track(t: dict) -> dict:
 async def root():
     return {"message": "Empire 1 Ledger online. Soulfire armed.", "version": "SLA-113"}
 
+def _audio_engine_status() -> dict:
+    """Report which music/vocal backends are available (for demo preflight)."""
+    try:
+        from local_musicgen import AUDIOCRAFT_AVAILABLE
+    except Exception:
+        AUDIOCRAFT_AVAILABLE = False
+    from integrations import REPLICATE_API_KEY, EMERGENT_LLM_KEY as _llm
+    from vertex_ai import VERTEX_AI_ENABLED
+    return {
+        "local_audio_mode": LOCAL_AUDIO_MODE,
+        "vertex_ai_enabled": VERTEX_AI_ENABLED and not LOCAL_AUDIO_MODE,
+        "vertex_agents_enabled": (
+            os.environ.get("VERTEX_AGENTS_ENABLED", "false").lower() == "true"
+            and not LOCAL_AUDIO_MODE
+        ),
+        "local_musicgen": AUDIOCRAFT_AVAILABLE,
+        "replicate_musicgen": bool(REPLICATE_API_KEY),
+        "procedural_instrumental": True,
+        "openai_tts_vocals": bool(_llm),
+        "demo_chain": (
+            "local:musicgen → procedural:python → openai:tts"
+            if LOCAL_AUDIO_MODE
+            else "vertex:soulfire → lyria → replicate → local → procedural"
+        ),
+    }
+
+
 @app.get("/health")
 @app.get("/api/health")
 async def health():
     try:
         await client.admin.command("ping")
-        return {"status": "ok", "service": "empire1-ledger"}
+        return {
+            "status": "ok",
+            "service": "empire1-ledger",
+            "audio_engines": _audio_engine_status(),
+        }
     except Exception as e:
         logger.warning("health check failed: mongodb ping error: %s", e)
         return JSONResponse(
@@ -662,37 +695,38 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         f"Raw lyric seed:\n{req.lyrics}\n\n"
         f"Compose the Soulfire. Return JSON only."
     )
-    # --- Primary: Vertex AI Gemini (IAM auth, no API key needed) ---
-    try:
-        from google import genai
-        from google.genai import types as gtypes
-        _vx_project = os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8")
-        _vx_location = os.environ.get("VERTEX_LOCATION", "us-west1")
-        _vx_model = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-1.5-pro-002")
-        _client = genai.Client(vertexai=True, project=_vx_project, location=_vx_location)
-        def _sync():
-            resp = _client.models.generate_content(
-                model=_vx_model,
-                contents=user_text,
-                config=gtypes.GenerateContentConfig(
-                    system_instruction=LML_SYSTEM,
-                    response_mime_type="application/json",
-                    temperature=0.9,
-                    top_p=0.95,
-                    max_output_tokens=2048,
-                ),
-            )
-            return resp.text or ""
-        txt = await asyncio.to_thread(_sync)
-        m = re.search(r"\{[\s\S]*\}", txt)
-        if m: txt = m.group(0)
-        data = json.loads(txt)
-        for k in ("title", "cultural_subtext", "lml"):
-            if k not in data or not isinstance(data[k], str):
-                raise ValueError(f"missing {k}")
-        return data
-    except Exception as e:
-        logger.warning(f"Vertex AI LML generation failed: {e} — trying EMERGENT_LLM_KEY")
+    # --- Primary: Vertex AI Gemini (skipped in LOCAL_AUDIO_MODE) ---
+    if not LOCAL_AUDIO_MODE:
+        try:
+            from google import genai
+            from google.genai import types as gtypes
+            _vx_project = os.environ.get("VERTEX_PROJECT_ID", "disco-amphora-490606-n8")
+            _vx_location = os.environ.get("VERTEX_LOCATION", "us-west1")
+            _vx_model = os.environ.get("VERTEX_GEMINI_MODEL", "gemini-1.5-pro-002")
+            _client = genai.Client(vertexai=True, project=_vx_project, location=_vx_location)
+            def _sync():
+                resp = _client.models.generate_content(
+                    model=_vx_model,
+                    contents=user_text,
+                    config=gtypes.GenerateContentConfig(
+                        system_instruction=LML_SYSTEM,
+                        response_mime_type="application/json",
+                        temperature=0.9,
+                        top_p=0.95,
+                        max_output_tokens=2048,
+                    ),
+                )
+                return resp.text or ""
+            txt = await asyncio.to_thread(_sync)
+            m = re.search(r"\{[\s\S]*\}", txt)
+            if m: txt = m.group(0)
+            data = json.loads(txt)
+            for k in ("title", "cultural_subtext", "lml"):
+                if k not in data or not isinstance(data[k], str):
+                    raise ValueError(f"missing {k}")
+            return data
+        except Exception as e:
+            logger.warning(f"Vertex AI LML generation failed: {e} — trying EMERGENT_LLM_KEY")
     # --- Secondary: OpenAI-compatible client via EMERGENT_LLM_KEY ---
     if EMERGENT_LLM_KEY:
         try:
@@ -770,6 +804,9 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         logger.warning(f"VICS generation failed (non-critical): {e}")
         # VICS is optional - continue with generation even if it fails
 
+    if LOCAL_AUDIO_MODE:
+        logger.info("LOCAL_AUDIO_MODE — skipping Vertex/Soulfire; using local engines")
+
     # ============================================================
     # SOULFIRE PIPELINE — Primary music generation via Vertex AI
     # SL Audio Master (THE BRAIN) → The Beast (THE ORCHESTRATOR) → Sub-agents
@@ -791,41 +828,42 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     soulfire_lml: Optional[str] = None
 
     # ── STEP 1: Soulfire agents — SL Audio Master (THE BRAIN) → The Beast ──
-    # Primary intelligence layer. Replaces _generate_lml for LML + production.
-    try:
-        from vertex_agents_config import generate_music_with_soulfire
-        soulfire_result = await generate_music_with_soulfire(
-            lyrics=req.lyrics,
-            genre=req.genre,
-            mood=req.mood,
-            title=req.title,
-            cultural_matrix=matrix,
-            mood_recipe=recipe,
-        )
-        if soulfire_result and isinstance(soulfire_result, dict):
-            soulfire_lml = soulfire_result.get("lml") or (
-                soulfire_result.get("sl_audio_master_payload", {}).get("lml_lyrics")
+    # Skipped when LOCAL_AUDIO_MODE=true (GCP billing lock / TechCrunch demo).
+    if not LOCAL_AUDIO_MODE:
+        try:
+            from vertex_agents_config import generate_music_with_soulfire
+            soulfire_result = await generate_music_with_soulfire(
+                lyrics=req.lyrics,
+                genre=req.genre,
+                mood=req.mood,
+                title=req.title,
+                cultural_matrix=matrix,
+                mood_recipe=recipe,
             )
-            if soulfire_lml:
-                logger.info("🔥 SL Audio Master generated LML — using as primary")
-                data["lml"] = soulfire_lml
-                if soulfire_result.get("sl_audio_master_payload", {}).get("cultural_matrix"):
-                    data["cultural_subtext"] = soulfire_result["sl_audio_master_payload"]["cultural_matrix"]
-            if "stems" in soulfire_result:
-                stems = soulfire_result["stems"]
-                synth_provider = "vertex:soulfire"
-            elif "audio_url" in soulfire_result or "instrumental_url" in soulfire_result:
-                synth_source_url = soulfire_result.get("audio_url") or soulfire_result.get("instrumental_url")
-                synth_provider = "vertex:soulfire"
-            if "sl_audio_master_payload" in soulfire_result:
-                logger.info("🧠 SL Audio Master physics payload received")
-    except ImportError:
-        logger.warning("Soulfire modules not found")
-    except Exception as e:
-        logger.warning(f"Soulfire agents failed — falling through: {e}")
+            if soulfire_result and isinstance(soulfire_result, dict):
+                soulfire_lml = soulfire_result.get("lml") or (
+                    soulfire_result.get("sl_audio_master_payload", {}).get("lml_lyrics")
+                )
+                if soulfire_lml:
+                    logger.info("🔥 SL Audio Master generated LML — using as primary")
+                    data["lml"] = soulfire_lml
+                    if soulfire_result.get("sl_audio_master_payload", {}).get("cultural_matrix"):
+                        data["cultural_subtext"] = soulfire_result["sl_audio_master_payload"]["cultural_matrix"]
+                if "stems" in soulfire_result:
+                    stems = soulfire_result["stems"]
+                    synth_provider = "vertex:soulfire"
+                elif "audio_url" in soulfire_result or "instrumental_url" in soulfire_result:
+                    synth_source_url = soulfire_result.get("audio_url") or soulfire_result.get("instrumental_url")
+                    synth_provider = "vertex:soulfire"
+                if "sl_audio_master_payload" in soulfire_result:
+                    logger.info("🧠 SL Audio Master physics payload received")
+        except ImportError:
+            logger.warning("Soulfire modules not found")
+        except Exception as e:
+            logger.warning(f"Soulfire agents failed — falling through: {e}")
 
     # ── STEP 2: Lyria 3 Pro — Full song stitching (multi-segment crossfade) ──
-    if VERTEX_AI_ENABLED and not synth_source_url and not stems:
+    if VERTEX_AI_ENABLED and not LOCAL_AUDIO_MODE and not synth_source_url and not stems:
         try:
             from vertex_lyria3 import vertex_lyria3_full_song
             synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
@@ -845,7 +883,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             logger.warning(f"Lyria 3 Pro failed — falling through: {e}")
 
     # ── STEP 3: Lyria 2 — Full song stitching (multi-segment crossfade) ──
-    if VERTEX_AI_ENABLED and not synth_source_url and not stems:
+    if VERTEX_AI_ENABLED and not LOCAL_AUDIO_MODE and not synth_source_url and not stems:
         synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
         full_song_path = await vertex_lyria_full_song(
             base_prompt=synth_prompt,
@@ -871,34 +909,35 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 out_dir=str(ROOT_DIR / "static" / "stems"),
             )
 
-    # ── STEP 5: Local MusicGen (audiocraft) — runs on Workbench GPU ────
-    if not synth_source_url and not stems:
+    async def _try_local_musicgen() -> None:
+        nonlocal synth_source_url, synth_provider, stems
         try:
             from local_musicgen import AUDIOCRAFT_AVAILABLE, generate_music_local
-            if AUDIOCRAFT_AVAILABLE:
-                synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
-                local_path = await generate_music_local(
-                    prompt=synth_prompt,
-                    duration=20,
-                    output_dir=str(ROOT_DIR / "static" / "stems"),
-                )
-                if local_path:
-                    from pathlib import Path as _Path
-                    fname = _Path(local_path).name
-                    synth_source_url = f"/api/static/stems/{fname}"
-                    synth_provider = "local:musicgen"
-                    stems = [
-                        {"name": "Raw Human Pipes", "src": None, "level": 0.0, "peak": 0.0},
-                        {"name": "Late-Pocket Drums", "src": synth_source_url, "level": 0.77, "peak": 0.55},
-                        {"name": "Sub Bass / Acoustic Requinto", "src": synth_source_url, "level": 0.77, "peak": 0.55},
-                        {"name": "Analog Melody", "src": synth_source_url, "level": 0.77, "peak": 0.55},
-                    ]
-                    logger.info("Local MusicGen generated instrumental on Workbench GPU")
+            if not AUDIOCRAFT_AVAILABLE:
+                return
+            synth_prompt = build_synth_prompt(matrix, recipe, data["lml"])
+            local_path = await generate_music_local(
+                prompt=synth_prompt,
+                duration=20,
+                output_dir=str(ROOT_DIR / "static" / "stems"),
+            )
+            if local_path:
+                from pathlib import Path as _Path
+                fname = _Path(local_path).name
+                synth_source_url = f"/api/static/stems/{fname}"
+                synth_provider = "local:musicgen"
+                stems = [
+                    {"name": "Raw Human Pipes", "src": None, "level": 0.0, "peak": 0.0},
+                    {"name": "Late-Pocket Drums", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+                    {"name": "Sub Bass / Acoustic Requinto", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+                    {"name": "Analog Melody", "src": synth_source_url, "level": 0.77, "peak": 0.55},
+                ]
+                logger.info("Local MusicGen generated instrumental")
         except Exception as e:
             logger.warning(f"Local MusicGen failed — falling through: {e}")
 
-    # ── STEP 6: Procedural instrumental generator (no API keys needed) ──
-    if not synth_source_url and not stems:
+    def _try_procedural_instrumental() -> None:
+        nonlocal synth_source_url, synth_provider, stems
         try:
             from procedural_instrumental import generate_instrumental_stems
             proc_bpm = 90
@@ -922,6 +961,18 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         except Exception as e:
             logger.warning(f"Procedural instrumental failed — falling back to SoundHelix: {e}")
 
+    # ── STEPS 5–6: Local engines (order depends on LOCAL_AUDIO_MODE) ────
+    # LOCAL_AUDIO_MODE tries procedural first (fast, no GPU) then MusicGen.
+    if not synth_source_url and not stems:
+        if LOCAL_AUDIO_MODE:
+            _try_procedural_instrumental()
+            if not synth_source_url and not stems:
+                await _try_local_musicgen()
+        else:
+            await _try_local_musicgen()
+            if not synth_source_url and not stems:
+                _try_procedural_instrumental()
+
     # ── STEP 7: Final fallback to SoundHelix ────────────────────────────
     if not synth_source_url and not stems:
         stems = fallback_stems()
@@ -937,7 +988,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         ]
 
     # ── STEP 8: Chirp 3 HD — Real vocal performance (primary) ──────────
-    if VERTEX_AI_ENABLED:
+    if VERTEX_AI_ENABLED and not LOCAL_AUDIO_MODE:
         text = _strip_lml(data["lml"])
         if text:
             chirp_result = await vertex_chirp_tts(
