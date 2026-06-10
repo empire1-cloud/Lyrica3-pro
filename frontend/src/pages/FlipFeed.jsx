@@ -91,51 +91,133 @@ function TrackCard({ t, onFlip, onShare }) {
 
 function FlipForm({ track, onClose, onSubmit }) {
   const [title, setTitle] = useState(`${track.title} (Flipped)`);
-  const [genre, setGenre] = useState("Resilience");
+  const [genre, setGenre] = useState("SGV Oldies");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [isFlipping, setIsFlipping] = useState(false);
+
   const submit = async (e) => {
     e?.preventDefault();
     setLoading(true); setErr("");
-    try { await onSubmit(title, genre); }
-    catch (ex) { setErr(ex?.response?.data?.detail || "Flip failed."); setLoading(false); }
+    setIsFlipping(true);
+    try { 
+      // Add artificial delay for the animation effect before backend processing
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      await onSubmit(title, genre); 
+    }
+    catch (ex) { 
+      setErr(ex?.response?.data?.detail || "Flip failed."); 
+      setLoading(false); 
+      setIsFlipping(false);
+    }
   };
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4" data-testid="flip-modal">
-      <form onSubmit={submit} className="panel rounded-[6px] p-6 md:p-8 w-full max-w-lg relative animate-amber">
-        <button type="button" onClick={onClose} className="absolute top-4 right-4 text-[#6B7280] hover:text-[#FF2EBE]"><X size={18}/></button>
-        <div className="etched text-[#FF2EBE] mb-1">Flip Protocol</div>
-        <h3 className="font-display text-[22px] md:text-[24px] text-[#F5F7FA] tracking-tight">Remix "{track.title}"</h3>
-        <p className="text-[11px] md:text-[12px] font-mono text-[#9CA3B0] mt-2">
-          Original DNA <span className="text-[#F5C542] break-all">{track.dna_tag}</span> routes residual royalties on every stream.
-        </p>
+    <div className="fixed inset-0 bg-[#05060D]/90 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all" onClick={onClose}>
+      <div className="w-full max-w-xl" onClick={e => e.stopPropagation()}>
+        <div className="bg-[#0E0F17] border border-[#1A1C2E] rounded-xl overflow-hidden shadow-[0_0_50px_rgba(255,46,190,0.15)] relative">
+          
+          {/* Background glow */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF2EBE]/20 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#00E6FF]/10 rounded-full blur-[100px] pointer-events-none" />
 
-        <div className="space-y-4 mt-6">
-          <div>
-            <div className="etched text-[#C8CCD8] mb-2">New Title</div>
-            <input value={title} onChange={e=>setTitle(e.target.value)}
-              data-testid="flip-title-input"
-              className="w-full bg-[#0E0F17] border border-[#0E0F17] focus:border-[#F5C542] rounded-[3px] px-3 py-2.5 text-[#F5F7FA] font-mono text-[13px] outline-none"/>
+          <div className="relative z-10 p-6 border-b border-[#1A1C2E] flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-display flex items-center gap-3 text-[#FF2EBE]">
+                <Repeat2 className={`w-6 h-6 ${isFlipping ? "animate-spin text-[#00E6FF]" : ""}`} /> 
+                Bloodline Flip
+              </h2>
+              <p className="text-[12px] font-mono text-[#9CA3B0] mt-1">Remixing <span className="text-[#F5F7FA] font-bold">"{track.title}"</span></p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-[#1A1C2E] rounded-full transition-colors text-[#6B7280] hover:text-[#F5F7FA]">
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <div>
-            <div className="etched text-[#C8CCD8] mb-2">Mutate Into</div>
-            <select value={genre} onChange={e=>setGenre(e.target.value)}
-              data-testid="flip-genre-select"
-              className="w-full bg-[#0E0F17] border border-[#0E0F17] focus:border-[#F5C542] rounded-[3px] px-3 py-2.5 text-[#F5F7FA] font-mono text-[13px] outline-none">
-              {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
+
+          <form onSubmit={submit} className="relative z-10 p-6 space-y-6">
+            {isFlipping ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center space-y-6">
+                 <div className="relative w-24 h-24">
+                    <div className="absolute inset-0 border-4 border-[#1A1C2E] rounded-full" />
+                    <div className="absolute inset-0 border-4 border-[#FF2EBE] rounded-full border-t-transparent animate-spin" />
+                    <div className="absolute inset-0 border-4 border-[#00E6FF] rounded-full border-b-transparent animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }} />
+                    <Fingerprint className="w-8 h-8 text-[#FF2EBE] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                 </div>
+                 <div>
+                   <h3 className="text-xl font-display text-[#F5F7FA] mb-2 animate-pulse">Injecting Cultura...</h3>
+                   <p className="text-[11px] font-mono text-[#9CA3B0]">Verifying Voice DNA • Re-pitching Stems • Routing Royalties</p>
+                 </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-[11px] md:text-[12px] font-mono text-[#9CA3B0]">
+                  Original DNA <span className="text-[#F5C542] break-all">{track.dna_tag}</span> routes residual royalties on every stream.
+                </p>
+
+                <div className="space-y-4 mt-6">
+                  <div>
+                    <div className="etched text-[#C8CCD8] mb-2">New Title</div>
+                    <input value={title} onChange={e=>setTitle(e.target.value)}
+                      data-testid="flip-title-input"
+                      className="w-full bg-[#05060D] border border-[#1A1C2E] focus:border-[#00E6FF] rounded-lg px-4 py-3 text-[#F5F7FA] font-mono text-[13px] outline-none transition-all"/>
+                  </div>
+
+                  {/* Visual Style Presets (Mapped to Genres) */}
+                  <div>
+                    <h3 className="text-[11px] font-mono text-[#C8CCD8] uppercase tracking-wider mb-3 flex items-center gap-2 etched">
+                      Select Mutation Style
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { id: 'SGV Oldies', desc: 'Chicano swing + Heavy 808s' },
+                        { id: 'Corridos', desc: 'Acoustic brass + Regional' },
+                        { id: 'Street Bounce', desc: 'Aggressive 808s + Synth' },
+                        { id: 'Bossa Nova', desc: 'Smooth + Acoustic' }
+                      ].map(style => (
+                        <div
+                          key={style.id}
+                          onClick={() => setGenre(style.id)}
+                          className={`p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                            genre === style.id
+                              ? "bg-[#FF2EBE]/10 border-[#FF2EBE] shadow-[0_0_15px_rgba(255,46,190,0.2)]"
+                              : "bg-[#05060D] border-[#1A1C2E] hover:border-[#3a3a44]"
+                          }`}
+                        >
+                          <div className={`font-display text-sm mb-1 ${genre === style.id ? "text-[#FF2EBE]" : "text-[#F5F7FA]"}`}>{style.id}</div>
+                          <div className="text-[10px] font-mono text-[#6B7280] leading-relaxed">{style.desc}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Select fallback for other genres */}
+                  <div className="pt-2">
+                    <div className="etched text-[#6B7280] mb-2 text-[9px]">Or select from all genres:</div>
+                    <select value={genre} onChange={e=>setGenre(e.target.value)}
+                      className="w-full bg-[#05060D] border border-[#1A1C2E] focus:border-[#F5C542] rounded-lg px-3 py-2 text-[#9CA3B0] font-mono text-[11px] outline-none">
+                      {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {err && <div className="mt-4 text-[12px] text-[#FF2EBE] font-mono">{err}</div>}
+              </>
+            )}
+
+            {!isFlipping && (
+              <div className="relative z-10 pt-4 mt-6 border-t border-[#1A1C2E] flex gap-3">
+                <button type="button" className="flex-1 py-3 text-[12px] font-mono text-[#9CA3B0] hover:text-[#F5F7FA] transition-colors" onClick={onClose}>Cancel</button>
+                <button type="submit" disabled={loading}
+                  data-testid="flip-submit-btn"
+                  className="flex-[2] py-3 rounded-lg border border-[#FF2EBE]/70 bg-gradient-to-r from-[#FF2EBE]/20 to-[#00E6FF]/20 text-[#F5F7FA]
+                             uppercase text-[12px] tracking-[0.2em] font-bold hover:brightness-125 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                  <Repeat2 className="w-4 h-4 text-[#FF2EBE]" /> Flip It
+                </button>
+              </div>
+            )}
+          </form>
         </div>
-
-        {err && <div className="mt-4 text-[12px] text-[#FF2EBE] font-mono">{err}</div>}
-
-        <button type="submit" disabled={loading}
-          data-testid="flip-submit-btn"
-          className="w-full mt-6 py-3 rounded-[3px] border border-[#FF2EBE]/70 bg-gradient-to-b from-[#F5C542] to-[#8B6914] text-[#05060D]
-                     uppercase text-[12px] tracking-[0.24em] font-bold hover:brightness-110 disabled:opacity-50">
-          {loading ? "Locking parent DNA…" : "Commit Flip · Mint Child DNA"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

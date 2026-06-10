@@ -4,7 +4,7 @@ import { X, Download, Share2, Fingerprint, Repeat2, TrendingUp, Crown, Zap } fro
 
 /**
  * Bloodline Share Card — cultural recruitment beacon.
- * Renders a 1080x1350 (4:5 TikTok/IG portrait) cinematic card with full DNA lineage,
+ * Renders a 1080x1920 (9:16 TikTok/IG vertical) cinematic card with full DNA lineage,
  * SynthID watermark, royalty snapshot, and one-tap PNG export / Web Share.
  *
  * Props:
@@ -137,20 +137,20 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
         <div
           ref={cardRef}
           data-testid="bloodline-share-card"
-          className="relative w-full overflow-hidden rounded-[6px]"
+          className="relative w-full overflow-hidden rounded-2xl shadow-2xl"
           style={{
-            aspectRatio: "4 / 5",
-            background: "linear-gradient(160deg, #08080a 0%, #0d0d12 50%, #12080f 100%)",
-            border: brandVariant === "watermark" ? "1px solid #00E6FF55" : "1px solid #2a2a34",
+            aspectRatio: "9 / 16",
+            background: "linear-gradient(160deg, #05060D 0%, #0E0F17 50%, #12080f 100%)",
+            border: brandVariant === "watermark" ? "2px solid #00E6FF55" : "2px solid #1A1C2E",
           }}
         >
           {/* Pink/cyan biometric haze */}
-          <div className="absolute -top-24 -right-24 w-[420px] h-[420px] rounded-full pointer-events-none"
-               style={{ background: "radial-gradient(circle, rgba(255,94,172,0.28) 0%, rgba(255,94,172,0) 70%)", filter: "blur(40px)" }}/>
-          <div className="absolute -bottom-32 -left-24 w-[460px] h-[460px] rounded-full pointer-events-none"
-               style={{ background: "radial-gradient(circle, rgba(89,211,255,0.22) 0%, rgba(89,211,255,0) 70%)", filter: "blur(48px)" }}/>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full pointer-events-none"
-               style={{ background: "radial-gradient(circle, rgba(245,165,36,0.12) 0%, rgba(245,165,36,0) 60%)", filter: "blur(60px)" }}/>
+          <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full pointer-events-none mix-blend-screen"
+               style={{ background: "radial-gradient(circle, rgba(255,46,190,0.3) 0%, transparent 70%)", filter: "blur(60px)" }}/>
+          <div className="absolute -bottom-32 -left-32 w-[600px] h-[600px] rounded-full pointer-events-none mix-blend-screen"
+               style={{ background: "radial-gradient(circle, rgba(0,230,255,0.25) 0%, transparent 70%)", filter: "blur(60px)" }}/>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none mix-blend-screen"
+               style={{ background: "radial-gradient(circle, rgba(245,197,66,0.15) 0%, transparent 60%)", filter: "blur(80px)" }}/>
 
           {/* Grain / scanlines overlay */}
           <div className="absolute inset-0 opacity-[0.08] pointer-events-none"
@@ -195,13 +195,28 @@ export default function BloodlineShareCard({ track, chain = null, onClose }) {
                     {track.cultural_matrix || "Soulfire"}
                   </span>
                 </div>
-                <h2 className="font-display text-[26px] md:text-[32px] text-[#F5F7FA] mt-2.5 tracking-tight leading-[1.02]"
-                    style={{ textShadow: "0 2px 18px rgba(245,165,36,0.15)" }}>
+                <h2 className="font-display text-[32px] md:text-[40px] text-[#F5F7FA] mt-3 tracking-tighter leading-none"
+                    style={{ textShadow: "0 4px 24px rgba(255,46,190,0.4)" }}>
                   {track.title}
                 </h2>
-                <div className="font-mono text-[10px] md:text-[11px] text-[#9CA3B0] mt-1.5 tracking-wide">
+                <div className="font-mono text-[12px] md:text-[14px] text-[#9CA3B0] mt-2 tracking-wide flex items-center gap-2">
                   by <span className="text-[#F5C542]">{track.creator}</span>
-                  {!!track.flips && <> · <span className="text-[#00E6FF]">{track.flips} flips</span></>}
+                  {!!track.flips && <><span className="text-[#1A1C2E]">•</span> <span className="text-[#00E6FF]">{track.flips} flips</span></>}
+                </div>
+                
+                {/* Neon Waveform */}
+                <div className="flex items-center gap-[3px] h-12 mt-6">
+                  {Array.from({ length: 32 }).map((_, i) => (
+                    <div 
+                      key={i} 
+                      className="flex-1 rounded-full opacity-80" 
+                      style={{ 
+                        height: `${20 + Math.random() * 80}%`,
+                        background: `linear-gradient(180deg, #FF2EBE, #00E6FF)`,
+                        boxShadow: `0 0 10px rgba(255,46,190,0.5)`
+                      }} 
+                    />
+                  ))}
                 </div>
               </div>
             </div>

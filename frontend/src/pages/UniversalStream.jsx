@@ -1,82 +1,77 @@
 import React, { useEffect, useRef, useState } from "react";
 import { getBloodlines, getLedger, WS_URL } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { Globe, Radio, TrendingUp, Fingerprint, Zap, Repeat2, Crown } from "lucide-react";
+import { Globe, Radio, TrendingUp, Fingerprint, Zap, Repeat2, Crown, Play, Pause, SkipForward, SkipBack, Volume2, Heart, Share2, Activity, ListMusic } from "lucide-react";
 
 const COLOR_RING = ["#F5C542", "#FF2EBE", "#00E6FF", "#00E6FF", "#F5C542"];
 
-function BloodlineCard({ bl, rank, accent }) {
+function BloodlineRow({ bl, rank, accent, isPlaying, onPlay }) {
   return (
-    <div className="panel rounded-[6px] p-4 md:p-5 relative overflow-hidden" data-testid={`bloodline-${bl.root_dna}`}>
-      <div className="absolute -top-16 -right-16 w-[200px] h-[200px] rounded-full blur-3xl pointer-events-none"
-           style={{ background: `${accent}22` }}/>
-      <div className="flex items-start justify-between gap-3 flex-wrap relative">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-mono font-bold"
-                 style={{ background: `${accent}33`, color: accent, border: `1px solid ${accent}66` }}>
-              {rank}
-            </div>
-            <div className="etched text-[#9CA3B0]">{bl.root_matrix}</div>
-          </div>
-          <h3 className="font-display text-[20px] md:text-[24px] text-[#F5F7FA] mt-1.5 tracking-tight leading-tight">
-            {bl.root_title}
-            {rank === 1 && <Crown size={16} className="inline ml-2 -translate-y-[2px] text-[#F5C542]"/>}
-          </h3>
-          <div className="text-[11px] md:text-[12px] font-mono text-[#9CA3B0] mt-1">
-            root: <span className="text-[#F5C542]">{bl.root_creator}</span>
-            <span className="mx-2">·</span>
-            <span className="text-[#00E6FF]">{bl.depth} node{bl.depth === 1 ? "" : "s"}</span>
+    <div className={`group flex flex-col p-3 rounded-xl hover:bg-[#1A1C2E]/60 transition-all cursor-pointer border border-transparent ${isPlaying ? 'bg-[#1A1C2E]/80 border-[#00E6FF]/20 shadow-[0_0_20px_rgba(0,230,255,0.05)]' : 'border-b-[#1A1C2E]/50'}`} onClick={onPlay}>
+      <div className="flex items-center gap-4">
+        <div className="w-8 text-center text-[#9CA3B0] font-mono text-[11px]">
+          {isPlaying ? <Activity className="w-4 h-4 mx-auto text-[#00E6FF] animate-pulse" /> : String(rank).padStart(2, '0')}
+        </div>
+        <div className="w-12 h-12 rounded-lg flex items-center justify-center relative overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
+          <div className="absolute inset-0 opacity-20" style={{ background: accent }} />
+          <Fingerprint size={24} style={{ color: accent }} />
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {isPlaying ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
           </div>
         </div>
-        <div className="text-right shrink-0">
-          <div className="font-display text-[22px] md:text-[28px] tabular-nums" style={{ color: accent }}>
-            ${bl.total_earnings_usd.toFixed(2)}
+        <div className="flex-1 min-w-0">
+          <div className={`font-display text-[16px] truncate ${isPlaying ? 'text-[#00E6FF]' : 'text-[#F5F7FA] group-hover:text-white'}`}>
+            {bl.root_title} {rank === 1 && <Crown size={14} className="inline ml-1 text-[#F5C542] -translate-y-0.5" />}
           </div>
-          <div className="text-[10px] font-mono text-[#6B7280] uppercase tracking-[0.16em]">
-            {bl.total_streams.toLocaleString()} streams · {bl.total_flips} flips
+          <div className="font-mono text-[11px] text-[#9CA3B0] truncate mt-1">
+            <span className="text-[#F5F7FA]">{bl.root_creator}</span> <span className="mx-1 text-[#1A1C2E]">•</span> {bl.total_streams.toLocaleString()} streams <span className="mx-1 text-[#1A1C2E]">•</span> {bl.total_flips} flips
           </div>
+        </div>
+        <div className="hidden sm:block w-32 text-right">
+          <div className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider mb-1">Total Earned</div>
+          <div className="font-mono text-[14px] tabular-nums font-bold" style={{ color: accent }}>${bl.total_earnings_usd.toFixed(2)}</div>
+        </div>
+        <div className="w-12 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity items-center gap-3">
+          <Heart className="w-4 h-4 text-[#9CA3B0] hover:text-[#FF2EBE]" />
         </div>
       </div>
 
-      {/* Lineage chain viz */}
-      <div className="mt-4 md:mt-5 relative">
-        <div className="flex items-center gap-0 overflow-x-auto pb-1 relative">
-          {bl.chain.map((c, i) => {
-            const isRoot = c.is_root;
-            const nodeColor = isRoot ? accent : "#00E6FF";
-            return (
-              <React.Fragment key={c.dna_tag}>
-                {i > 0 && (
-                  <div className="flex-1 min-w-[24px] h-[2px] mx-1 relative"
-                       style={{ background: `linear-gradient(90deg, ${isRoot ? accent : "#00E6FF"}66, ${accent}66)` }}>
-                    <Repeat2 size={10} className="absolute left-1/2 -translate-x-1/2 -top-[5px] text-[#FF2EBE] bg-[#0a0a0c] px-[1px]"/>
+      {/* Lineage Chain - Only visible when playing */}
+      {isPlaying && (
+        <div className="mt-4 pl-16 pr-4 pb-2 relative animate-accordion-down">
+          <div className="text-[10px] font-mono text-[#00E6FF] uppercase tracking-[0.16em] mb-3 flex items-center gap-2">
+            <Radio className="w-3 h-3" /> Live Lineage Chain ({bl.depth} Nodes)
+          </div>
+          <div className="flex items-center gap-0 overflow-x-auto pb-2 scrollbar-hide">
+            {bl.chain.map((c, i) => {
+              const isRoot = c.is_root;
+              const nodeColor = isRoot ? accent : "#00E6FF";
+              return (
+                <React.Fragment key={c.dna_tag}>
+                  {i > 0 && (
+                    <div className="flex-1 min-w-[24px] h-[1px] mx-2 relative" style={{ background: `linear-gradient(90deg, ${isRoot ? accent : "#00E6FF"}44, ${accent}44)` }}>
+                      <Repeat2 size={10} className="absolute left-1/2 -translate-x-1/2 -top-[4px] text-[#FF2EBE] bg-[#05060D]" />
+                    </div>
+                  )}
+                  <div className="shrink-0 w-[140px] bg-[#0A0B14] border rounded-lg px-3 py-2.5 transition-all hover:bg-[#0E0F17]"
+                       style={{ borderColor: `${nodeColor}33`, boxShadow: `inset 0 0 10px ${nodeColor}11` }}>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Fingerprint size={10} style={{ color: nodeColor }}/>
+                      <span className="font-mono text-[#9CA3B0] text-[9px] truncate">
+                        {isRoot ? "ROOT" : `FLIP ${i}`}
+                      </span>
+                    </div>
+                    <div className="font-display text-[12px] text-[#F5F7FA] truncate leading-tight">
+                      {c.title}
+                    </div>
+                    <div className="font-mono text-[9px] text-[#6B7280] truncate mt-0.5">{c.creator}</div>
                   </div>
-                )}
-                <div className="shrink-0 min-w-[130px] md:min-w-[150px] max-w-[180px] bg-[#0E0F17] border rounded-[4px] px-2.5 py-2"
-                     style={{ borderColor: `${nodeColor}55`, boxShadow: `inset 0 0 10px ${nodeColor}22` }}>
-                  <div className="flex items-center gap-1.5">
-                    <Fingerprint size={10} style={{ color: nodeColor }}/>
-                    <span className="etched text-[#9CA3B0] text-[9px] truncate">
-                      {isRoot ? "ROOT" : `FLIP ${i}`}
-                    </span>
-                  </div>
-                  <div className="font-display text-[12px] md:text-[13px] text-[#F5F7FA] mt-1 truncate leading-tight">
-                    {c.title}
-                  </div>
-                  <div className="font-mono text-[9px] text-[#6B7280] truncate mt-0.5">{c.creator}</div>
-                  <div className="flex items-center justify-between mt-1.5 font-mono">
-                    <span className="text-[9px] text-[#6B7280]">{c.streams.toLocaleString()}</span>
-                    <span className="text-[10px]" style={{ color: nodeColor }}>
-                      ${c.earnings_usd.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </React.Fragment>
-            );
-          })}
+                </React.Fragment>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -137,6 +132,8 @@ export default function UniversalStream() {
   const [bloodlines, setBloodlines] = useState([]);
   const [ledger, setLedger] = useState([]);
   const [live, setLive] = useState([]);
+  const [playingId, setPlayingId] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
   const wsRef = useRef(null);
 
   const refresh = () => {
@@ -162,63 +159,165 @@ export default function UniversalStream() {
     return () => { try { ws.close(); } catch {} };
   }, [token]);
 
+  const playingTrack = bloodlines.find(b => b.root_dna === playingId) || bloodlines[0];
+
+  const handlePlay = (id) => {
+    if (playingId === id) {
+      setIsPlaying(!isPlaying);
+    } else {
+      setPlayingId(id);
+      setIsPlaying(true);
+    }
+  };
+
   return (
-    <div className="min-h-screen p-4 md:p-8 lg:p-12">
-      <div className="flex items-start justify-between mb-6 md:mb-8 gap-3 flex-wrap">
-        <div>
-          <div className="etched text-[#9CA3B0]">// UNIVERSAL STREAM</div>
-          <h2 className="font-display text-[26px] md:text-[40px] text-[#F5F7FA] tracking-tight leading-[1.05] mt-1">
-            Bloodline <span className="text-[#FF2EBE]">Remix</span> Leaderboard
-          </h2>
-          <p className="font-serif italic text-[#9CA3B0] mt-1 md:mt-2 text-[12px] md:text-[14px]">
-            Rolling 24h rank · whose cultural bloodline is generating the most micro-royalties globally
-          </p>
-        </div>
-        <div className="panel rounded-[6px] px-4 py-3 flex items-center gap-3">
-          <Radio size={14} className="text-[#00E6FF] animate-pulse"/>
-          <div>
-            <div className="etched text-[#C8CCD8]">Live events</div>
-            <div className="font-mono text-[#F5C542] text-[14px]">{live.length}</div>
+    <div className="min-h-screen bg-[#05060D] text-[#F5F7FA] pb-28">
+      {/* Hero Section */}
+      <div className="h-[40vh] min-h-[300px] relative overflow-hidden flex items-end p-8 md:p-12 border-b border-[#1A1C2E]">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#05060D] via-[#05060D]/60 to-transparent z-10" />
+        {playingTrack && (
+          <div className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-screen filter blur-xl transition-all duration-1000"
+               style={{ background: `linear-gradient(45deg, ${COLOR_RING[bloodlines.indexOf(playingTrack) % COLOR_RING.length]}, transparent)` }} />
+        )}
+        
+        <div className="relative z-20 flex gap-6 md:gap-8 items-end w-full">
+          <div className="w-32 h-32 md:w-48 md:h-48 rounded-xl bg-[#0E0F17] border-2 border-[#1A1C2E] shadow-2xl flex items-center justify-center shrink-0 overflow-hidden relative group">
+            {playingTrack ? (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-br from-black/60 to-black/20 z-10" />
+                <Fingerprint size={80} className="text-[#00E6FF] opacity-30 absolute group-hover:scale-110 transition-transform duration-500" />
+                <div className="relative z-20 w-16 h-16 rounded-full bg-[#00E6FF]/20 flex items-center justify-center backdrop-blur-sm cursor-pointer hover:bg-[#00E6FF]/40 transition-colors" onClick={() => handlePlay(playingTrack.root_dna)}>
+                  {isPlaying ? <Pause className="w-8 h-8 text-[#00E6FF]" /> : <Play className="w-8 h-8 text-[#00E6FF] ml-1" />}
+                </div>
+              </>
+            ) : (
+              <Radio className="w-12 h-12 text-[#1A1C2E]" />
+            )}
+          </div>
+          <div className="flex-1 pb-2">
+            <div className="flex items-center gap-2 mb-2 md:mb-4">
+              <span className="px-2 py-1 rounded bg-[#FF2EBE]/10 text-[#FF2EBE] font-mono text-[10px] uppercase tracking-widest border border-[#FF2EBE]/20">
+                SL Universal Radio
+              </span>
+              <span className="text-[#9CA3B0] font-mono text-[11px] flex items-center gap-1">
+                <Globe className="w-3 h-3" /> Live Matrix
+              </span>
+            </div>
+            <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tighter mb-2">
+              {playingTrack ? playingTrack.root_title : "Select a Track"}
+            </h1>
+            <p className="font-mono text-[#9CA3B0] text-sm md:text-base">
+              {playingTrack ? `By ${playingTrack.root_creator} • ${playingTrack.total_streams.toLocaleString()} Streams` : "Tuning in to the Empire 1 Ledger..."}
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-4 md:gap-6">
-        {/* leaderboard */}
-        <div className="col-span-12 lg:col-span-8 space-y-4 md:space-y-5" data-testid="bloodline-list">
-          {bloodlines.length === 0 && (
-            <div className="panel rounded-[6px] p-6 text-center text-[#9CA3B0] font-mono text-[12px]">
-              No bloodlines yet · flip a track to seed the lineage graph
+      <div className="p-4 md:p-8 lg:p-12 grid grid-cols-12 gap-8 max-w-[1800px] mx-auto">
+        {/* Playlist Container */}
+        <div className="col-span-12 lg:col-span-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-display text-2xl flex items-center gap-3">
+              <ListMusic className="w-6 h-6 text-[#00E6FF]" />
+              Global Bloodline Chart
+            </h2>
+            <div className="font-mono text-[11px] text-[#6B7280] uppercase tracking-widest flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#00E6FF] animate-pulse"></span>
+              Live Ledger Sync
             </div>
-          )}
-          {bloodlines.map((bl, i) => (
-            <BloodlineCard key={bl.root_dna} bl={bl} rank={i + 1} accent={COLOR_RING[i % COLOR_RING.length]}/>
-          ))}
+          </div>
+          
+          <div className="space-y-1" data-testid="bloodline-list">
+            {bloodlines.length === 0 && (
+              <div className="py-12 text-center text-[#6B7280] font-mono text-sm border border-dashed border-[#1A1C2E] rounded-xl">
+                Awaiting streams...
+              </div>
+            )}
+            {bloodlines.map((bl, i) => (
+              <BloodlineRow 
+                key={bl.root_dna} 
+                bl={bl} 
+                rank={i + 1} 
+                accent={COLOR_RING[i % COLOR_RING.length]}
+                isPlaying={playingId === bl.root_dna}
+                onPlay={() => handlePlay(bl.root_dna)}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* right rail */}
-        <div className="col-span-12 lg:col-span-4 space-y-4 md:space-y-5">
+        {/* Sidebar */}
+        <div className="col-span-12 lg:col-span-4 space-y-8">
           <NetworkGravityOrbit bloodlines={bloodlines}/>
 
-          <div className="panel rounded-[6px] p-4 md:p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap size={14} className="text-[#F5C542]"/>
-              <span className="etched text-[#F5C542]">Immutable Ledger · Last Events</span>
+          <div className="bg-[#0E0F17]/50 rounded-xl p-5 border border-[#1A1C2E] backdrop-blur-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap size={16} className="text-[#F5C542]"/>
+              <span className="font-mono text-xs uppercase tracking-widest text-[#F5C542]">Live Ledger Events</span>
             </div>
-            <div className="space-y-2 max-h-[320px] overflow-hidden">
+            <div className="space-y-3 max-h-[300px] overflow-hidden">
               {ledger.length === 0 && <div className="text-[#6B7280] font-mono text-[11px]">Ledger idle…</div>}
-              {ledger.slice(0, 10).map((e) => (
-                <div key={e.id} className="bg-[#0E0F17] border border-[#0E0F17] rounded-[3px] p-2.5 flex items-center justify-between">
-                  <div className="min-w-0">
-                    <div className="font-mono text-[10px] uppercase tracking-[0.14em]"
-                         style={{ color: e.kind === "mint" ? "#F5C542" : e.kind === "flip" ? "#FF2EBE" : "#00E6FF" }}>
-                      {e.kind}
+              {ledger.slice(0, 8).map((e) => (
+                <div key={e.id} className="flex items-center gap-3 group">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: e.kind === "mint" ? "#F5C542" : e.kind === "flip" ? "#FF2EBE" : "#00E6FF" }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-mono text-[10px] text-[#C8CCD8] truncate group-hover:text-white transition-colors">
+                      <span className="uppercase tracking-wider" style={{ color: e.kind === "mint" ? "#F5C542" : e.kind === "flip" ? "#FF2EBE" : "#00E6FF" }}>{e.kind}</span>
+                      <span className="mx-2">•</span>
+                      {e.dna_tag?.slice(0,12)}…
                     </div>
-                    <div className="font-mono text-[10px] text-[#C8CCD8] truncate mt-0.5">{e.dna_tag?.slice(0,18)}…</div>
                   </div>
-                  <div className="text-[10px] font-mono text-[#6B7280] shrink-0 ml-2">{e.actor?.slice(0,14)}</div>
+                  <div className="text-[9px] font-mono text-[#6B7280] shrink-0">{e.actor?.slice(0,10)}</div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky Bottom Player Bar */}
+      <div className="fixed bottom-0 left-0 right-0 h-24 bg-[#0A0B14]/95 backdrop-blur-xl border-t border-[#1A1C2E] z-50 px-4 md:px-8 flex items-center justify-between">
+        <div className="w-1/3 flex items-center gap-4">
+          {playingTrack ? (
+            <>
+              <div className="w-14 h-14 rounded-md bg-[#0E0F17] flex items-center justify-center border border-[#1A1C2E] relative overflow-hidden">
+                <div className="absolute inset-0 opacity-30" style={{ background: COLOR_RING[bloodlines.indexOf(playingTrack) % COLOR_RING.length] }} />
+                <Fingerprint className="w-6 h-6 text-white relative z-10" />
+              </div>
+              <div className="min-w-0 hidden sm:block">
+                <div className="font-display text-sm text-white truncate hover:underline cursor-pointer">{playingTrack.root_title}</div>
+                <div className="font-mono text-[10px] text-[#9CA3B0] truncate hover:underline cursor-pointer">{playingTrack.root_creator}</div>
+              </div>
+              <Heart className="w-4 h-4 text-[#9CA3B0] hover:text-[#FF2EBE] ml-2 cursor-pointer transition-colors" />
+            </>
+          ) : (
+            <div className="font-mono text-xs text-[#6B7280]">No track selected</div>
+          )}
+        </div>
+
+        <div className="flex-1 max-w-2xl flex flex-col items-center justify-center">
+          <div className="flex items-center gap-6 mb-2">
+            <SkipBack className="w-5 h-5 text-[#9CA3B0] hover:text-white cursor-pointer transition-colors" />
+            <button className="w-10 h-10 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform" onClick={() => setIsPlaying(!isPlaying)}>
+              {isPlaying ? <Pause className="w-5 h-5 text-black" /> : <Play className="w-5 h-5 text-black ml-1" />}
+            </button>
+            <SkipForward className="w-5 h-5 text-[#9CA3B0] hover:text-white cursor-pointer transition-colors" />
+          </div>
+          <div className="w-full flex items-center gap-3">
+            <span className="text-[10px] font-mono text-[#9CA3B0] w-8 text-right">0:00</span>
+            <div className="flex-1 h-1 bg-[#1A1C2E] rounded-full overflow-hidden group cursor-pointer relative">
+              <div className="absolute top-0 left-0 bottom-0 bg-[#00E6FF] w-1/3 group-hover:bg-[#FF2EBE] transition-colors" />
+            </div>
+            <span className="text-[10px] font-mono text-[#9CA3B0] w-8">3:14</span>
+          </div>
+        </div>
+
+        <div className="w-1/3 flex justify-end items-center gap-4 hidden md:flex">
+          <Radio className="w-4 h-4 text-[#00E6FF]" />
+          <div className="flex items-center gap-2 w-24">
+            <Volume2 className="w-4 h-4 text-[#9CA3B0]" />
+            <div className="flex-1 h-1 bg-[#1A1C2E] rounded-full overflow-hidden cursor-pointer">
+              <div className="h-full bg-white w-2/3" />
             </div>
           </div>
         </div>
