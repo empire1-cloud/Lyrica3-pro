@@ -71,6 +71,6 @@
       "source": "/((?!service-worker\\.js|manifest\\.json|icon-.*|favicon\\.ico|static/.*).*)",
       "destination": "/index.html"
     }
-  ],
-
+  
+  ]
 }
