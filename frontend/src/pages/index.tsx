@@ -1,5 +1,5 @@
 import React from "react";
-import { LyricaPublicLanding } from "@/LyricaPublicLanding";
+import LyricaPublicLanding from "@/LyricaPublicLanding";
 import { useNavigate } from "react-router-dom";
 
 export default function LandingPage() {
