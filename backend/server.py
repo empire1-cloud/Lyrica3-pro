@@ -1845,9 +1845,9 @@ app.include_router(api_router)
 # Without /api prefix the path falls through to the React dev server and returns index.html.
 app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="static")
 
-# ─── Duo-Soul Engine ───
-from api.main import app as duo_soul_app
-app.mount("/duo-soul", duo_soul_app)
+# ─── Duo-Soul Engine ─── (commented: api module not deployed yet)
+# from api.main import app as duo_soul_app
+# app.mount("/duo-soul", duo_soul_app)
 
 app.add_middleware(
     CORSMiddleware,
