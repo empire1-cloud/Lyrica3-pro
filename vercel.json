@@ -5,6 +5,7 @@
   "outputDirectory": "frontend/build",
   "installCommand": "echo 'Skipping root install'",
   "framework": null,
+  "rootDirectory": ".",
   "cleanUrls": true,
   "env": {
     "GENERATE_SOURCEMAP": "false",
@@ -71,15 +72,5 @@
       "destination": "/index.html"
     }
   ],
-  "experimentalServices": {
-    "discord_bot": {
-      "entrypoint": "discord_bot",
-      "routePrefix": "/_/discord_bot"
-    },
-    "frontend": {
-      "entrypoint": "frontend",
-      "routePrefix": "/",
-      "framework": "create-react-app"
-    }
-  }
+
 }
