@@ -1,0 +1,26 @@
+name: Deploy Discord Bot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "discord_bot/**"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: curl -fsSL https://railway.app/install.sh | sh
+
+      - name: Deploy Discord Bot to Railway
+        run: railway up --service discord-bot
+        working-directory: discord_bot
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_APP_ID: ${{ secrets.DISCORD_APP_ID }}
+          DISCORD_PUBLIC_KEY: ${{ secrets.DISCORD_PUBLIC_KEY }}
+          DISCORD_BOT_PASS: ${{ secrets.DISCORD_BOT_PASS }}

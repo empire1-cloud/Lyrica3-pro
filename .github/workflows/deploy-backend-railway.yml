@@ -1,0 +1,24 @@
+name: Deploy Backend to Railway
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "Dockerfile"
+      - "railway.toml"
+      - "requirements.txt"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: curl -fsSL https://railway.app/install.sh | sh
+
+      - name: Deploy to Railway
+        run: railway up --service lyrica3-backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
