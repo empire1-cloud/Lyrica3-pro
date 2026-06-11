@@ -27,7 +27,7 @@ restartPolicyMaxRetries = 10
 [deploy.variables]
 DB_NAME        = "lyrica3_prod"
 # Comma-separated — update to your Vercel / custom domain(s)
-CORS_ORIGINS   = "https://lyrica3pro.com,https://www.lyrica3pro.com"
+CORS_ORIGINS   = "https://lyrica3.com,https://www.lyrica3.com"
 WORKERS        = "2"
 DEMUCS_MODEL   = "htdemucs"
 DEMUCS_ENABLED = "false"
