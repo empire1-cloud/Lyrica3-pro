@@ -5,7 +5,6 @@
   "outputDirectory": "frontend/build",
   "installCommand": "echo 'Skipping root install'",
   "framework": null,
-  "rootDirectory": ".",
   "cleanUrls": true,
   "env": {
     "GENERATE_SOURCEMAP": "false",
