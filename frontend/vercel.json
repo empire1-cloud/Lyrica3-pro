@@ -1,7 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "framework": "react",
   "env": {
     "REACT_APP_BACKEND_URL": "@REACT_APP_BACKEND_URL",
     "REACT_APP_GEMINI_API_KEY": "@REACT_APP_GEMINI_API_KEY"
