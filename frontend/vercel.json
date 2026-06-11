@@ -2,8 +2,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": "build",
   "env": {
-    "REACT_APP_BACKEND_URL": "@REACT_APP_BACKEND_URL",
-    "REACT_APP_GEMINI_API_KEY": "@REACT_APP_GEMINI_API_KEY"
+    "REACT_APP_BACKEND_URL": "http://localhost:8000",
+    "REACT_APP_GEMINI_API_KEY": "placeholder"
   },
   "rewrites": [
     {
