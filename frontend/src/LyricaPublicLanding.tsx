@@ -165,6 +165,129 @@ nav {
   pointer-events: none;
 }
 
+.ferris-wheel {
+  position: absolute;
+  right: -120px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 500px;
+  height: 500px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ferris-spoke {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 160px;
+  background: linear-gradient(180deg, transparent, var(--pink), transparent);
+  transform-origin: 0 0;
+  opacity: 0.25;
+}
+
+.ferris-rim-layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1.5px solid var(--pink);
+  transform: translate(-50%, -50%);
+  animation: spin linear infinite;
+}
+
+.ferris-rim-1 { width: 320px; height: 320px; opacity: 0.3; animation-duration: 20s; }
+.ferris-rim-2 { width: 280px; height: 280px; opacity: 0.2; animation-duration: 25s; }
+.ferris-rim-3 { width: 340px; height: 340px; opacity: 0.15; animation-duration: 30s; }
+
+.ferris-cab {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1.5px solid var(--pink);
+  background: rgba(255, 20, 147, 0.08);
+  box-shadow: 0 0 10px var(--pink-glow), inset 0 0 6px var(--pink-glow);
+  animation: spin-cab 20s linear infinite;
+}
+
+.ferris-cab:nth-child(1) { animation-delay: 0s; }
+.ferris-cab:nth-child(2) { animation-delay: -3.33s; }
+.ferris-cab:nth-child(3) { animation-delay: -6.66s; }
+.ferris-cab:nth-child(4) { animation-delay: -10s; }
+.ferris-cab:nth-child(5) { animation-delay: -13.33s; }
+.ferris-cab:nth-child(6) { animation-delay: -16.66s; }
+
+.ferris-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  background: var(--pink);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 30px var(--pink-glow), 0 0 60px var(--pink-glow);
+}
+
+.ferris-hub-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 2px solid var(--pink);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse-hub 3s ease-in-out infinite;
+  opacity: 0.3;
+}
+
+.ferris-stand {
+  position: absolute;
+  bottom: 220px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 60px;
+  background: linear-gradient(180deg, var(--pink), transparent);
+  opacity: 0.2;
+}
+
+.ferris-stand::before,
+.ferris-stand::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  height: 40px;
+  background: var(--pink);
+  opacity: 0.15;
+}
+
+.ferris-stand::before { left: -20px; transform: rotate(20deg); transform-origin: bottom center; }
+.ferris-stand::after { right: -20px; transform: rotate(-20deg); transform-origin: bottom center; }
+
+.ferris-light {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--pink);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--pink-glow), 0 0 16px var(--pink-glow);
+  animation: blink-light 1.5s ease-in-out infinite;
+}
+
+@keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes spin-cab { to { transform: translateX(-50%) rotate(360deg); } }
+@keyframes pulse-hub { 0%, 100% { opacity: 0.2; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.3); } }
+@keyframes blink-light { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
 .hero-badge {
   display: inline-block;
   font-family: 'JetBrains Mono', monospace;
@@ -1085,6 +1208,26 @@ export default function LyricaPublicLanding({ onEnterStudio }: LandingProps) {
       </nav>
 
       <section className="hero">
+        <div className="ferris-wheel">
+          <div className="ferris-hub"></div>
+          <div className="ferris-hub-pulse"></div>
+          <div className="ferris-rim-layer ferris-rim-1"></div>
+          <div className="ferris-rim-layer ferris-rim-2"></div>
+          <div className="ferris-rim-layer ferris-rim-3"></div>
+          <div className="ferris-cab"></div>
+          <div className="ferris-cab"></div>
+          <div className="ferris-cab"></div>
+          <div className="ferris-cab"></div>
+          <div className="ferris-cab"></div>
+          <div className="ferris-cab"></div>
+          <div className="ferris-stand"></div>
+          <div className="ferris-light" style={{ top: '30%', left: '20%', animationDelay: '0s' }}></div>
+          <div className="ferris-light" style={{ top: '60%', left: '75%', animationDelay: '0.5s' }}></div>
+          <div className="ferris-light" style={{ top: '80%', left: '40%', animationDelay: '1s' }}></div>
+          <div className="ferris-light" style={{ top: '40%', left: '85%', animationDelay: '1.5s' }}></div>
+          <div className="ferris-light" style={{ top: '20%', left: '65%', animationDelay: '2s' }}></div>
+          <div className="ferris-light" style={{ top: '70%', left: '15%', animationDelay: '2.5s' }}></div>
+        </div>
         <div className="container">
           <div className="hero-badge">SLA113 // Universe 1 — LYRICA3</div>
           <h1>The First <span className="pink">Creator-Owned</span><br />AI Music Platform</h1>
