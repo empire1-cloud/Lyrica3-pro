@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import LyricaPublicLanding from './LyricaPublicLanding';
 import ProStudio, { LoginGate } from './pages/ProStudio';
 import PricingPage from './PricingPage';
@@ -27,5 +28,10 @@ function AppShell() {
 }
 
 export default function App() {
-  return <AppShell />;
+  return (
+    <>
+      <AppShell />
+      <Analytics />
+    </>
+  );
 }
