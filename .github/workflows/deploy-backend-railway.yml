@@ -1,6 +1,7 @@
 name: Deploy Backend to Railway
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -8,6 +9,7 @@ on:
       - "Dockerfile"
       - "railway.toml"
       - "requirements.txt"
+      - ".github/workflows/**"
 
 jobs:
   deploy:
