@@ -5,10 +5,17 @@ from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+    from slowapi.middleware import SlowAPIMiddleware
+    _SLOWAPI_AVAILABLE = True
+except ImportError:
+    _SLOWAPI_AVAILABLE = False
+    Limiter = object
+    RateLimitExceeded = Exception
+    SlowAPIMiddleware = type
 from starlette.middleware.base import BaseHTTPMiddleware
 import ipaddress
 import os, logging, random, asyncio, json, re, uuid, hashlib, shutil, time
@@ -94,20 +101,19 @@ def trusted_client_ip(request: Request) -> str:
 # ------------------------------------------------------------
 REDIS_URL = os.environ.get("REDIS_URL", "").strip()
 _limiter_storage = REDIS_URL if REDIS_URL else "memory://"
-try:
-    limiter = Limiter(
-        key_func=trusted_client_ip,
-        storage_uri=_limiter_storage,
-        strategy="fixed-window",
-    )
-except Exception as _e:
-    # Fail-open in a documented way: Redis unreachable at boot → in-memory fallback.
-    logging.getLogger("empire1").warning(f"limiter storage fallback to memory: {_e}")
-    limiter = Limiter(key_func=trusted_client_ip, storage_uri="memory://")
-
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
+if _SLOWAPI_AVAILABLE:
+    try:
+        limiter = Limiter(
+            key_func=trusted_client_ip,
+            storage_uri=_limiter_storage,
+            strategy="fixed-window",
+        )
+    except Exception as _e:
+        logging.getLogger("empire1").warning(f"limiter storage fallback to memory: {_e}")
+        limiter = Limiter(key_func=trusted_client_ip, storage_uri="memory://")
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    app.add_middleware(SlowAPIMiddleware)
 
 # ------------------------------------------------------------
 # Sanitized error handler — never leaks stack traces or internal paths.
@@ -726,12 +732,13 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         except Exception as e:
             logger.warning(f"OpenAI LML generation failed: {e} — using structured fallback")
     # --- Final fallback: structured seed ---
-    seed = (req.lyrics or "").strip().splitlines()[0][:40] or "Untitled Soulfire"
+    lines = (req.lyrics or "").strip().splitlines()
+    seed = (lines[0][:40] if lines else "Untitled Soulfire")
     return {
         "title": seed.title(),
         "cultural_subtext": f"Rooted in {matrix}. Encoded biometric truth, bruised subtext, tape-hiss memory.",
         "lml": (f"<intro breath='deep' inhale='adaptive'/>\n[verse]\n"
-                f"<vocal_fry depth='{fry:.2f}'>{req.lyrics.strip() or 'wildflowers in the cracks'}</vocal_fry>\n"
+                f"<vocal_fry depth='{fry:.2f}'>{(req.lyrics or '').strip() or 'wildflowers in the cracks'}</vocal_fry>\n"
                 f"<adaptive_inhale depth='deep'/>\n"
                 f"<emotional_crack intensity='{crack:.2f}'>carry the name like a prayer</emotional_crack>\n"
                 f"<tape_hiss level='subtle'/>"),
@@ -821,13 +828,23 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
     # SL Audio Master (THE BRAIN) → The Beast (THE ORCHESTRATOR) → Sub-agents
     # Falls back to Replicate (MusicGen) → Demucs if Soulfire unavailable
     # ============================================================
-    from integrations import (
-        audio_synth, auto_split, fallback_stems, build_synth_prompt,
-        vocal_performance, _strip_lml, REPLICATE_API_KEY,
-    )
-    from vertex_ai import (
-        vertex_lyria_full_song, vertex_chirp_tts, VERTEX_AI_ENABLED,
-    )
+    try:
+        from integrations import (
+            audio_synth, auto_split, fallback_stems, build_synth_prompt,
+            vocal_performance, _strip_lml, REPLICATE_API_KEY,
+        )
+    except ImportError:
+        audio_synth = auto_split = fallback_stems = lambda *a, **kw: None
+        build_synth_prompt = vocal_performance = _strip_lml = lambda *a, **kw: None
+        REPLICATE_API_KEY = None
+
+    try:
+        from vertex_ai import (
+            vertex_lyria_full_song, vertex_chirp_tts, VERTEX_AI_ENABLED,
+        )
+    except ImportError:
+        vertex_lyria_full_song = vertex_chirp_tts = None
+        VERTEX_AI_ENABLED = False
 
     stems: list = []
     synth_source_url: Optional[str] = None
@@ -1135,8 +1152,11 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         "created_at": now,
     }
     # VICS Ledger — cryptographic seal before DB insert
-    from vics_ledger import sign_track
-    track = sign_track(track)
+    try:
+        from vics_ledger import sign_track
+        track = sign_track(track)
+    except ImportError:
+        pass
 
     await db.tracks.insert_one(track)
     await db.ledger.insert_one({
@@ -1260,8 +1280,11 @@ async def s2_mutate(request: Request, req: S2MutateRequest, user: Dict = Depends
             "created_at": now,
         }
         
-        from vics_ledger import sign_track
-        track = sign_track(track)
+        try:
+            from vics_ledger import sign_track
+            track = sign_track(track)
+        except ImportError:
+            pass
         await db.tracks.insert_one(track)
         
         await db.ledger.insert_one({
@@ -1846,8 +1869,11 @@ app.include_router(api_router)
 app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="static")
 
 # ─── Duo-Soul Engine ───
-from api.main import app as duo_soul_app
-app.mount("/duo-soul", duo_soul_app)
+try:
+    from api.main import app as duo_soul_app
+    app.mount("/duo-soul", duo_soul_app)
+except ImportError:
+    pass
 
 app.add_middleware(
     CORSMiddleware,

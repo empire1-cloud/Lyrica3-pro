@@ -19,6 +19,6 @@ jobs:
         run: curl -fsSL https://railway.app/install.sh | sh
 
       - name: Deploy to Railway
-        run: railway up --service lyrica3-backend
+        run: railway up --service c11571c1-6546-4468-b187-036d6eb18eec
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
