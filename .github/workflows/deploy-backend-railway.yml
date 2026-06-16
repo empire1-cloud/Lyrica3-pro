@@ -16,9 +16,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Railway CLI
-        run: curl -fsSL https://railway.app/install.sh | sh
+        run: npm install -g @railway/cli
 
       - name: Deploy to Railway
-        run: railway up --service c11571c1-6546-4468-b187-036d6eb18eec
+        run: railway up --service c11571c1-6546-4468-b187-036d6eb18eec --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
