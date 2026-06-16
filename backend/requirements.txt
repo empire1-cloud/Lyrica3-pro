@@ -6,5 +6,5 @@ pydantic==2.5.0
 python-dotenv==1.0.0
 pyjwt==2.9.0
 bcrypt==4.1.1
-slowapi==0.1.9
+slowapi==0.1.10
 python-multipart==0.0.6
