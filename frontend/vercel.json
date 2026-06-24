@@ -1,7 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "https://lyrica3-pro.onrender.com/api/:path*" },
-    { "source": "/livesession/:path*", "destination": "https://lyrica3-pro.onrender.com/livesession/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
