@@ -2010,13 +2010,18 @@ async def _ttl_sweep():
 @app.on_event("startup")
 async def _boot():
     # Verify MongoDB is reachable before accepting traffic
+    mongo_ok = True
     try:
         await client.admin.command("ping")
         logger.info("MongoDB ping OK — connected to %s / %s", MONGO_URL.split("@")[-1], DB_NAME)
     except Exception as e:
         logger.error("MongoDB connection FAILED: %s — check MONGO_URL env var", e)
-        # Don't crash the process — health endpoint will report unhealthy
-    await ensure_seed()
+        mongo_ok = False
+    if mongo_ok:
+        try:
+            await ensure_seed()
+        except Exception as e:
+            logger.error("Seed failed: %s", e)
     asyncio.create_task(_ttl_sweep())
     logger.info("Empire 1 Ledger booted. Soulfire armed. TTL sweeper active.")
 
