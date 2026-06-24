@@ -8,3 +8,6 @@ pyjwt==2.9.0
 bcrypt==4.1.1
 slowapi==0.1.10
 python-multipart==0.0.6
+numpy
+scipy
+cryptography

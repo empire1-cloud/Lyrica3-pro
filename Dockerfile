@@ -1,7 +1,8 @@
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ffmpeg \
+      ffmpeg fluidsynth fluid-soundfont-gs \
+  && ln -sf /usr/share/sounds/sf2/FluidR3_GS.sf2 /usr/share/sounds/sf2/FluidR3_GM.sf2 \
   && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
