@@ -1,15 +1,7 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "build",
-  "framework": "react",
-  "env": {
-    "REACT_APP_BACKEND_URL": "@REACT_APP_BACKEND_URL",
-    "REACT_APP_GEMINI_API_KEY": "@REACT_APP_GEMINI_API_KEY"
-  },
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/:path*", "destination": "https://lyrica3-pro.onrender.com/api/:path*" },
+    { "source": "/livesession/:path*", "destination": "https://lyrica3-pro.onrender.com/livesession/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

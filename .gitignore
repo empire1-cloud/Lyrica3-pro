@@ -83,6 +83,18 @@ backend/static/voices/
 backend/static/uploads/
 backend/static/stems/
 
+# Generated audio / build artifacts
+*.wav
+*.mp3
+*.mid
+generated_audio/
+proof-weekend/
+uploads/
+backend/music_output/
+*.db
+.railway/
+proof_registry.json
+
 # Mobile development
 android-sdk/-e 
 # Environment and credential files
