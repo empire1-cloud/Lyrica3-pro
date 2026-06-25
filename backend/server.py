@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, status, UploadFile, File, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, WebSocket, WebSocketDisconnect, status, UploadFile, File, Request, Body
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
@@ -25,6 +25,9 @@ from typing import List, Optional, Literal, Dict
 from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
+
+# ── Music Engine ──────────────────────────────────────────────────
+from music_engine.composer import compose as compose_track
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1861,6 +1864,103 @@ async def universal_query(request: Request, req: UniversalQueryRequest, user: Di
         logger.error(f"Universal query pipeline error: {e}")
         raise HTTPException(500, "Universal pipeline failed.")
 
+# ─── Music Engine Routes ──────────────────────────────────────────
+MUSIC_OUTPUT_DIR = ROOT_DIR / "music_output"
+MUSIC_OUTPUT_DIR.mkdir(exist_ok=True)
+
+
+@api_router.post("/music/create")
+async def api_music_create(body: dict = Body(...), user: Dict = Depends(current_user)):
+    lyrics = body.get("lyrics", "")
+    genre = body.get("genre", "west coast")
+    mood = body.get("mood", "soulful")
+    title = body.get("title") or f"Track {uuid.uuid4().hex[:6]}"
+
+    track_id = "track_" + uuid.uuid4().hex[:10]
+    track_dir = MUSIC_OUTPUT_DIR / track_id
+    track_dir.mkdir(exist_ok=True)
+
+    try:
+        loop = asyncio.get_event_loop()
+        comp_result = await loop.run_in_executor(
+            None,
+            lambda: compose_track(
+                lyrics=lyrics or f"A {genre} {mood} track",
+                genre=genre,
+                mood=mood,
+                title=title,
+                output_dir=str(track_dir),
+            ),
+        )
+        mp3_path = comp_result["mp3_path"]
+        wav_path = comp_result["wav_path"]
+        duration_sec = comp_result.get("duration_sec", 0)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Music generation failed: {e}")
+
+    audio_url = f"/api/music/{track_id}/audio"
+    track_doc = {
+        "id": track_id,
+        "dna_tag": "dna_" + uuid.uuid4().hex[:16],
+        "title": title,
+        "creator": user["handle"],
+        "genre": genre,
+        "mood": mood,
+        "status": "generated",
+        "duration_sec": duration_sec,
+        "audio_url": audio_url,
+        "stems": [
+            {"name": "Master", "src": audio_url, "level": 0.85},
+        ],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    await db.tracks.insert_one(track_doc)
+
+    return {
+        "id": track_id,
+        "title": title,
+        "creator": user["handle"],
+        "audio_url": audio_url,
+        "duration_sec": duration_sec,
+        "status": "generated",
+        "created_at": track_doc["created_at"],
+    }
+
+
+@api_router.get("/music/{track_id}/audio")
+async def api_music_audio(track_id: str):
+    track_dir = MUSIC_OUTPUT_DIR / track_id
+    mp3 = track_dir / f"{track_dir.name}.mp3"
+    wav = track_dir / f"{track_dir.name}.wav"
+
+    if mp3.exists():
+        from fastapi.responses import FileResponse
+        return FileResponse(str(mp3), media_type="audio/mpeg")
+    if wav.exists():
+        from fastapi.responses import FileResponse
+        return FileResponse(str(wav), media_type="audio/wav")
+
+    # Also check track_dir directly (composer names by title_hex)
+    for f in track_dir.glob("*.mp3"):
+        from fastapi.responses import FileResponse
+        return FileResponse(str(f), media_type="audio/mpeg")
+    for f in track_dir.glob("*.wav"):
+        from fastapi.responses import FileResponse
+        return FileResponse(str(f), media_type="audio/wav")
+
+    raise HTTPException(404, "Audio not found")
+
+
+@api_router.get("/music/my-tracks")
+async def api_my_music_tracks(user: Dict = Depends(current_user)):
+    cursor = db.tracks.find(
+        {"creator": user["handle"]},
+        {"_id": 0},
+    ).sort("created_at", -1).limit(50)
+    tracks = await cursor.to_list(50)
+    return tracks
+
 app.include_router(api_router)
 
 # Static mount for uploaded audio + Demucs stems + TTS voices
@@ -1910,13 +2010,18 @@ async def _ttl_sweep():
 @app.on_event("startup")
 async def _boot():
     # Verify MongoDB is reachable before accepting traffic
+    mongo_ok = True
     try:
         await client.admin.command("ping")
         logger.info("MongoDB ping OK — connected to %s / %s", MONGO_URL.split("@")[-1], DB_NAME)
     except Exception as e:
         logger.error("MongoDB connection FAILED: %s — check MONGO_URL env var", e)
-        # Don't crash the process — health endpoint will report unhealthy
-    await ensure_seed()
+        mongo_ok = False
+    if mongo_ok:
+        try:
+            await ensure_seed()
+        except Exception as e:
+            logger.error("Seed failed: %s", e)
     asyncio.create_task(_ttl_sweep())
     logger.info("Empire 1 Ledger booted. Soulfire armed. TTL sweeper active.")
 
