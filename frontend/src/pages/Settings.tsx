@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../components/ui/Button';
+import { loadSoulfireDefaults, saveSoulfireDefaults } from '../lib/creatorLoop';
 
 const SECTIONS = [
   { id: 'ai', label: 'AI & Engine', icon: Cpu },
@@ -19,15 +20,16 @@ const SECTIONS = [
 ];
 
 export function Settings() {
+  const savedDefaults = loadSoulfireDefaults();
   const [activeSection, setActiveSection] = useState('ai');
   const [saved, setSaved] = useState(false);
 
   // AI settings
-  const [defaultEnergy, setDefaultEnergy] = useState(70);
-  const [defaultMood, setDefaultMood] = useState(50);
-  const [defaultBounce, setDefaultBounce] = useState(60);
-  const [defaultGenre, setDefaultGenre] = useState('Hip-Hop');
-  const [defaultCulture, setDefaultCulture] = useState('Chicano');
+  const [defaultEnergy, setDefaultEnergy] = useState(savedDefaults.energy);
+  const [defaultMood, setDefaultMood] = useState(savedDefaults.mood);
+  const [defaultBounce, setDefaultBounce] = useState(savedDefaults.culturaBounce);
+  const [defaultGenre, setDefaultGenre] = useState(savedDefaults.genre);
+  const [defaultCulture, setDefaultCulture] = useState(savedDefaults.culture);
 
   // Audio settings
   const [defaultBpm, setDefaultBpm] = useState('128');
@@ -45,6 +47,7 @@ export function Settings() {
   const [notifyExport, setNotifyExport] = useState(true);
 
   const handleSave = () => {
+    saveSoulfireDefaults({ energy: defaultEnergy, mood: defaultMood, culturaBounce: defaultBounce, genre: defaultGenre, culture: defaultCulture });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

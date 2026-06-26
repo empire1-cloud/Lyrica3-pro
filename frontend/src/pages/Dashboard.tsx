@@ -81,9 +81,9 @@ export function Dashboard() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Link to="/studio">
+                <Link to="/make-music">
                   <Button variant="primary" glowColor="fuchsia" className="gap-2">
-                    Enter Sonance Pro
+                    Make Music
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>

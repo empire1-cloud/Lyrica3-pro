@@ -6,9 +6,9 @@ import { clearAuthToken, getAuthToken } from '../lib/api';
 
 const navItems = [
   { path: '/', label: 'Home', icon: Home },
-  { path: '/radio', label: 'SL Universal', icon: Waves },
-  { path: '/music/make', label: 'Make Music', icon: Music },
-  { path: '/music/tracks', label: 'My Tracks', icon: Shield },
+  { path: '/radio', label: 'SL Universal / Radio', icon: Waves },
+  { path: '/make-music', label: 'Make Music', icon: Music },
+  { path: '/my-tracks', label: 'My Tracks', icon: Shield },
 ];
 
 export function Layout() {
@@ -29,7 +29,7 @@ export function Layout() {
 
         <nav className="flex-1 flex flex-col gap-2">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || (item.path === '/make-music' && location.pathname === '/music/make') || (item.path === '/my-tracks' && location.pathname === '/music/tracks') || (item.path === '/radio' && location.pathname === '/sl-universal');
             const Icon = item.icon;
             return (
               <NavLink
@@ -86,7 +86,7 @@ export function Layout() {
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-800/50 flex items-center justify-around px-4 z-50">
         {[ ...navItems, { path: '/settings', label: 'Settings', icon: Settings } ].map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || (item.path === '/make-music' && location.pathname === '/music/make') || (item.path === '/my-tracks' && location.pathname === '/music/tracks') || (item.path === '/radio' && location.pathname === '/sl-universal');
           const Icon = item.icon;
           return (
             <NavLink
