@@ -409,7 +409,9 @@ async def register(request: Request, req: RegisterReq):
 async def login(request: Request, req: LoginReq):
     handle = req.handle.strip().lower()
     user = await db.users.find_one({"handle": handle})
-    if not user or not bcrypt.checkpw(req.password.encode(), user["password_hash"].encode()):
+    if not user:
+        raise HTTPException(401, "Invalid credentials.")
+    if not bcrypt.checkpw(req.password.encode(), user["password_hash"].encode()):
         raise HTTPException(401, "Invalid credentials.")
     token = _make_token(handle)
     return {"token": token, "handle": handle, "wallet": user["wallet"]}
