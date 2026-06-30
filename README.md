@@ -1,10 +1,10 @@
-# Lyrica 3 PRO
+# Lyrica 3 Soulfire
 
 **Hybrid Intelligence Core · Universe U1 — AI Music Studio**
 
 **Status: LIVE on Railway** · Backend deployed, FastAPI serving at Railway endpoint. Frontend ready for Vercel deploy.
 
-Built on **Emergent DNA** — the reference implementation architecture. Lyrica 3 Pro is the AI Music Studio universe within the 6-universe Empire-1 federation. 19 shared engines, federated revenue, one HIC control plane.
+Built on **Emergent DNA** — the reference implementation architecture. Lyrica 3 Soulfire is the AI Music Studio universe within the 6-universe Empire-1 federation. 19 shared engines, federated revenue, one HIC control plane.
 
 **Visual Identity:** Black (`#050508`) · Pink (`#ff1493`) · Obsidian Blue (`#111827`) — matching the Empire-1 landing page at `empire-1.vercel.app`. UI design spec in Figma, aligned to the HYBRID-AI-CORE reference implementation positioning.
 
