@@ -16,6 +16,8 @@ export const fetchMe      = () => apiGet("/auth/me");
 
 export const getTracks  = () => apiGet("/tracks");
 export const getTrack   = (dna) => apiGet(`/tracks/${dna}`);
+export const getCertificate = (dna) => apiGet(`/tracks/${dna}/certificate`);
+export const downloadPackUrl = (dna) => `${API}/tracks/${dna}/download`;
 export const flipTrack  = (dna, body) => apiPost(`/tracks/${dna}/flip`, body);
 export const generate   = (body) => apiPost("/generate", body);
 export const getLedger  = (limit = 40) => apiGet(`/ledger?limit=${limit}`);
