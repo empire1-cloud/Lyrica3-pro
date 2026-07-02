@@ -74,10 +74,6 @@ export function MakeMusic() {
         prompt,
         audio_url: absoluteAudioUrl(res.audio_url),
         source: 'backend',
-        soulprint_verified: true,
-        ledger_valid: true,
-        royalty_trust: true,
-        protection: { dna_verified: true, soulprint_verified: true, soulprint_confidence: 0.92 },
       });
     } catch (err: any) {
       const message = err?.response?.data?.detail || err?.message || "Backend music generation unavailable.";
@@ -98,10 +94,6 @@ export function MakeMusic() {
         created_at: new Date().toISOString(),
         source: 'local-fallback',
         ...proof,
-        soulprint_verified: true,
-        ledger_valid: false,
-        royalty_trust: true,
-        protection: { dna_verified: true, soulprint_verified: true, soulprint_confidence: 0.78 },
         royalty_risk: { verdict: 'backend pending', decision: 'manual_review' },
       });
     } finally {

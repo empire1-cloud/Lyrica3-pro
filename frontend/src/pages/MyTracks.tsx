@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { myTracks, getAuthToken } from "../lib/api";
 import { Shield, Music, Fingerprint, Waves } from "lucide-react";
-import { absoluteAudioUrl, loadLocalTracks, saveLocalTrack, type CreatorTrack } from "../lib/creatorLoop";
+import { absoluteAudioUrl, loadLocalTracks, type CreatorTrack } from "../lib/creatorLoop";
 
 export function MyTracks() {
   const [tracks, setTracks] = useState<CreatorTrack[]>([]);
@@ -21,7 +21,7 @@ export function MyTracks() {
     myTracks()
       .then((remote) => {
         const merged = [...(remote || []), ...local].filter((track, index, all) => all.findIndex((item) => item.id === track.id) === index);
-        merged.forEach(saveLocalTrack);
+        localStorage.setItem("lyrica3.creator.tracks", JSON.stringify(merged.slice(0, 50)));
         setTracks(merged);
       })
       .catch(() => setNotice("Backend library unavailable. Showing saved local tracks instead."))
