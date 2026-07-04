@@ -7,15 +7,23 @@ const api = axios.create({
 
 export default api;
 
-let authToken: string | null = null;
+const TOKEN_STORAGE_KEY = "lyrica_auth_token";
+
+let authToken: string | null = localStorage.getItem(TOKEN_STORAGE_KEY);
+
+if (authToken) {
+  api.defaults.headers.Authorization = `Bearer ${authToken}`;
+}
 
 export function setAuthToken(token: string) {
   authToken = token;
+  localStorage.setItem(TOKEN_STORAGE_KEY, token);
   api.defaults.headers.Authorization = `Bearer ${token}`;
 }
 
 export function clearAuthToken() {
   authToken = null;
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
   delete api.defaults.headers.Authorization;
 }
 
@@ -55,11 +63,6 @@ export async function generateLyrics(prompt: string) {
   return data;
 }
 
-const livesession = axios.create({
-  baseURL: "/livesession",
-  headers: { "Content-Type": "application/json" },
-});
-
 export async function routeSession(payload: {
   prompt: string;
   creator_id?: string;
@@ -67,11 +70,11 @@ export async function routeSession(payload: {
   culture?: string;
   genre?: string;
 }) {
-  const { data } = await livesession.post("/route", payload);
+  const { data } = await api.post("/livesession/route", payload);
   return data;
 }
 
 export async function getSessionStatus() {
-  const { data } = await livesession.get("/status");
+  const { data } = await api.get("/livesession/status");
   return data;
 }

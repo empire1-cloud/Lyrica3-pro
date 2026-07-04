@@ -1,14 +1,19 @@
 import React from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
-import { Home, SquarePlay, Library, Settings, Flame, Cpu, Waves, Music, Disc, Shield, LogOut } from 'lucide-react';
+import { Home, Sliders, SquarePlay, Library, Settings, Flame, Cpu, Waves, Music, Shield, LogOut } from 'lucide-react';
 import { cn } from '../components/ui/Button';
 import { clearAuthToken, getAuthToken } from '../lib/api';
 
 const navItems = [
-  { path: '/', label: 'Home', icon: Home },
-  { path: '/radio', label: 'SL Universal / Radio', icon: Waves },
-  { path: '/make-music', label: 'Make Music', icon: Music },
-  { path: '/my-tracks', label: 'My Tracks', icon: Shield },
+  { path: '/dashboard', label: 'Home', icon: Home },
+  { path: '/studio', label: 'Main Studio', icon: Waves },
+  { path: '/engine', label: 'Soulfire Engine', icon: Flame },
+  { path: '/timeline', label: 'Timeline', icon: SquarePlay },
+  { path: '/library', label: 'Library', icon: Library },
+  { path: '/system', label: 'System', icon: Cpu },
+  { path: '/radio', label: 'SL Universal', icon: Music },
+  { path: '/music/make', label: 'Make Music', icon: Sliders },
+  { path: '/music/tracks', label: 'My Tracks', icon: Shield },
 ];
 
 export function Layout() {
@@ -37,8 +42,8 @@ export function Layout() {
                 to={item.path}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium group",
-                  isActive 
-                    ? "bg-zinc-900 text-white" 
+                  isActive
+                    ? "bg-zinc-900 text-white"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/50"
                 )}
               >

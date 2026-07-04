@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, useNavigate } from "react-router";
 import { Layout } from "./pages/Layout";
 import { Dashboard } from "./pages/Dashboard";
 import { Engine } from "./pages/Engine";
@@ -12,13 +12,26 @@ import { Auth } from "./pages/Auth";
 import { MakeMusic } from "./pages/MakeMusic";
 import { MyTracks } from "./pages/MyTracks";
 import { TrackProof } from "./pages/TrackProof";
+import LyricaPublicLanding from "./LyricaPublicLanding";
+
+function PublicLandingRoute() {
+  const navigate = useNavigate();
+
+  return (
+    <LyricaPublicLanding
+      onEnterStudio={() => navigate("/auth")}
+      onEnterVibe={() => navigate("/radio")}
+    />
+  );
+}
 
 export const router = createBrowserRouter([
+  { path: "/", Component: PublicLandingRoute },
   {
     path: "/",
     Component: Layout,
     children: [
-      { index: true, Component: Dashboard },
+      { path: "dashboard", Component: Dashboard },
       { path: "studio", Component: Studio },
       { path: "engine", Component: Engine },
       { path: "timeline", Component: Timeline },
