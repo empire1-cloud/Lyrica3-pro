@@ -5,27 +5,22 @@ on:
     branches: [main]
 
 jobs:
-  deploy-backend:
+  build-frontend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - id: auth
-        uses: google-github-actions/auth@v2
+      
+      - uses: actions/setup-node@v4
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Build and deploy to Cloud Run
+          node-version: '20'
+      
+      - name: Build frontend
         run: |
-          gcloud builds submit --config cloudbuild.yaml .
-          gcloud run deploy lyrica3-backend \
-            --image us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/lyrica3/backend:latest \
-            --region us-central1 \
-            --platform managed \
-            --allow-unauthenticated \
-            --port 8001 \
-            --memory 2Gi \
-            --cpu 2
+          cd frontend
+          npm install
+          npm run build
+      
+      - name: Deploy to Vercel
+        run: npx vercel deploy --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
