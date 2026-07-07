@@ -7,6 +7,13 @@ REGION="us-west1"
 SERVICE_NAME="lyrica3-backend"
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"
 
+# Secrets must come from your shell environment — never hardcode credentials
+# in this script. Set these before running, e.g.:
+#   export LYRICA_MONGO_URL="mongodb+srv://..."
+#   export LYRICA_JWT_SECRET="$(openssl rand -hex 32)"
+: "${LYRICA_MONGO_URL:?Set LYRICA_MONGO_URL before running this script}"
+: "${LYRICA_JWT_SECRET:?Set LYRICA_JWT_SECRET before running this script (use a real random secret, not the repo placeholder)}"
+
 echo "=========================================="
 echo "DEPLOYING LYRICA3 TO GCP CLOUD RUN"
 echo "=========================================="
@@ -24,7 +31,8 @@ gcloud services enable artifactregistry.googleapis.com --project=${PROJECT_ID}
 # Build container image
 echo ""
 echo "[2/5] Building container image..."
-cd /home/shiestybizz/Lyrica3-pro/backend
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}/backend"
 gcloud builds submit --tag ${IMAGE_NAME} --project=${PROJECT_ID}
 
 # Deploy to Cloud Run
@@ -40,9 +48,9 @@ gcloud run deploy ${SERVICE_NAME} \
   --cpu 2 \
   --timeout 300 \
   --max-instances 10 \
-  --set-env-vars "MONGO_URL=mongodb+srv://Lyrica3-pro:Xochitlboom113@cluster0.wqf3a4d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0" \
+  --set-env-vars "MONGO_URL=${LYRICA_MONGO_URL}" \
   --set-env-vars "DB_NAME=lyrica3_prod" \
-  --set-env-vars "JWT_SECRET=lyrica3_jwt_secret_change_in_prod" \
+  --set-env-vars "JWT_SECRET=${LYRICA_JWT_SECRET}" \
   --set-env-vars "VERTEX_PROJECT_ID=disco-amphora-490606-n8" \
   --set-env-vars "VERTEX_LOCATION=us-west1" \
   --set-env-vars "VERTEX_AGENTS_ENABLED=true" \

@@ -10,7 +10,8 @@ BACKEND_URL="https://lyrica3-backend-e2q5oemapa-uw.a.run.app"
 
 echo "🚀 Deploying Lyrica3 Frontend to Cloud Run..."
 
-cd /home/shiestybizz/Lyrica3-pro/frontend
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}/frontend"
 
 # Create production env file
 echo "REACT_APP_BACKEND_URL=${BACKEND_URL}" > .env.production
