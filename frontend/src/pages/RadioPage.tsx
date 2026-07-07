@@ -6,7 +6,7 @@ import {
   Activity, Sliders, Download, Settings, Cpu, Waves, Zap, Wind, Send,
   Users, MessageSquare, TrendingUp, Undo2, Redo2, ChevronDown,
   Headphones, Shield, History, X, Sparkles, Copy, Check, ExternalLink,
-  Trash2, FileText
+  Trash2, FileText, Radio
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { cn } from '../radio/lib/utils';
@@ -17,6 +17,9 @@ import { AuraCanvasVisualizer } from '../radio/components/AuraCanvasVisualizer';
 import { AuraSchedulerPanel } from '../radio/components/AuraSchedulerPanel';
 import { RemixFeedPanel } from '../radio/components/RemixFeedPanel';
 import { getAuthToken } from '../lib/api';
+import { RadioDirectoryPage } from '../features/radio/pages/RadioDirectoryPage';
+import { LivePartyDJRoom } from '../features/radio/pages/LivePartyDJRoom';
+import type { StationPreset, UserStation } from '../features/radio/config/externalStations';
 import { 
   generateTrack, getLibrary, saveTrack, getRoyaltyStatus,
   shareTrack, createLiveSession, getHistory, addToHistory,
@@ -623,6 +626,33 @@ export function RadioPage() {
   const [error, setError] = useState<string | null>(null);
   const [savedSongs, setSavedSongs] = useState<Track[]>([]);
   const [historyList, setHistoryList] = useState<any[]>([]);
+
+  // Top-level mode: generate (SL Universal), Stations directory, or Party DJ room
+  const [mode, setMode] = useState<"sonance" | "directory" | "party_dj">("sonance");
+  const [externalStationPlaying, setExternalStationPlaying] = useState<StationPreset | UserStation | null>(null);
+  const externalAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const handlePlayStation = (station: StationPreset | UserStation) => {
+    if (externalAudioRef.current) {
+      externalAudioRef.current.pause();
+      externalAudioRef.current = null;
+    }
+    if (station.streamUrl) {
+      const audio = new Audio(station.streamUrl);
+      audio.play().catch(e => console.error("Station playback failed", e));
+      externalAudioRef.current = audio;
+      setExternalStationPlaying(station);
+    }
+  };
+
+  const handleStopStation = () => {
+    if (externalAudioRef.current) {
+      externalAudioRef.current.pause();
+      externalAudioRef.current = null;
+    }
+    setExternalStationPlaying(null);
+  };
+
   const [showLibrary, setShowLibrary] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -947,6 +977,48 @@ export function RadioPage() {
           <span className="text-xl font-bold tracking-tighter uppercase font-sans">SL <span className="text-pink-500">Universal</span></span>
         </div>
         <div className="flex items-center gap-6 text-sm font-medium text-white/60">
+          {/* Mode Toggle: SL Universal generation / Stations / Party DJ */}
+          <div className="flex items-center bg-white/5 rounded-xl p-0.5 border border-white/10">
+            <button
+              onClick={() => setMode("sonance")}
+              title="Generate AI music from text prompts"
+              className={cn(
+                "px-4 py-2 rounded-[10px] text-[10px] font-bold tracking-widest uppercase transition-all",
+                mode === "sonance"
+                  ? "bg-gradient-to-r from-pink-500 to-pink-600 text-black shadow-lg"
+                  : "text-white/40 hover:text-white"
+              )}
+            >
+              Lyrica
+            </button>
+            <button
+              onClick={() => setMode("directory")}
+              title="Browse and play external radio stations"
+              className={cn(
+                "px-4 py-2 rounded-[10px] text-[10px] font-bold tracking-widest uppercase transition-all flex items-center gap-1.5",
+                mode === "directory"
+                  ? "bg-gradient-to-r from-pink-500 to-pink-600 text-black shadow-lg"
+                  : "text-white/40 hover:text-white"
+              )}
+            >
+              <Radio className="w-3 h-3" />
+              Stations
+            </button>
+            <button
+              onClick={() => setMode("party_dj")}
+              title="AI DJ party room with listener interactivity"
+              className={cn(
+                "px-4 py-2 rounded-[10px] text-[10px] font-bold tracking-widest uppercase transition-all flex items-center gap-1.5",
+                mode === "party_dj"
+                  ? "bg-gradient-to-r from-pink-500 to-pink-600 text-black shadow-lg"
+                  : "text-white/40 hover:text-white"
+              )}
+            >
+              <Mic2 className="w-3 h-3" />
+              Party DJ
+            </button>
+          </div>
+
           <button onClick={() => setProMode(!proMode)}
             className={cn("flex items-center gap-2 px-4 py-2 rounded-full transition-all border", proMode ? "bg-pink-500/20 border-pink-500 text-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.15)]" : "hover:text-white border-white/10")}>
             <Cpu className="w-4 h-4" /> {proMode ? "Soulfire Engine" : "Activate Soulfire"}
@@ -987,6 +1059,17 @@ export function RadioPage() {
       </AnimatePresence>
 
       <main className="max-w-6xl mx-auto px-8 pt-12 pb-32 relative z-10">
+        {mode === "party_dj" ? (
+          /* ── Party DJ Mode ── */
+          <LivePartyDJRoom />
+        ) : mode === "directory" ? (
+          /* ── Station Directory ── */
+          <RadioDirectoryPage
+            onPlayStation={handlePlayStation}
+            onStopStation={handleStopStation}
+            currentPlayingId={externalStationPlaying ? (externalStationPlaying as any).id || externalStationPlaying.name : undefined}
+          />
+        ) : (
         <AnimatePresence mode="wait">
           {!currentTrack && !isGenerating ? (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="text-center py-24">
@@ -1211,6 +1294,7 @@ export function RadioPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        )}
       </main>
 
       {/* Library Modal */}
