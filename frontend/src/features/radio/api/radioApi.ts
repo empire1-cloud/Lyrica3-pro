@@ -31,6 +31,7 @@ export interface TrackData {
 export async function generateTrack(vibe: string, context?: any, emotionalMode?: string) {
   const contextText = context
     ? `\n\nListener context: time=${context.time || "unknown"}, weather=${context.weather || "unknown"}, heartRate=${context.heartRate || "unavailable"}.`
+      + (context.auraContext ? ` Aura context: ${context.auraContext}` : "")
     : "";
   const { data } = await api.post("/generate", {
     genre: "SGV Oldies",

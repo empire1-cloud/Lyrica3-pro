@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { cn } from '../radio/lib/utils';
-import { translateVibeToParams, generateMusicStream, VibeParams } from '../radio/lib/gemini';
+import { type VibeParams } from '../radio/lib/gemini';
 import { LiveSession } from '../radio/components/LiveSession';
 import { slSynth } from '../radio/lib/synth';
 import { AuraCanvasVisualizer } from '../radio/components/AuraCanvasVisualizer';
@@ -21,7 +21,7 @@ import { RadioDirectoryPage } from '../features/radio/pages/RadioDirectoryPage';
 import { LivePartyDJRoom } from '../features/radio/pages/LivePartyDJRoom';
 import type { StationPreset, UserStation } from '../features/radio/config/externalStations';
 import {
-  getLibrary, saveTrack, getRoyaltyStatus,
+  generateTrack, getLibrary, saveTrack, getRoyaltyStatus,
   shareTrack, createLiveSession, getHistory, addToHistory,
   type TrackData
 } from '../features/radio/api/radioApi';
@@ -770,48 +770,23 @@ export function RadioPage() {
 
       const modePrompt = emotionalMode === 'Pain' ? `${basePrompt} (vulnerability_slider=0.9)` : emotionalMode === 'Playful' ? `${basePrompt} (Major 7th, Juxtaposition Logic)` : `${basePrompt} (Duo/Ensemble interplay)`;
 
-      const params = await translateVibeToParams(modePrompt, context);
+      // Real generation via the backend (Soulfire/Vertex pipeline) instead of
+      // client-side Gemini streaming. data.fulfillment/voiceFulfillment are
+      // the backend's honest ground truth -- never overridden here.
+      const data = await generateTrack(modePrompt, context, emotionalMode);
+
+      const params: VibeParams = { ...(data.params || {}), ...explicitParams };
       params.emotionalMode = emotionalMode;
-      Object.assign(params, explicitParams);
-
-      const stream = await generateMusicStream(params);
-      const audioChunks: Uint8Array[] = [];
-      let lyrics = "";
-      let isFallback = false;
-
-      for await (const chunk of stream) {
-        const parts = chunk.candidates?.[0]?.content?.parts;
-        if (!parts) continue;
-        for (const part of parts) {
-          const p = part as any;
-          if (p.inlineData?.data) {
-            if (p.inlineData.data === "FALLBACK_AUDIO_SIGNAL") { isFallback = true; break; }
-            const binary = atob(p.inlineData.data);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            audioChunks.push(bytes);
-          }
-          if (p.text && !lyrics) lyrics = p.text;
-        }
-        if (isFallback) break;
-      }
-
-      let url = "";
-      if (isFallback) url = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-      else if (audioChunks.length > 0) {
-        const totalLength = audioChunks.reduce((acc, c) => acc + c.length, 0);
-        const merged = new Uint8Array(totalLength);
-        let offset = 0;
-        for (const chunk of audioChunks) { merged.set(chunk, offset); offset += chunk.length; }
-        url = URL.createObjectURL(new Blob([merged], { type: 'audio/wav' }));
-      } else throw new Error("No audio data received.");
 
       const newTrack: Track = {
-        id: Date.now().toString(),
-        title: vibe.length > 20 ? vibe.substring(0, 20) + "..." : vibe,
-        artist: isFallback ? "Lyrica Studio Mix" : "Soulfire Engine",
-        vibe, params, audioUrl: url, lyrics: lyrics || params.lyrics,
-        fulfillment: isFallback ? "fallback" : "primary",
+        id: data.track_id || Date.now().toString(),
+        title: data.title || (vibe.length > 20 ? vibe.substring(0, 20) + "..." : vibe),
+        artist: data.artist || "Soulfire Engine",
+        vibe: data.vibe || vibe,
+        params,
+        audioUrl: data.audioUrl,
+        lyrics: data.lyrics || params.lyrics,
+        fulfillment: data.fulfillment,
       };
 
       setCurrentTrack(newTrack);
@@ -821,7 +796,7 @@ export function RadioPage() {
       setIsPlaying(true);
     } catch (err: any) {
       console.error("Generation failed", err);
-      setError(err.message || "Failed to generate track.");
+      setError(err.message || "Failed to generate track. Please ensure the API server is running.");
     } finally {
       setIsGenerating(false);
     }
