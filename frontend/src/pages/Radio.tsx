@@ -467,6 +467,8 @@ export function RadioPage() {
   });
   const [flipTempo, setFlipTempo] = useState<'same' | 'slower' | 'faster'>('same');
 
+  const [history, setHistory] = useState<Track[]>([]);
+
   const loadTrackFromHistory = (track: Track) => {
     setCurrentTrack(track);
     setParamsHistory([track.params]);
@@ -559,7 +561,6 @@ export function RadioPage() {
     }, 100);
   };
 
-  const [history, setHistory] = useState<Track[]>([]);
   const [paramsHistory, setParamsHistory] = useState<VibeParams[]>([]);
   const [paramsHistoryIndex, setParamsHistoryIndex] = useState(-1);
   const [exportFormat, setExportFormat] = useState<'WAV' | 'MP3' | 'Stems' | 'MIDI' | 'Dolby Atmos'>('WAV');

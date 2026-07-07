@@ -7,8 +7,8 @@ import { Library } from "./pages/Library";
 import { System } from "./pages/System";
 import { Studio } from "./pages/Studio";
 import { Settings } from "./pages/Settings";
-import { RadioPage as RadioLegacyPage } from "./pages/Radio";
-import { RadioPage } from "./pages/RadioPage";
+import { RadioPage } from "./pages/Radio";
+import { RadioPage as SLUniversalDesignPage } from "./pages/RadioPage";
 import { SLUniversalOriginalPage } from "./pages/SLUniversalOriginal";
 import { Auth } from "./pages/Auth";
 import { MakeMusic } from "./pages/MakeMusic";
@@ -42,9 +42,8 @@ export const router = createBrowserRouter([
       { path: "system", Component: System },
       { path: "settings", Component: Settings },
       { path: "radio", Component: RadioPage },
-      { path: "sl-universal", Component: RadioPage },
+      { path: "sl-universal", Component: SLUniversalDesignPage },
       { path: "sl-universal-original", Component: SLUniversalOriginalPage },
-      { path: "radio-legacy", Component: RadioLegacyPage },
       { path: "make-music", Component: MakeMusic },
       { path: "my-tracks", Component: MyTracks },
       { path: "music/make", Component: MakeMusic },
