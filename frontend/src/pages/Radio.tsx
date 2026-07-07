@@ -150,7 +150,23 @@ interface Track {
   acousticPrimitives?: any;
   lyricsPayload?: any[];
   vocalPipelines?: { name: string; description: string; active: boolean; intensity?: number }[];
+  // Ground truth for what actually generated this track — must be checked
+  // before displaying any engine name; never assume "primary" by default.
+  fulfillment?: "primary" | "secondary" | "fallback";
+  voiceFulfillment?: "primary" | "secondary" | "none_by_design" | "none_failed";
 }
+
+/** Renders nothing for a genuine primary-engine track; a visible badge otherwise. */
+const FulfillmentBadge = ({ fulfillment }: { fulfillment?: Track["fulfillment"] }) => {
+  if (!fulfillment || fulfillment === "primary") return null;
+  const label = fulfillment === "secondary" ? "Studio Backup Engine" : "Fallback Mix — Not AI-Generated";
+  const color = fulfillment === "secondary" ? "text-amber-400 border-amber-400/40" : "text-red-400 border-red-400/40";
+  return (
+    <span className={`ml-2 inline-block text-[10px] uppercase tracking-wide border rounded px-1.5 py-0.5 ${color}`}>
+      {label}
+    </span>
+  );
+};
 
 // --- Components ---
 
@@ -751,6 +767,8 @@ export function RadioPage() {
         isRemix: Boolean(remixSource),
         originalCreatorName: remixSource?.artist,
         parentTrackTitle: remixSource?.title,
+        fulfillment: data.fulfillment,
+        voiceFulfillment: data.voiceFulfillment,
       };
 
       if (data.cognitivePipeline) {
@@ -1400,7 +1418,10 @@ export function RadioPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <h2 className="text-2xl font-bold tracking-tight">{currentTrack?.title}</h2>
-                          <p className="text-white/40 text-sm">{currentTrack?.artist || "Lyria-3-Pro Engine"}</p>
+                          <p className="text-white/40 text-sm">
+                            {currentTrack?.artist || "Lyria-3-Pro Engine"}
+                            <FulfillmentBadge fulfillment={currentTrack?.fulfillment} />
+                          </p>
                         </div>
                         <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-mono text-white/60 flex items-center gap-2" title="Vertex AI Model Garden">
                           <Cpu className="w-3 h-3 text-fuchsia-500" />
@@ -2169,9 +2190,16 @@ export function RadioPage() {
                           <div className="flex justify-between items-end">
                             <div>
                               <p className="text-white/40 text-[10px] font-bold tracking-widest uppercase mb-1">
-                                {proMode ? "ENGINE: SONANCE PRO v4.2" : "Now Playing"}
+                                {proMode
+                                  ? (currentTrack?.fulfillment && currentTrack.fulfillment !== "primary"
+                                      ? "ENGINE: STUDIO FALLBACK"
+                                      : "ENGINE: SONANCE PRO v4.2")
+                                  : "Now Playing"}
                               </p>
-                              <h3 className="text-2xl font-bold tracking-tight">{currentTrack?.artist}</h3>
+                              <h3 className="text-2xl font-bold tracking-tight">
+                                {currentTrack?.artist}
+                                <FulfillmentBadge fulfillment={currentTrack?.fulfillment} />
+                              </h3>
                               <div className="flex gap-3 mt-2">
                                 <button
                                   onClick={() => handleGenerate(`Continue the vibe of ${currentTrack?.vibe} but go deeper and more atmospheric`)}

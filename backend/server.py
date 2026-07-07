@@ -516,6 +516,24 @@ def _qual(v: float) -> str:
     if v >= 0.45: return "Present"
     return "Subtle"
 
+_PRIMARY_SYNTH_PROVIDERS = ("vertex:", "lyria3-multimodal")
+_SECONDARY_SYNTH_PROVIDERS = ("replicate:musicgen", "local:musicgen", "procedural:python")
+
+def _fulfillment_tier(synth_provider: str) -> str:
+    """Classify how a track's audio was actually produced, for honest client-side labeling."""
+    if any(synth_provider.startswith(p) for p in _PRIMARY_SYNTH_PROVIDERS):
+        return "primary"
+    if synth_provider in _SECONDARY_SYNTH_PROVIDERS:
+        return "secondary"
+    return "fallback"  # fallback:soundhelix, or any unrecognized provider — treat as least trusted
+
+def _voice_fulfillment_tier(voice_provider: str, metered_enabled: bool) -> str:
+    if voice_provider == "vertex:chirp3-hd":
+        return "primary"
+    if voice_provider == "openai:tts-1-hd":
+        return "secondary"
+    return "none_by_design" if not metered_enabled else "none_failed"
+
 def _sanitize_track(t: dict) -> dict:
     """Strip IP-sensitive internals (LML, raw biometric decimals, persona) before returning to client."""
     if not t: return t
@@ -716,6 +734,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         for k in ("title", "cultural_subtext", "lml"):
             if k not in data or not isinstance(data[k], str):
                 raise ValueError(f"missing {k}")
+        data["lyrics_source"] = "generated:vertex"
         return data
     except Exception as e:
         logger.warning(f"Vertex AI LML generation failed: {e} — trying EMERGENT_LLM_KEY")
@@ -743,6 +762,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
             for k in ("title", "cultural_subtext", "lml"):
                 if k not in data or not isinstance(data[k], str):
                     raise ValueError(f"missing {k}")
+            data["lyrics_source"] = "generated:openai"
             return data
         except Exception as e:
             logger.warning(f"OpenAI LML generation failed: {e} — using structured fallback")
@@ -757,6 +777,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
                 f"<adaptive_inhale depth='deep'/>\n"
                 f"<emotional_crack intensity='{crack:.2f}'>carry the name like a prayer</emotional_crack>\n"
                 f"<tape_hiss level='subtle'/>"),
+        "lyrics_source": "seeded_fallback",
     }
 
 @api_router.post("/generate_lyrics")
@@ -887,6 +908,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             if soulfire_lml:
                 logger.info("🔥 SL Audio Master generated LML — using as primary")
                 data["lml"] = soulfire_lml
+                data["lyrics_source"] = "generated:soulfire"
                 if soulfire_result.get("sl_audio_master_payload", {}).get("cultural_matrix"):
                     data["cultural_subtext"] = soulfire_result["sl_audio_master_payload"]["cultural_matrix"]
             if "stems" in soulfire_result and isinstance(soulfire_result["stems"], list) and len(soulfire_result["stems"]) > 0 and isinstance(soulfire_result["stems"][0], dict) and "src" in soulfire_result["stems"][0]:
@@ -1073,8 +1095,16 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
             {"name": "Analog Melody", "src": synth_source_url, "level": 0.77, "peak": 0.55},
         ]
 
+    # ── BETA COST GUARD ─────────────────────────────────────────────────
+    # Metered engines (Vertex Chirp, OpenAI TTS, Nemotron) only run when
+    # LYRICA_FREE_TIER_ONLY != "1". In public beta, free users get the
+    # zero-cost FluidSynth/procedural chain; vocals are a paid-order feature
+    # fulfilled where this flag is off. Credits can never run out on the
+    # free tier because the free tier never spends them.
+    _metered_enabled = os.environ.get("LYRICA_FREE_TIER_ONLY", "0") != "1"
+
     # ── STEP 8: Chirp 3 HD — Real vocal performance (primary) ──────────
-    if VERTEX_AI_ENABLED:
+    if VERTEX_AI_ENABLED and _metered_enabled:
         text = _strip_lml(data["lml"])
         if text:
             chirp_result = await vertex_chirp_tts(
@@ -1088,7 +1118,7 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
                 logger.info(f"Chirp 3 HD vocal: {chirp_result['url']}")
 
     # ── STEP 9: OpenAI TTS fallback for vocals ──────────────────────────
-    if voice_provider == "none":
+    if voice_provider == "none" and _metered_enabled:
         vp = await vocal_performance(
             lml=data["lml"], mood=req.mood,
             out_dir=str(ROOT_DIR / "static" / "voices"),
@@ -1096,6 +1126,15 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         if vp:
             voice_provider = "openai:tts-1-hd"
             voice_meta = vp
+    elif voice_provider == "none":
+        logger.info("Free-tier beta: vocal engines skipped (LYRICA_FREE_TIER_ONLY=1)")
+
+    # Honest client-facing labels — computed from the actual fulfillment path,
+    # never inferred by the frontend. synth_provider/voice_provider are the
+    # ground truth; fulfillment/voice_fulfillment are what consumers must check
+    # before rendering any "engine" branding.
+    fulfillment = _fulfillment_tier(synth_provider)
+    voice_fulfillment = _voice_fulfillment_tier(voice_provider, _metered_enabled)
 
     # ── STEP 10: Soulfire Mastering — apply mastering preset ──────────────
     mastering_preset = "soulfire"
@@ -1154,14 +1193,17 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         "lml": data["lml"],                      # stored internally
         "cultural_subtext": data["cultural_subtext"],  # stored internally
         "synth_source_url": synth_source_url,    # stored internally
-        "synth_provider": synth_provider,        # stored internally
-        "voice_provider": voice_provider,        # stored internally
+        "synth_provider": synth_provider,        # ground truth — which engine actually produced the audio
+        "voice_provider": voice_provider,        # ground truth — which engine actually produced the vocal
         "voice_meta": voice_meta,                # stored internally
+        "fulfillment": fulfillment,               # "primary" | "secondary" | "fallback" — client MUST check before showing engine branding
+        "voice_fulfillment": voice_fulfillment,   # "primary" | "secondary" | "none_by_design" | "none_failed"
+        "lyrics_source": data.get("lyrics_source", "unknown"),  # "generated:*" | "seeded_fallback"
         "vision_metadata": vision_metadata,      # Lyrica Vision API payload
         "vics_blueprint": vics_blueprint,        # VICS emotional intelligence + cultural analysis
         "mastering": {
             "preset": mastering_preset,
-            "applied": mastering_applied,
+            "applied_to_source": synth_provider if mastering_applied else None,  # what was actually mastered, not just whether a step ran
             "target_lufs": -14.0,
         },
         "created_at": now,
@@ -1180,6 +1222,13 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         "note": f"Soulfire ignited · synth={synth_provider} · voice={voice_provider} · vics=sealed",
         "timestamp": now,
     })
+    # Empire Spine: signed track.generated event → ArchiSynapse birth certificate.
+    # Fail-open: a spine outage never blocks music creation.
+    try:
+        from empire_spine.pipeline_hook import emit_track_minted
+        emit_track_minted(track)
+    except ImportError:
+        pass
     track.pop("_id", None)
     return _sanitize_track(track)
 
@@ -1301,14 +1350,21 @@ async def s2_mutate(request: Request, req: S2MutateRequest, user: Dict = Depends
         except ImportError:
             pass
         await db.tracks.insert_one(track)
-        
+
         await db.ledger.insert_one({
             "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": dna,
             "actor": user["handle"], "amount_usd": 0.0,
             "note": f"S2 Metamorphic Blend Blueprint created: {req.base_genre} x {req.mutation_genre}",
             "timestamp": now,
         })
-        
+
+        # Empire Spine: signed track.generated event → ArchiSynapse birth certificate.
+        try:
+            from empire_spine.pipeline_hook import emit_track_minted
+            emit_track_minted(track)
+        except ImportError:
+            pass
+
         return blueprint
     except Exception as e:
         logger.exception("S2 Mutation failed")
@@ -1840,7 +1896,7 @@ async def universal_query(request: Request, req: UniversalQueryRequest, user: Di
         )
         _agent.set_up()
         result = _agent.query(req.query)
-        return {"status": "success", "user_id": req.user_id, "pipeline": "vertex:aura-efad", "result": result}
+        return {"status": "success", "fulfillment": "primary", "user_id": req.user_id, "pipeline": "vertex:aura-efad", "result": result}
     except Exception as vertex_err:
         logger.warning(f"Vertex AURA-EFAD failed ({vertex_err}), falling back to Claude LLM pipeline")
 
@@ -1871,7 +1927,7 @@ async def universal_query(request: Request, req: UniversalQueryRequest, user: Di
         txt = _resp.choices[0].message.content.strip()
         m = re.search(r"\{[\s\S]*\}", txt)
         data = json.loads(m.group(0) if m else txt)
-        return {"status": "success", "user_id": req.user_id, "pipeline": "openai:aura-efad", "result": data}
+        return {"status": "degraded", "fulfillment": "secondary", "user_id": req.user_id, "pipeline": "openai:aura-efad", "result": data}
     except Exception as e:
         logger.error(f"Universal query pipeline error: {e}")
         raise HTTPException(500, "Universal pipeline failed.")

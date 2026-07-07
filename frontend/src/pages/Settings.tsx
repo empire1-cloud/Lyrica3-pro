@@ -59,7 +59,7 @@ export function Settings() {
           <h1 className="text-3xl md:text-4xl font-['Sedgwick_Ave_Display'] mb-2 text-zinc-100 flex items-center gap-3">
             <Settings2 className="w-8 h-8 text-zinc-400" /> Settings
           </h1>
-          <p className="text-zinc-400 font-medium text-sm">Configure production defaults for Lyrica 3.</p>
+          <p className="text-zinc-400 font-medium text-sm">Configure your Lyrica 3 environment.</p>
         </div>
         <Button
           variant="primary"

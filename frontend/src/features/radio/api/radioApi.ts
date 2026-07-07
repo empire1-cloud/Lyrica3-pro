@@ -1,6 +1,9 @@
 import api from '../../../lib/api';
 import type { VibeParams } from '../../../radio/lib/gemini';
 
+export type FulfillmentTier = "primary" | "secondary" | "fallback";
+export type VoiceFulfillmentTier = "primary" | "secondary" | "none_by_design" | "none_failed";
+
 export interface TrackData {
   id: string;
   title: string;
@@ -19,6 +22,10 @@ export interface TrackData {
   acousticPrimitives?: any;
   lyricsPayload?: any[];
   vocalPipelines?: { id: string; name: string; description: string; active: boolean; intensity?: number }[];
+  /** Ground truth for what actually produced the audio — MUST be checked before showing any engine branding. */
+  fulfillment?: FulfillmentTier;
+  voiceFulfillment?: VoiceFulfillmentTier;
+  lyricsSource?: string;
 }
 
 export async function generateTrack(vibe: string, context?: any, emotionalMode?: string) {
@@ -53,6 +60,11 @@ export async function generateTrack(vibe: string, context?: any, emotionalMode?:
     },
     audioUrl: data.audioUrl || data.audio_url || firstPlayableStem?.src,
     lyrics: data.lyrics,
+    // Ground truth from the backend — carried through untouched, never defaulted.
+    // Consumers must treat a missing/"fallback" value as "not real AI generation."
+    fulfillment: data.fulfillment,
+    voiceFulfillment: data.voice_fulfillment,
+    lyricsSource: data.lyrics_source,
   };
 }
 

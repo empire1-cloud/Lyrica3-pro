@@ -108,12 +108,12 @@ export function Studio() {
         {/* Left: Sound Browser */}
         <aside className="hidden md:flex w-64 border-r border-zinc-800/50 bg-zinc-950 flex-col shrink-0 z-10">
           <div className="p-4 border-b border-zinc-800/50">
-            <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Creator Assets</h3>
+            <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wider mb-3">Sample Universe</h3>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
               <input
                 type="text"
-                placeholder="Search assets..."
+                placeholder="Search sounds..."
                 className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all"
               />
             </div>
@@ -133,8 +133,8 @@ export function Studio() {
                   <Play className="w-3.5 h-3.5 ml-0.5" />
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-cyan-400 transition-colors">Session Asset {i + 1}</p>
-                  <p className="text-[10px] text-zinc-500 truncate">Ready for attribution • 128 BPM</p>
+                  <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-cyan-400 transition-colors">Neon Hit {i + 1}</p>
+                  <p className="text-[10px] text-zinc-500 truncate">Synthwave • 128BPM</p>
                 </div>
                 <button className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-zinc-300 transition-all">
                   <Plus className="w-4 h-4" />

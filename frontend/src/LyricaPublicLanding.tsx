@@ -213,6 +213,153 @@ nav {
 .hero .container {
   position: relative;
   z-index: 1;
+  max-width: 1280px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(340px, 0.88fr);
+  gap: 48px;
+  align-items: center;
+}
+
+.hero-copy {
+  text-align: left;
+}
+
+.hero-logo-shell {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 18px;
+}
+
+.hero-logo-mark {
+  width: min(260px, 72vw);
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 0 26px rgba(255, 20, 147, 0.18));
+}
+
+.hero-copy .hero-sub {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.hero-copy .hero-stats,
+.hero-copy .hero-ctas {
+  justify-content: flex-start;
+}
+
+.hero-tagline {
+  margin-top: 24px;
+  max-width: 620px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hero-visual {
+  position: relative;
+  align-self: center;
+}
+
+.hero-visual-card {
+  position: relative;
+  padding: 18px;
+  border-radius: 28px;
+  background: rgba(8, 8, 12, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 28px 100px rgba(0, 0, 0, 0.52),
+    0 0 0 1px rgba(255, 20, 147, 0.06) inset;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+}
+
+.hero-visual-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 20, 147, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 34%);
+  pointer-events: none;
+}
+
+.hero-visual-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.hero-visual-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 20, 147, 0.24);
+  background: rgba(255, 20, 147, 0.08);
+  color: #ffd1ea;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.hero-visual-chip.alt {
+  border-color: rgba(168, 85, 247, 0.22);
+  background: rgba(168, 85, 247, 0.1);
+  color: #e9d5ff;
+}
+
+.hero-visual-image {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: center 44%;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  filter: saturate(1.08) contrast(1.05);
+}
+
+.hero-visual-caption {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hero-visual-caption .caption-label {
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pink);
+}
+
+.hero-visual-caption .caption-copy {
+  text-align: right;
+  color: var(--text);
 }
 
 .hero-badge {
@@ -1045,6 +1192,25 @@ footer {
   .nav-links { display: none; }
   section { padding: 80px 20px; }
   .hero { padding: 160px 20px 80px; }
+  .hero .container { grid-template-columns: 1fr; gap: 32px; }
+  .hero-copy { text-align: center; }
+  .hero-logo-shell { justify-content: center; }
+  .hero-copy .hero-sub {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .hero-copy .hero-stats,
+  .hero-copy .hero-ctas {
+    justify-content: center;
+  }
+  .hero-visual { order: -1; }
+  .hero-visual-caption {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hero-visual-caption .caption-copy {
+    text-align: left;
+  }
   .problem-grid,
   .equity-grid { grid-template-columns: repeat(2, 1fr); }
   .soulfire-grid,
@@ -1058,6 +1224,9 @@ footer {
   .equity-grid { grid-template-columns: 1fr; }
   .hero-stats { flex-direction: column; gap: 16px; }
   .artist-grid { grid-template-columns: 1fr; }
+  .hero-visual-card { padding: 14px; border-radius: 24px; }
+  .hero-visual-image { border-radius: 18px; aspect-ratio: 1 / 1.08; }
+  .hero-logo-mark { width: min(220px, 78vw); }
 }
 `;
 
@@ -1157,19 +1326,48 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
 
       <section className="hero">
         <div className="container">
-          <div className="hero-badge"><span className="pulse" /> SLA113 // Universe 1 — LYRICA3</div>
-          <h1>The First <span className="pink">Creator-Owned</span><br />AI Music Platform</h1>
-          <p className="hero-sub">100% micro-royalties. Digital birth certificates for every track. Your sound, your IP, your money — powered by the Soulfire Engine.</p>
-          <div className="hero-stats">
-            <div className="hero-stat"><div className="num">100%</div><div className="label">Creator IP Ownership</div></div>
-            <div className="hero-stat"><div className="num">$0.012</div><div className="label">Per Song Inference</div></div>
-            <div className="hero-stat"><div className="num">70/30</div><div className="label">Creator Split</div></div>
-            <div className="hero-stat"><div className="num">20+</div><div className="label">Genre Engines</div></div>
+          <div className="hero-copy">
+            <div className="hero-logo-shell">
+              <img
+                src="/empire1_logo.jpeg"
+                alt="Empire 1 logo"
+                className="hero-logo-mark"
+                loading="eager"
+                decoding="async"
+              />
+            </div>
+            <div className="hero-badge"><span className="pulse" /> SLA113 // Universe 1 — LYRICA3</div>
+            <h1><span className="pink">Creator-Owned</span><br />AI Music Infrastructure</h1>
+            <p className="hero-sub">Provenance, remix/sample attribution, royalty routing, and cultural protection for every track — powered by the Soulfire Engine.</p>
+            <div className="hero-stats">
+              <div className="hero-stat"><div className="num">100%</div><div className="label">Creator IP Ownership</div></div>
+              <div className="hero-stat"><div className="num">$0.012</div><div className="label">Per Song Inference</div></div>
+              <div className="hero-stat"><div className="num">70/30</div><div className="label">Creator Split</div></div>
+              <div className="hero-stat"><div className="num">20+</div><div className="label">Genre Engines</div></div>
+            </div>
+            <div className="hero-ctas">
+              <button className="btn-primary" onClick={onEnterStudio}>Start Creating</button>
+              {onEnterVibe && <button className="btn-secondary" onClick={onEnterVibe}>Feel the Vibe</button>}
+              <a href="#soulfire" className="btn-secondary">See the Engine</a>
+            </div>
+            <div className="hero-tagline">Ferris wheel lights, chrome reflections, and funnel-cake smoke baked into the opening frame.</div>
           </div>
-          <div className="hero-ctas">
-            <button className="btn-primary" onClick={onEnterStudio}>Start Creating</button>
-            {onEnterVibe && <button className="btn-secondary" onClick={onEnterVibe}>Feel the Vibe</button>}
-            <a href="#soulfire" className="btn-secondary">See the Engine</a>
+          <div className="hero-visual" aria-hidden="true">
+            <div className="hero-visual-card">
+              <div className="hero-visual-top">
+                <span className="hero-visual-chip">Live Carnival</span>
+                <span className="hero-visual-chip alt">SGV Night Tape</span>
+              </div>
+              <img
+                src={`${IMG_BASE}/artists/carnival_vibe.jpg`}
+                alt="Chrome lowrider at night carnival with neon pink ferris wheel"
+                className="hero-visual-image"
+              />
+              <div className="hero-visual-caption">
+                <span className="caption-label">Featured Scene</span>
+                <span className="caption-copy">Ferris wheel baked into the hero, not hidden below the fold.</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1207,7 +1405,7 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
         <div className="container">
           <div className="section-label">The Engine</div>
           <h2 className="section-title">Soulfire Engine</h2>
-          <p className="section-sub">Hybrid neural-symbolic architecture. Not just generation — emotional intelligence. Every track carries feeling, not just frequency.</p>
+          <p className="section-sub">Hybrid neural-symbolic architecture. Not just generation — rights-aware intelligence. Every track carries provenance, context, and cultural memory.</p>
           <div className="soulfire-grid">
             <div className="soulfire-visual">
               <div className="spectrum-bar">
@@ -1263,18 +1461,18 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
             <div className="dna-card">
               <div className="tag">Remix Economics</div>
               <h3>Every Remix Pays the Original</h3>
-              <p>When someone remixes your track, the DNA tag traces back to you. $0.025 per remix, auto-paid. No disputes. No middlemen. Just math.</p>
+              <p>When someone remixes your track, the DNA tag traces back to you. $1.25 per remix, auto-paid to the original creator. DNA-traced. No disputes. No middlemen.</p>
               <br />
               <p style={{ color: "var(--text)" }}><strong>Three royalty models:</strong></p>
               <ul style={{ listStyle: "none", marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                 <li style={{ fontSize: 14, color: "var(--text-dim)", paddingLeft: 20, position: "relative" as const }}>
-                  <span style={{ position: "absolute", left: 0, color: "var(--pink)" }}>›</span> <strong>Original Only</strong> — 100% to the creator
+                  <span style={{ position: "absolute", left: 0, color: "var(--pink)" }}>›</span> <strong>Original Only</strong> — 100% IP ownership stays with the original creator. Royalty split: 70% original creator / 30% Empire.
                 </li>
                 <li style={{ fontSize: 14, color: "var(--text-dim)", paddingLeft: 20, position: "relative" as const }}>
-                  <span style={{ position: "absolute", left: 0, color: "var(--pink)" }}>›</span> <strong>Linear Equal Split</strong> — 50/50 with remixer
+                  <span style={{ position: "absolute", left: 0, color: "var(--pink)" }}>›</span> <strong>Linear Equal Split</strong> — IP remains protected by creator/remix rights. Creator-side pool: 35% original creator / 35% remixer / 30% Empire.
                 </li>
                 <li style={{ fontSize: 14, color: "var(--text-dim)", paddingLeft: 20, position: "relative" as const }}>
-                  <span style={{ position: "absolute", left: 0, color: "var(--pink)" }}>›</span> <strong>Exponential Decay</strong> — 0.5^depth per generation
+                  <span style={{ position: "absolute", left: 0, color: "var(--pink)" }}>›</span> <strong>Exponential Decay</strong> — 100% IP ownership remains protected. The 70% creator-side pool follows 0.5^depth lineage; Empire receives 30% once at platform level.
                 </li>
               </ul>
             </div>
@@ -1329,10 +1527,6 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
               <h3>Whittier Narrows Carnival</h3>
               <p>The Environment Layer</p>
             </div>
-            <div style={{ margin: "30px 0", display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
-              <img src={`${IMG_BASE}/artists/carnival_vibe.jpg`} alt="Chrome lowrider at night carnival with neon pink ferris wheel"
-                style={{ width: "100%", maxWidth: 800, borderRadius: 12, border: "1px solid rgba(255,20,147,0.3)", boxShadow: "0 0 40px rgba(255,20,147,0.15)" }} />
-            </div>
             <div style={{ margin: "20px 0 30px", display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
               <img src={`${IMG_BASE}/artists/whittier_blvd_1.jpg`} alt="Lowriders on Whittier Blvd with Mexican flags"
                 style={{ width: "48%", maxWidth: 380, borderRadius: 8, border: "1px solid rgba(255,20,147,0.2)" }} />
@@ -1354,7 +1548,7 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
         <div className="container">
           <div className="section-label">Creator Economics</div>
           <h2 className="section-title">Your Music. Your Money.</h2>
-          <p className="section-sub">We don't take your IP. We don't hide the splits. Every dollar is tracked, every creator is paid.</p>
+          <p className="section-sub">We don't take your IP. We don't hide the splits. Every remix, sample, and payout routes back to the right creator.</p>
           <div className="equity-grid">
             <div className="equity-card">
               <div className="big-num">100%</div>
@@ -1367,7 +1561,7 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
               <p>You keep 70%. We keep 30%. Transparent. Simple. The way it should be.</p>
             </div>
             <div className="equity-card">
-              <div className="big-num">$0.025</div>
+              <div className="big-num">$1.25</div>
               <h4>Per Remix</h4>
               <p>Auto-paid to the original creator. DNA-traced. No disputes. No middlemen.</p>
             </div>
@@ -1392,12 +1586,12 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
               <div className="product-badge">Flagship</div>
               <h3>Sonance Pro</h3>
               <div className="price">$99–$299/mo</div>
-              <div className="price-sub">Professional AI music studio</div>
+              <div className="price-sub">Creator-owned AI music studio</div>
               <div className="margin-tag">90% GROSS MARGIN</div>
               <ul className="product-features">
                 <li>Full Soulfire Engine access</li>
                 <li>DNA Tagging on every track</li>
-                <li>Unlimited generation</li>
+                <li>Unlimited creation</li>
                 <li>Mastering + export pipeline</li>
                 <li>Remix economics enabled</li>
                 <li>Commercial license included</li>
@@ -1407,10 +1601,10 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
               <div className="product-badge">Streaming</div>
               <h3>SL Universal</h3>
               <div className="price">$4.99/mo</div>
-              <div className="price-sub">Pulse Stream — AI-curated listening</div>
+              <div className="price-sub">Pulse Stream — provenance-verified listening</div>
               <div className="margin-tag">86% GROSS MARGIN</div>
               <ul className="product-features">
-                <li>Stream AI-generated music</li>
+                <li>Stream provenance-verified music</li>
                 <li>Cultural playlists (Chicano Soul, Corridos, Souldies)</li>
                 <li>Creator discovery feed</li>
                 <li>Royalty-verified tracks only</li>
@@ -1420,10 +1614,10 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
               <div className="product-badge">Community</div>
               <h3>Discord Bot</h3>
               <div className="price">$4.99–$19.99/mo</div>
-              <div className="price-sub">Generate in your server</div>
+              <div className="price-sub">Create in your server</div>
               <div className="margin-tag">98% GROSS MARGIN</div>
               <ul className="product-features">
-                <li>Generate tracks from Discord</li>
+                <li>Create tracks from Discord</li>
                 <li>/lyrica command suite</li>
                 <li>Server-wide creation history</li>
                 <li>DNA tagging included</li>
@@ -1479,7 +1673,7 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
       <section className="final-cta" id="start">
         <div className="container">
           <h2>Own Your <span className="pink">Sound</span>.</h2>
-          <p>Join the first AI music platform that pays creators, protects IP, and respects the culture.</p>
+          <p>Join the creator-owned AI music infrastructure for provenance, attribution, and royalty routing.</p>
           <div className="hero-ctas">
             <button className="btn-primary" onClick={onEnterStudio}>Start Creating on Sonance Pro</button>
             <a href="https://sluniversal.lyrica3.com" className="btn-secondary">Stream on SL Universal</a>

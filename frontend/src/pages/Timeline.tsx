@@ -27,7 +27,7 @@ export function Timeline() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   React.useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
+    let interval: NodeJS.Timeout;
     if (isPlaying) {
       interval = setInterval(() => {
         setPlayheadPos(p => (p >= 100 ? 0 : p + 0.5));
@@ -43,7 +43,7 @@ export function Timeline() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 shrink-0">
         <div>
           <h1 className="text-3xl font-['Sedgwick_Ave_Display'] flex items-center gap-3">
-            Current session <span className="text-sm font-sans font-medium px-2 py-1 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">120 BPM</span>
+            L.A. NightDrive <span className="text-sm font-sans font-medium px-2 py-1 rounded bg-zinc-900 text-zinc-400 border border-zinc-800">120 BPM</span>
           </h1>
         </div>
         
@@ -73,7 +73,7 @@ export function Timeline() {
           </Button>
           <div className="w-px h-8 bg-zinc-800 mx-2" />
           <Button variant="secondary" className="gap-2" onClick={() => setIsExportModalOpen(true)}>
-            <Download className="w-4 h-4" /> Export session
+            <Download className="w-4 h-4" /> Export
           </Button>
         </div>
       </div>

@@ -28,7 +28,7 @@ const loop = [
   'Archisynapse evaluates payout risk before money moves.',
 ];
 
-export function SLUniversalPage() {
+export function SLUniversalOriginalPage() {
   return (
     <div className="min-h-screen bg-zinc-950">
       <section className="border-b border-zinc-800/60">

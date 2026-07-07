@@ -1,34 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
-  Send, 
   Users, 
-  MessageSquare, 
   TrendingUp, 
   Activity, 
   Flame, 
   Mic2, 
   Zap,
-  Heart,
   CloudRain,
-  Plus,
   Play,
   Pause,
-  Music
+  Music,
+  Sparkles,
+  Shield
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { translateVibeToParams, generateMusicStream } from '../lib/gemini';
-import { routeSession } from '../../lib/api';
-
-interface Message {
-  id: string;
-  user: string;
-  text: string;
-  type: 'lyric' | 'theme' | 'chat';
-  color: string;
-  themeValue?: string;
-}
+import { interpretListenerInput } from '../../features/radio/ai/interpretListenerInput';
+import type { ListenerInput } from '../../features/radio/ai/interpretListenerInput';
+import { generateDjResponse } from '../../features/radio/ai/generateDjResponse';
+import type { SessionState } from '../../features/radio/ai/generateDjResponse';
+import { ListenerInputPanel } from '../../features/radio/ListenerInputPanel';
+import { LiveSubmissionsFeed } from '../../features/radio/LiveSubmissionsFeed';
+import type { SubmissionEntry } from '../../features/radio/LiveSubmissionsFeed';
+import { submitListenerInput, saveAudienceInspiration, createOwnershipEventIfUsed } from '../../features/radio/api/radioApi';
 
 interface Persona {
   id: string;
@@ -62,27 +58,6 @@ const PERSONAS: Persona[] = [
   },
 ];
 
-const COLORS = ['text-pink-500', 'text-red-500', 'text-blue-500', 'text-purple-500', 'text-green-500'];
-const MOCK_USERS = ['AuraSeeker', 'VibeMaster', 'BassDrop', 'LyricLover', 'SynthSoul', 'NeonDreamer', 'EchoPulse'];
-const MOCK_LYRICS = [
-  "The velvet cage is now unlocked...",
-  "Two broken smiles in the rain...",
-  "Neon lights reflecting in the puddles...",
-  "Searching for a ghost in the machine...",
-  "Heartbeat syncopated with the rhythm...",
-  "Lost in the frequency of your love..."
-];
-const MOCK_THEMES = ["Cyberpunk Soul", "Dark Cabaret", "Rio Drift Phonk", "90s R&B Nostalgia", "Ethereal Trap", "Soulful House", "Dark Techno", "Ambient Drift"];
-
-const normalizeTheme = (text: string) => {
-  const normalized = text.toLowerCase().trim();
-  const keywords = ["soul", "trap", "phonk", "r&b", "nostalgia", "cyberpunk", "dark", "ethereal", "cabaret", "techno", "house", "ambient"];
-  for (const kw of keywords) {
-    if (normalized.includes(kw)) return kw.toUpperCase();
-  }
-  return normalized.toUpperCase();
-};
-
 interface Summary {
   engagement: number;
   popularThemes: string[];
@@ -93,8 +68,8 @@ interface Summary {
 }
 
 export function LiveSession({ onClose }: { onClose: () => void }) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
+  const [submissions, setSubmissions] = useState<SubmissionEntry[]>([]);
+  const [isProcessingInput, setIsProcessingInput] = useState(false);
   const [crowdEmotion, setCrowdEmotion] = useState(0.75);
   const [activeThemes, setActiveThemes] = useState<string[]>(["Soul", "Electronic", "Dark"]);
   const [themeVotes, setThemeVotes] = useState<Record<string, number>>({
@@ -120,7 +95,7 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
   });
   const [showSummary, setShowSummary] = useState(false);
   const [summaryData, setSummaryData] = useState<Summary | null>(null);
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const submissionsEndRef = useRef<HTMLDivElement>(null);
 
   const [listeners, setListeners] = useState(2412891);
   const [peakListeners, setPeakListeners] = useState(2412891);
@@ -135,59 +110,6 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
   const [isGeneratingLiveTrack, setIsGeneratingLiveTrack] = useState(false);
   const [liveLyricsScrollIndex, setLiveLyricsScrollIndex] = useState(0);
   const liveAudioRef = useRef<HTMLAudioElement | null>(null);
-
-  // Soulfire routing — wire corpus intelligence into session on mount
-  useEffect(() => {
-    const defaultPrompt = "west coast vibe with emotional depth and authentic storytelling";
-    const storedPrompt = sessionStorage.getItem('livesession_prompt') || defaultPrompt;
-    routeSession({
-      prompt: storedPrompt,
-      creator_id: 'live_session',
-      target_vibe: 'authentic',
-      culture: 'chicano',
-      genre: 'soul'
-    })
-      .then(result => {
-        const personaMap: Record<string, string> = {
-          storyteller: 'shadyboy',
-          broken: 'shadyboy',
-          romantic: 'shadyboy',
-          healer: 'auraveda',
-          dreamer: 'auraveda',
-          warrior: 'neonpulse',
-          hustler: 'neonpulse',
-          rebel: 'neonpulse',
-        };
-        const mappedId = personaMap[result.selected_persona.toLowerCase()] || 'shadyboy';
-        const matched = PERSONAS.find(p => p.id === mappedId);
-        if (matched) setCurrentPersona(matched);
-
-        setPersonaControls(prev => {
-          const p = result.selected_persona.toLowerCase();
-          if (p === 'healer' || p === 'dreamer') return { ...prev, reverb: 0.9, vocalGrit: 0.2, emotionalDepth: 0.6 };
-          if (p === 'warrior' || p === 'rebel') return { ...prev, vocalGrit: 0.9, stagePresence: 0.9, reverb: 0.2 };
-          if (p === 'broken') return { ...prev, emotionalDepth: 0.9, sadness: 0.8, vocalCrackle: 0.7 };
-          return prev;
-        });
-
-        setLiveParams(prev => ({
-          ...prev,
-          genre: result.genre_lane,
-          bpm: result.selected_persona === 'HEALER' || result.selected_persona === 'DREAMER' ? 80 :
-                result.selected_persona === 'WARRIOR' || result.selected_persona === 'REBEL' ? 110 : 90,
-        }));
-
-        const welcomeMsg: Message = {
-          id: 'soulfire-route',
-          user: 'Soulfire',
-          text: `Session routed via ${result.selected_persona} persona | ${result.genre_lane} lane | ${result.culture_lane} · ${result.guidance[0]}`,
-          type: 'chat',
-          color: 'text-yellow-400',
-        };
-        setMessages(prev => [...prev, welcomeMsg]);
-      })
-      .catch(err => console.warn('Soulfire routing unavailable:', err));
-  }, []);
 
   // Auto-advance lyrics as the song plays
   useEffect(() => {
@@ -207,10 +129,10 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
       const topTheme = Object.entries(themeVotes).sort(([, a], [, b]) => b - a)[0]?.[0] || "Soul";
       
       // 2. Aggregate chat lyrics from user submissions
-      const userLyrics = messages
-        .filter(m => m.type === 'lyric')
+      const userLyrics = submissions
+        .filter(s => s.input.inputType === 'lyrics')
         .slice(-3)
-        .map(m => m.text)
+        .map(s => s.input.text)
         .join("\n");
       
       const combinedLyrics = userLyrics || "The velvet cage is now unlocked,\nSearching for a ghost in the machine,\nNeon reflections in the dark puddles,\nTwo hearts waiting for a spark.";
@@ -316,50 +238,103 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // Simulate "millions" of users chatting
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const isLyric = Math.random() > 0.7;
-      const isTheme = Math.random() > 0.8;
-      
-      const themeText = isTheme ? MOCK_THEMES[Math.floor(Math.random() * MOCK_THEMES.length)] : null;
-      const normalized = themeText ? normalizeTheme(themeText) : undefined;
-      
-      const newMessage: Message = {
-        id: Math.random().toString(36).substr(2, 9),
-        user: MOCK_USERS[Math.floor(Math.random() * MOCK_USERS.length)],
-        text: isLyric 
-          ? MOCK_LYRICS[Math.floor(Math.random() * MOCK_LYRICS.length)]
-          : isTheme 
-            ? `Let's try ${themeText}!`
-            : "This vibe is insane! 🔥",
-        type: isLyric ? 'lyric' : isTheme ? 'theme' : 'chat',
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        themeValue: normalized
+  // Derive session state from live params for AI DJ
+  const sessionState: SessionState = {
+    currentBpm: liveParams.bpm,
+    currentEnergy: liveParams.energy,
+    currentGenre: liveParams.genre,
+    currentMood: liveParams.energy > 0.6 ? "high energy" : "chill",
+    currentPersonaName: currentPersona.name,
+    crowdEmotion,
+    activeThemes,
+  };
+
+  // Handle listener input → AI interpretation → DJ response
+  const handleListenerSubmit = useCallback(async (input: ListenerInput) => {
+    setIsProcessingInput(true);
+    try {
+      // 1. Persist to API / localStorage
+      await submitListenerInput(input);
+
+      // 2. AI Interpret the input
+      const interpretation = await interpretListenerInput(input);
+
+      // 3. AI DJ generates response
+      const djResponse = await generateDjResponse(sessionState, input, interpretation);
+
+      // 4. Build the submission entry
+      const entry: SubmissionEntry = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 4),
+        input,
+        interpretation,
+        djResponse,
+        timestamp: new Date().toISOString(),
       };
 
-      setMessages(prev => [...prev.slice(-50), newMessage]);
-      
-      if (isTheme && normalized) {
-        setThemeVotes(prev => ({
+      setSubmissions(prev => [...prev, entry]);
+
+      // 5. Update session state based on interpretation
+      if (interpretation.suggestedBpmShift) {
+        setLiveParams(prev => ({
           ...prev,
-          [normalized]: (prev[normalized] || 0) + Math.floor(Math.random() * 10) + 1
+          bpm: Math.max(60, Math.min(200, prev.bpm + interpretation.suggestedBpmShift)),
+        }));
+      }
+      if (interpretation.suggestedEnergyShift) {
+        setLiveParams(prev => ({
+          ...prev,
+          energy: Math.max(0, Math.min(1, prev.energy + interpretation.suggestedEnergyShift)),
+        }));
+      }
+      if (djResponse.suggestedMusicChange?.genre) {
+        setLiveParams(prev => ({ ...prev, genre: djResponse.suggestedMusicChange!.genre! }));
+      }
+      if (djResponse.suggestedMusicChange?.mood) {
+        setCrowdEmotion(prev =>
+          djResponse.suggestedMusicChange?.mood === "energetic" ? Math.min(1, prev + 0.1) :
+          djResponse.suggestedMusicChange?.mood === "chill" ? Math.max(0.1, prev - 0.1) : prev
+        );
+      }
+      if (djResponse.suggestedMusicChange?.energy !== undefined) {
+        setLiveParams(prev => ({
+          ...prev,
+          energy: Math.max(0, Math.min(1, djResponse.suggestedMusicChange!.energy!)),
         }));
       }
 
-      // Randomly shift crowd emotion
-      setCrowdEmotion(prev => Math.max(0.1, Math.min(1, prev + (Math.random() - 0.5) * 0.1)));
-      
-      // Dynamic listener count
-      setListeners(prev => {
-        const next = prev + Math.floor((Math.random() - 0.4) * 100);
-        setPeakListeners(currentPeak => Math.max(currentPeak, next));
-        return next;
-      });
-    }, 800);
+      // 6. Boost crowd emotion on engagement
+      setCrowdEmotion(prev => Math.min(1, prev + 0.03));
 
-    return () => clearInterval(interval);
-  }, []);
+      // 7. Save as audience inspiration
+      await saveAudienceInspiration({
+        id: entry.id,
+        sessionId: input.sessionId,
+        userId: input.userId,
+        inputType: input.inputType,
+        originalText: input.text,
+        interpretedEmotion: interpretation.detectedEmotion,
+        interpretedVibe: interpretation.detectedVibe,
+        djResponseType: djResponse.responseType,
+        djMessage: djResponse.djMessage,
+        ownershipEventCreated: djResponse.ownershipEventRequired,
+        createdAt: entry.timestamp,
+      });
+
+      // 8. Create ownership event if original lyrics
+      if (djResponse.ownershipEventRequired && interpretation.isOriginalLyrics) {
+        await createOwnershipEventIfUsed({
+          sessionId: input.sessionId,
+          userId: input.userId,
+          originalText: input.text,
+          inputType: input.inputType,
+        });
+      }
+    } catch (err) {
+      console.error("AI DJ processing failed", err);
+    } finally {
+      setIsProcessingInput(false);
+    }
+  }, [sessionState, themeVotes]);
 
   // Update active themes based on top votes
   useEffect(() => {
@@ -370,15 +345,14 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
     
     setActiveThemes(sortedThemes);
     
-    // Influence track generation with the top theme
     if (sortedThemes.length > 0 && sortedThemes[0] !== liveParams.genre) {
       setLiveParams(prev => ({ ...prev, genre: sortedThemes[0] }));
     }
   }, [themeVotes, liveParams.genre]);
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    submissionsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [submissions]);
 
   const handleVote = (theme: string) => {
     setThemeVotes(prev => ({
@@ -388,64 +362,11 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
     setCrowdEmotion(prev => Math.min(1, prev + 0.02));
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputText.trim()) return;
-
-    const isTheme = inputText.toLowerCase().includes('theme') || inputText.length < 15;
-    const themeMatch = inputText.match(/theme:\s*(.*)/i);
-    const themeText = themeMatch ? themeMatch[1] : (isTheme ? inputText : null);
-    const normalized = themeText ? normalizeTheme(themeText) : undefined;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      user: "You",
-      text: inputText,
-      type: inputText.includes('"') ? 'lyric' : (themeText ? 'theme' : 'chat'),
-      color: 'text-white',
-      themeValue: normalized
-    };
-
-    // Emotional Feedback Loop Logic
-    const lowerText = inputText.toLowerCase();
-    if (lowerText.includes('💔') || lowerText.includes('heartbreak')) {
-      setLiveParams(prev => ({ 
-        ...prev, 
-        sadness: Math.min(1, prev.sadness + 0.2), 
-        key: "B Minor",
-        vocalCrackle: Math.min(1, prev.vocalCrackle + 0.3)
-      }));
-    } else if (lowerText.includes('sadder') || lowerText.includes('darker')) {
-      setLiveParams(prev => ({ ...prev, sadness: Math.min(1, prev.sadness + 0.1), key: "D# Minor" }));
-    } else if (lowerText.includes('energy') || lowerText.includes('faster')) {
-      setLiveParams(prev => ({ ...prev, energy: Math.min(1, prev.energy + 0.1), bpm: prev.bpm + 5 }));
-    } else if (lowerText.includes('harmonies')) {
-      setLiveParams(prev => ({ ...prev, harmonies: true }));
-    } else if (lowerText.includes('oldies')) {
-      setLiveParams(prev => ({ ...prev, genre: "Chicano Oldies" }));
-    }
-
-    setMessages(prev => [...prev, newMessage]);
-    
-    if (themeText) {
-      const normalized = normalizeTheme(themeText);
-      setThemeVotes(prev => ({
-        ...prev,
-        [normalized]: (prev[normalized] || 0) + 50 // User boost
-      }));
-    }
-
-    setInputText('');
-    
-    // Boost emotion on user interaction
-    setCrowdEmotion(prev => Math.min(1, prev + 0.05));
-  };
-
   const handleEndSession = () => {
     const summary: Summary = {
       engagement: Math.floor(crowdEmotion * 100),
       popularThemes: Object.entries(themeVotes).sort(([, a], [, b]) => b - a).slice(0, 3).map(([k]) => k),
-      topLyrics: messages.filter(m => m.type === 'lyric').slice(-3).map(m => m.text),
+      topLyrics: submissions.filter(s => s.input.inputType === 'lyrics').slice(-3).map(s => s.input.text),
       finalBPM: liveParams.bpm,
       finalEnergy: liveParams.energy,
       listenersReached: peakListeners
@@ -862,17 +783,17 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {/* Right: Live Chat */}
+        {/* Right: AI DJ Listener Feed */}
         <div className="w-96 border-l border-white/10 flex flex-col bg-black/40">
           <div className="p-4 border-b border-white/10 flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-pink-500" />
-                <span className="text-xs font-bold tracking-widest uppercase">Live Feedback</span>
+                <Sparkles className="w-4 h-4 text-pink-500" />
+                <span className="text-xs font-bold tracking-widest uppercase">AI DJ Studio</span>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-mono text-white/40">
                 <TrendingUp className="w-3 h-3" />
-                <span>TRENDING</span>
+                <span>LIVE</span>
               </div>
             </div>
             
@@ -901,141 +822,40 @@ export function LiveSession({ onClose }: { onClose: () => void }) {
                   </div>
                 ))}
             </div>
-          </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-            {messages.map((msg) => (
-              <motion.div 
-                key={msg.id}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-1 group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className={cn("text-[10px] font-bold uppercase tracking-wider", msg.color)}>
-                      {msg.user}
-                    </span>
-                    {msg.type === 'lyric' && <Flame className="w-3 h-3 text-pink-500" />}
-                    {msg.type === 'theme' && <Zap className="w-3 h-3 text-blue-500" />}
-                  </div>
-                  
-                  {msg.type === 'theme' && msg.themeValue && (
-                    <motion.button 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.8 }}
-                      onClick={() => handleVote(msg.themeValue!)}
-                      className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 transition-colors relative overflow-hidden group/vote"
-                    >
-                      <motion.div
-                        animate={{ scale: [1, 1.6, 1], rotate: [0, 15, -15, 0] }}
-                        key={`heart-icon-${themeVotes[msg.themeValue]}`}
-                        transition={{ duration: 0.4 }}
-                      >
-                        <Heart className="w-2.5 h-2.5 text-red-500 fill-red-500/20 group-hover/vote:fill-red-500 transition-colors" />
-                      </motion.div>
-                      <motion.span 
-                        key={`vote-count-${themeVotes[msg.themeValue]}`}
-                        initial={{ y: -15, opacity: 0, scale: 2 }}
-                        animate={{ y: 0, opacity: 1, scale: 1 }}
-                        className="text-[8px] font-mono text-white/60 font-bold relative"
-                      >
-                        {themeVotes[msg.themeValue]?.toLocaleString() || 0}
-                        <motion.div
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-                          key={`ripple-${themeVotes[msg.themeValue]}`}
-                          className="absolute inset-0 bg-white/20 rounded-full"
-                        />
-                      </motion.span>
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0 }}
-                        whileTap={{ opacity: 1, scale: 4 }}
-                        className="absolute inset-0 bg-red-500/40 rounded-full pointer-events-none"
-                      />
-                      {/* Floating Heart Effect */}
-                      <AnimatePresence>
-                        {themeVotes[msg.themeValue] % 10 === 0 && (
-                          <motion.div
-                            initial={{ y: 0, opacity: 1 }}
-                            animate={{ y: -20, opacity: 0 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none"
-                          >
-                            <Heart className="w-2 h-2 text-red-500 fill-red-500" />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
-                  )}
-                </div>
-                <p className={cn(
-                  "text-sm",
-                  msg.type === 'lyric' ? "font-serif italic text-white/90" : "text-white/60"
-                )}>
-                  {msg.text}
-                </p>
-              </motion.div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-
-          <div className="p-4 border-t border-white/10 space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <div className="relative group/suggest">
-                <button
-                  onClick={() => {
-                    setInputText("Theme: ");
-                  }}
-                  className="px-2 py-1 bg-pink-500/20 border border-pink-500/30 rounded-md text-[8px] font-bold tracking-widest uppercase hover:bg-pink-500/30 transition-colors text-pink-500 flex items-center gap-1"
-                >
-                  <Plus className="w-2 h-2" /> Suggest Theme
-                </button>
-                {/* Interactive Suggestion Tooltip */}
-                <div className="absolute bottom-full left-0 mb-2 w-48 bg-black/90 border border-white/10 rounded-xl p-2 opacity-0 group-hover/suggest:opacity-100 pointer-events-none group-hover/suggest:pointer-events-auto transition-all transform translate-y-2 group-hover/suggest:translate-y-0 z-50">
-                  <p className="text-[8px] font-bold text-white/40 uppercase mb-2 px-1">Trending Suggestions</p>
-                  <div className="grid grid-cols-1 gap-1">
-                    {["Vaporwave Soul", "Industrial Phonk", "Lo-fi Chicano"].map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setInputText(`Theme: ${s}`)}
-                        className="text-left px-2 py-1.5 rounded hover:bg-white/5 text-[9px] text-white/60 hover:text-white transition-colors"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            {/* Vibe Influence Summary */}
+            {submissions.length > 0 && (
+              <div className="flex items-center gap-2 p-2 bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 rounded-lg">
+                <Activity className="w-3 h-3 text-pink-500" />
+                <span className="text-[8px] font-mono text-white/60">
+                  <strong className="text-pink-500">{submissions.length}</strong> inputs shaped this session
+                </span>
+                {submissions.filter(s => s.djResponse.ownershipEventRequired).length > 0 && (
+                  <span className="flex items-center gap-1 text-[7px] font-mono text-amber-400/60">
+                    <Shield className="w-2 h-2" />
+                    {submissions.filter(s => s.djResponse.ownershipEventRequired).length} ownership
+                  </span>
+                )}
               </div>
-              {["Cyberpunk", "Soul", "Dark", "Ethereal", "Trap"].map(theme => (
-                <button
-                  key={theme}
-                  onClick={() => {
-                    setInputText(`Theme: ${theme}`);
-                  }}
-                  className="px-2 py-1 bg-white/5 border border-white/10 rounded-md text-[8px] font-bold tracking-widest uppercase hover:bg-white/10 transition-colors text-white/40 hover:text-white"
-                >
-                  + {theme}
-                </button>
-              ))}
-            </div>
-            <form onSubmit={handleSendMessage} className="relative">
-              <input 
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Type lyrics or themes..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-pink-500/50 transition-colors pr-12"
-              />
-              <button 
-                type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-pink-500 hover:text-white transition-colors"
-              >
-                <Send className="w-5 h-5" />
-              </button>
-            </form>
+            )}
+          </div>
+
+          {/* Live Submissions Feed */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            <LiveSubmissionsFeed submissions={submissions} />
+            <div ref={submissionsEndRef} />
+          </div>
+
+          {/* Listener Input Panel */}
+          <div className="p-4 border-t border-white/10 space-y-3">
+            <ListenerInputPanel
+              sessionId={`live-${Date.now()}`}
+              userId="You"
+              onSubmit={handleListenerSubmit}
+              isProcessing={isProcessingInput}
+            />
             <p className="text-[8px] font-mono text-white/20 uppercase text-center">
-              Your input influences the live Sonance Pro performance
+              Your input shapes the live session in real time
             </p>
           </div>
         </div>

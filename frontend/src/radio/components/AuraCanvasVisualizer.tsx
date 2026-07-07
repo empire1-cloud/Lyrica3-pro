@@ -112,7 +112,7 @@ export const AuraCanvasVisualizer: React.FC<VisualizerProps> = ({
         gradient.addColorStop(0.5, 'rgba(4, 20, 16, 1)');
         gradient.addColorStop(1, 'rgba(2, 6, 4, 1)');
       } else {
-        gradient.addColorStop(0, 'rgba(44, 18, 5, 0.95)'); // Orange warm
+        gradient.addColorStop(0, 'rgba(44, 18, 5, 0.95)'); // Pink neon
         gradient.addColorStop(0.5, 'rgba(15, 7, 3, 1)');
         gradient.addColorStop(1, 'rgba(3, 1, 1, 1)');
       }
@@ -310,7 +310,7 @@ export const AuraCanvasVisualizer: React.FC<VisualizerProps> = ({
 
         let segColor = 'rgba(168, 85, 247, 0.4)'; // cool purple
         if (intensity > 0.72) {
-          segColor = `rgba(239, 68, 68, ${0.45 + intensity * 0.45})`; // ultra hot orange-red
+          segColor = `rgba(239, 68, 68, ${0.45 + intensity * 0.45})`; // ultra hot fuchsia-pink
         } else if (intensity > 0.45) {
           segColor = `rgba(236, 72, 153, ${0.4 + intensity * 0.4})`; // medium vibrant pink
         } else {

@@ -10,7 +10,7 @@ export function System() {
         <h1 className="text-3xl md:text-4xl font-['Sedgwick_Ave_Display'] mb-2 text-fuchsia-400">
           System Architecture
         </h1>
-        <p className="text-zinc-400 font-medium text-sm">Production surfaces for generation, attribution, routing, and payout control.</p>
+        <p className="text-zinc-400 font-medium text-sm">Soulfire Engine architecture and data pipelines.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -44,8 +44,8 @@ export function System() {
 
             <div className="w-full md:w-48 text-center p-4 rounded-xl bg-zinc-950 border border-zinc-800 shadow-[0_0_15px_rgba(6,182,212,0.1)] z-10">
               <Database className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
-              <div className="text-sm font-bold">Asset Library</div>
-              <div className="text-xs text-zinc-500 mt-1">Tags, provenance, metadata</div>
+              <div className="text-sm font-bold">Preset Library</div>
+              <div className="text-xs text-zinc-500 mt-1">Tags & Metadata</div>
             </div>
             
             <motion.div animate={{ x: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 2 }} className="hidden md:block z-10">
@@ -55,7 +55,7 @@ export function System() {
             <div className="w-full md:w-64 text-center p-6 rounded-xl bg-gradient-to-br from-fuchsia-900/20 to-cyan-900/20 border border-fuchsia-500/30 shadow-[0_0_30px_rgba(217,70,239,0.2)] z-10">
               <Sparkles className="w-10 h-10 text-fuchsia-400 mx-auto mb-3" />
               <div className="text-base font-bold text-fuchsia-100">Soulfire Core</div>
-            <div className="text-xs text-fuchsia-300 mt-2">Creator intent to audio control</div>
+              <div className="text-xs text-fuchsia-300 mt-2">Emotional Performance Model</div>
             </div>
 
             <motion.div animate={{ x: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 2, delay: 0.5 }} className="hidden md:block z-10">
@@ -65,14 +65,14 @@ export function System() {
             <div className="w-full md:w-48 text-center p-4 rounded-xl bg-zinc-950 border border-zinc-800 shadow-[0_0_15px_rgba(168,85,247,0.1)] z-10">
               <Zap className="w-8 h-8 text-purple-400 mx-auto mb-2" />
               <div className="text-sm font-bold">Session Timeline</div>
-              <div className="text-xs text-zinc-500 mt-1">Multi-track rendering and review</div>
+              <div className="text-xs text-zinc-500 mt-1">Multi-track Rendering</div>
             </div>
           </div>
         </Card>
 
         <Card className="bg-zinc-950 border-zinc-800">
           <h3 className="font-medium flex items-center gap-2 text-zinc-300 mb-6">
-            <Database className="w-5 h-5 text-purple-400" /> Session data flow
+            <Database className="w-5 h-5 text-purple-400" /> Session Data Flow
           </h3>
           <ul className="space-y-4">
             {[
@@ -106,7 +106,7 @@ export function System() {
             ))}
           </div>
           <div className="mt-6 p-4 rounded-lg bg-zinc-900/30 border border-zinc-800/50 text-xs text-zinc-400">
-            Assets combine creator tags, provenance, and control data. Loading them re-initializes the production surface with those values.
+            Presets combine exact multi-dimensional tagging. When loaded, they immediately re-initialize the Soulfire Engine with their mapped values.
           </div>
         </Card>
       </div>

@@ -39,7 +39,7 @@ export function Engine() {
           <h1 className="text-3xl md:text-4xl font-['Sedgwick_Ave_Display'] mb-2 flex items-center gap-3 text-cyan-400">
             <Sparkles className="w-8 h-8" /> Soulfire Engine
           </h1>
-          <p className="text-zinc-400 font-medium">Set creator intent, culture, and audio shape before generation.</p>
+          <p className="text-zinc-400 font-medium">Dial in the emotional parameters and let the engine create.</p>
         </div>
 
         <Card className="space-y-8">
@@ -144,7 +144,7 @@ export function Engine() {
             <Card className="glowOnHover flex flex-col gap-4 bg-zinc-900/80">
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="font-bold text-lg text-white">Active generation output</h3>
+                  <h3 className="font-bold text-lg text-white">Generation Output #001</h3>
                   <p className="text-sm text-zinc-400">{activeGenre} • {activeVibe} • {activeCulture}</p>
                 </div>
                 <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-white">
@@ -164,7 +164,7 @@ export function Engine() {
                 <span className="text-xs font-medium text-zinc-500">2:45</span>
               </div>
               <div className="flex gap-2 mt-2">
-                <Button variant="secondary" className="flex-1 text-xs h-9">Send to Library</Button>
+                <Button variant="secondary" className="flex-1 text-xs h-9">Save to Library</Button>
                 <Button variant="secondary" className="flex-1 text-xs h-9 gap-2">
                   <RefreshCw className="w-3 h-3" /> Variations
                 </Button>

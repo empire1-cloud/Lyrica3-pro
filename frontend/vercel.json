@@ -1,17 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "installCommand": "cd frontend && npm install --legacy-peer-deps",
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist",
+  "installCommand": "npm ci --legacy-peer-deps",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "framework": null,
   "cleanUrls": true,
-  "env": {
-    "GENERATE_SOURCEMAP": "false",
-    "INLINE_RUNTIME_CHUNK": "false",
-    "DISABLE_ESLINT_PLUGIN": "true",
-    "TSC_COMPILE_ON_ERROR": "true"
-  },
   "headers": [
     {
       "source": "/service-worker.js",

@@ -30,7 +30,7 @@ export function Library() {
           <h1 className="text-3xl md:text-4xl font-['Sedgwick_Ave_Display'] mb-2 text-fuchsia-400">
             Soulfire Vault
           </h1>
-          <p className="text-zinc-400 font-medium text-sm">Browse creator assets, provenance, and ready-to-distribute sessions.</p>
+          <p className="text-zinc-400 font-medium text-sm">Discover and load community-driven emotional presets.</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -38,7 +38,7 @@ export function Library() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
             <input 
               type="text" 
-              placeholder="Search assets..." 
+              placeholder="Search presets..." 
               className="w-full h-10 pl-10 pr-4 rounded-full bg-zinc-900 border border-zinc-800 text-sm focus:outline-none focus:border-fuchsia-500 focus:ring-1 focus:ring-fuchsia-500 transition-all placeholder:text-zinc-600"
             />
           </div>
@@ -116,7 +116,7 @@ export function Library() {
                     <Heart className="w-3 h-3" /> {preset.likes}
                   </div>
                   <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 hover:text-white">
-                    Open <Download className="w-3 h-3" />
+                    Load <Download className="w-3 h-3" />
                   </Button>
                 </div>
               </Card>
