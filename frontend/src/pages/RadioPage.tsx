@@ -41,7 +41,20 @@ interface Track {
   acousticPrimitives?: any;
   lyricsPayload?: any[];
   vocalPipelines?: { id: string; name: string; description: string; active: boolean; intensity?: number }[];
+  // Ground truth for what actually generated this track — must be checked
+  // before displaying any engine name; never assume "primary" by default.
+  fulfillment?: "primary" | "fallback";
 }
+
+/** Renders nothing for a genuine primary-engine track; a visible badge otherwise. */
+const FulfillmentBadge = ({ fulfillment }: { fulfillment?: Track["fulfillment"] }) => {
+  if (!fulfillment || fulfillment === "primary") return null;
+  return (
+    <span className="ml-2 inline-block text-[10px] uppercase tracking-wide border rounded px-1.5 py-0.5 text-red-400 border-red-400/40 align-middle">
+      Fallback Mix — Not AI-Generated
+    </span>
+  );
+};
 
 const downloadIndividualPDFCard = (track: Track) => {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: [120, 180] });
@@ -766,8 +779,9 @@ export function RadioPage() {
       const newTrack: Track = {
         id: Date.now().toString(),
         title: vibe.length > 20 ? vibe.substring(0, 20) + "..." : vibe,
-        artist: "Soulfire Engine",
+        artist: isFallback ? "Lyrica Studio Mix" : "Soulfire Engine",
         vibe, params, audioUrl: url, lyrics: lyrics || params.lyrics,
+        fulfillment: isFallback ? "fallback" : "primary",
       };
 
       setCurrentTrack(newTrack);
@@ -1033,7 +1047,10 @@ export function RadioPage() {
                           </div>
                         </div>
                         <div className="space-y-4">
-                          <h2 className="text-5xl font-black tracking-tighter leading-none">{currentTrack?.title}</h2>
+                          <h2 className="text-5xl font-black tracking-tighter leading-none">
+                            {currentTrack?.title}
+                            <FulfillmentBadge fulfillment={currentTrack?.fulfillment} />
+                          </h2>
                           <div className="flex items-center gap-4">
                             <p className="text-white/40 text-lg font-light italic">{currentTrack?.vibe}</p>
                             <button onClick={() => { setIsAuraActive(!isAuraActive); if (!isAuraActive) handleGenerate(`Deepen the aura of ${currentTrack?.title}: ${currentTrack?.vibe}`, true); }}
