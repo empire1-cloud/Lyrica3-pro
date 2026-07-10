@@ -41,7 +41,7 @@ export function TrackProof() {
           <ProofCard label="DNA Verification" status={proof.dna_verified}>
             {proof.dna_tag && <p className="text-xs text-zinc-500 font-mono mt-1">{proof.dna_tag.slice(0, 32)}</p>}
           </ProofCard>
-          <ProofCard label="Blockchain Ledger" status={proof.ledger_valid}>
+          <ProofCard label="Mint Ledger Record" status={proof.ledger_valid}>
             {proof.ledger_tx && <p className="text-xs text-zinc-500 font-mono mt-1">{proof.ledger_tx.slice(0, 32)}</p>}
           </ProofCard>
           <ProofCard label="Soulprint" status={proof.soulprint_verified}>

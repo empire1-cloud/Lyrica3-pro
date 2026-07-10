@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { createTrack, generateLyrics, getAuthToken } from "../lib/api";
+import { createTrack, generateLyrics, getAuthToken, trackProof } from "../lib/api";
 import { Wand2, Shield, Music, FileText, AlertTriangle, Sparkles } from "lucide-react";
 import { absoluteAudioUrl, buildProof, loadSoulfireDefaults, makeLocalPreviewAudio, saveLocalTrack, type CreatorTrack } from "../lib/creatorLoop";
 
@@ -61,7 +61,16 @@ export function MakeMusic() {
     try {
       if (!getAuthToken()) throw new Error("Backend requires sign-in. Saved a local playable proof preview instead.");
       const res = await createTrack(lyrics || prompt, genre, mood, trackTitle);
-      const proof = buildProof({ title: trackTitle, lyrics: lyrics || prompt, genre, mood, culture });
+      // Real backend proof — same VICS cryptographic seal + ledger mint record
+      // the backend actually produced, re-verified server-side. No client-side
+      // hash fabrication on this path.
+      let proof: Record<string, any> = {};
+      try {
+        proof = await trackProof(res.id);
+      } catch {
+        // Proof lookup failing doesn't invalidate the track itself — the
+        // create response still carries the real dna_tag/vics_signature.
+      }
       persistTrack({
         ...res,
         ...proof,
@@ -136,8 +145,16 @@ export function MakeMusic() {
         <div className="space-y-6 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6">
           <div><h2 className="text-2xl font-semibold text-white">{result.title}</h2><p className="text-sm text-zinc-400">{result.genre} · {result.mood} · {result.culture} · {result.source === 'local-fallback' ? 'local fallback proof preview' : 'backend generated'}</p></div>
           <audio controls className="w-full" src={absoluteAudioUrl(result.audio_url || result.audioUrl)}>Your browser does not support the audio element.</audio>
-          <div className="grid gap-3 md:grid-cols-3"><StatusBadge label="DNA" value={result.dna_tag} ok /><StatusBadge label="Soulprint" value={result.soulprint_id} ok /><StatusBadge label="VICS" value={result.vics_signature} ok /></div>
-          <div className="flex flex-wrap gap-3"><button onClick={() => navigate('/my-tracks')} className="rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-medium hover:bg-zinc-700">Open My Tracks</button><button onClick={() => { setResult(null); setTitle(''); setLyrics(''); }} className="rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-medium hover:bg-zinc-700">Make Another</button></div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <StatusBadge label="DNA" value={result.dna_tag} ok={!!result.dna_tag} />
+            <StatusBadge label="Soulprint" value={result.soulprint_verified ? 'Verified' : 'Unverified'} ok={!!result.soulprint_verified} />
+            <StatusBadge label="VICS Signature" value={result.vics_signature} ok={!!result.vics_signature} />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button onClick={() => navigate('/my-tracks')} className="rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-medium hover:bg-zinc-700">Open My Tracks</button>
+            {result.source === 'backend' && <button onClick={() => navigate(`/music/${result.id}/proof`)} className="rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-medium hover:bg-zinc-700">View Proof</button>}
+            <button onClick={() => { setResult(null); setTitle(''); setLyrics(''); }} className="rounded-xl bg-zinc-800 px-4 py-2.5 text-sm font-medium hover:bg-zinc-700">Make Another</button>
+          </div>
         </div>
       )}
     </div>

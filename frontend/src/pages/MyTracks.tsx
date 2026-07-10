@@ -53,6 +53,8 @@ export function MyTracks() {
 }
 
 function TrackCard({ track }: { track: CreatorTrack }) {
+  const navigate = useNavigate();
+  const isBackendTrack = track.id?.startsWith('track_');
   return (
     <article className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-5">
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -65,10 +67,15 @@ function TrackCard({ track }: { track: CreatorTrack }) {
       </div>
       <audio controls className="mb-4 w-full" src={absoluteAudioUrl(track.audio_url || track.audioUrl || (track.id?.startsWith('track_') ? `/api/music/${track.id}/audio` : undefined))}>Your browser does not support the audio element.</audio>
       <div className="grid gap-2 md:grid-cols-3">
-        <MiniBadge label="DNA" value={track.dna_tag} ok={track.soulprint_verified || track.protection?.dna_verified} />
-        <MiniBadge label="Soulprint" value={track.soulprint_id || (track.protection?.soulprint_confidence ? `${Math.round(track.protection.soulprint_confidence * 100)}%` : undefined)} ok={track.soulprint_verified || track.protection?.soulprint_verified} />
-        <MiniBadge label="VICS" value={track.vics_signature || track.royalty_risk?.verdict} ok={track.royalty_trust !== false} />
+        <MiniBadge label="DNA" value={track.dna_tag} ok={!!track.dna_tag} />
+        <MiniBadge label="Soulprint" value={track.soulprint_verified ? 'Verified' : (isBackendTrack ? 'Unverified — open proof' : undefined)} ok={!!track.soulprint_verified} />
+        <MiniBadge label="VICS" value={track.vics_signature} ok={!!track.vics_signature} />
       </div>
+      {isBackendTrack && (
+        <button onClick={() => navigate(`/music/${track.id}/proof`)} className="mt-3 flex items-center gap-2 text-xs text-fuchsia-300 hover:underline">
+          <Shield className="h-3 w-3" /> View proof
+        </button>
+      )}
     </article>
   );
 }
