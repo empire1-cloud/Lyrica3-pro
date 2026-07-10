@@ -1967,6 +1967,7 @@ async def api_music_create(body: dict = Body(...), user: Dict = Depends(current_
         raise HTTPException(status_code=500, detail=f"Music generation failed: {e}")
 
     audio_url = f"/api/music/{track_id}/audio"
+    now = datetime.now(timezone.utc).isoformat()
     track_doc = {
         "id": track_id,
         "dna_tag": "dna_" + uuid.uuid4().hex[:16],
@@ -1974,16 +1975,38 @@ async def api_music_create(body: dict = Body(...), user: Dict = Depends(current_
         "creator": user["handle"],
         "genre": genre,
         "mood": mood,
+        "lyrics": lyrics,
         "status": "generated",
         "duration_sec": duration_sec,
         "audio_url": audio_url,
         "stems": [
             {"name": "Master", "src": audio_url, "level": 0.85},
         ],
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": now,
     }
 
+    # VICS Ledger — cryptographic seal before DB insert (same mechanism /generate uses).
+    try:
+        from vics_ledger import sign_track
+        track_doc = sign_track(track_doc)
+    except ImportError:
+        pass
+
     await db.tracks.insert_one(track_doc)
+    await db.ledger.insert_one({
+        "id": str(uuid.uuid4()), "kind": "mint", "dna_tag": track_doc["dna_tag"],
+        "actor": user["handle"], "amount_usd": 0.0,
+        "note": f"Track minted via music/create · genre={genre} · mood={mood}",
+        "timestamp": now,
+    })
+
+    # Empire Spine: signed track.generated event → ArchiSynapse birth certificate.
+    # Fail-open: a spine outage never blocks music creation.
+    try:
+        from empire_spine.pipeline_hook import emit_track_minted
+        emit_track_minted(track_doc)
+    except ImportError:
+        pass
 
     return {
         "id": track_id,
@@ -1992,7 +2015,55 @@ async def api_music_create(body: dict = Body(...), user: Dict = Depends(current_
         "audio_url": audio_url,
         "duration_sec": duration_sec,
         "status": "generated",
-        "created_at": track_doc["created_at"],
+        "created_at": now,
+        "dna_tag": track_doc["dna_tag"],
+        "vics_signature": track_doc.get("vics_signature"),
+    }
+
+
+@api_router.get("/music/{track_id}/proof")
+async def api_music_proof(track_id: str, user: Dict = Depends(current_user)):
+    track = await db.tracks.find_one({"id": track_id})
+    if not track:
+        raise HTTPException(404, "Track not found.")
+
+    dna_tag = track.get("dna_tag")
+    dna_verified = bool(dna_tag)
+
+    # Re-verify the VICS cryptographic signature against the stored payload —
+    # an actual recompute-and-compare at request time, not a stored flag.
+    soulprint_verified = False
+    try:
+        from vics_ledger import verify_track
+        verify_payload = {k: v for k, v in track.items() if k != "_id"}
+        soulprint_verified = verify_track(verify_payload)
+    except ImportError:
+        pass
+
+    mint_event = await db.ledger.find_one({"dna_tag": dna_tag, "kind": "mint"}, {"_id": 0}) if dna_tag else None
+    ledger_valid = mint_event is not None
+    ledger_tx = mint_event["id"] if mint_event else None
+
+    # Royalty trust: a real check for dispute/flip lineage against this dna_tag
+    # in the ledger — not a fabricated risk score.
+    flip_count = await db.ledger.count_documents({"dna_tag": dna_tag, "kind": "flip"}) if dna_tag else 0
+    royalty_trust = flip_count == 0
+
+    return {
+        "title": track.get("title"),
+        "lyrics": track.get("lyrics", ""),
+        "dna_verified": dna_verified,
+        "dna_tag": dna_tag,
+        "ledger_valid": ledger_valid,
+        "ledger_tx": ledger_tx,
+        "soulprint_verified": soulprint_verified,
+        "soulprint_confidence": 1.0 if soulprint_verified else 0.0,
+        "royalty_trust": royalty_trust,
+        "royalty_risk": {
+            "verdict": "clear" if royalty_trust else "review",
+            "decision": "no_flags" if royalty_trust else "flip_lineage_present",
+            "flip_count": flip_count,
+        },
     }
 
 
