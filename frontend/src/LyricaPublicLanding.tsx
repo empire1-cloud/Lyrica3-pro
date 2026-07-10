@@ -1440,7 +1440,7 @@ export default function LyricaPublicLanding({ onEnterStudio, onEnterVibe }: Land
         <div className="container">
           <div className="section-label">Digital Birth Certificates</div>
           <h2 className="section-title">DNA Tagging</h2>
-          <p className="section-sub">Every track gets a cryptographic watermark — SHA-256 verified, blockchain-anchored. Your proof of creation. Forever.</p>
+          <p className="section-sub">Every track gets a cryptographic watermark — HMAC-SHA256 signed, ledger-verified. Your proof of creation. Forever.</p>
           <div className="dna-layout">
             <div className="dna-card">
               <div className="tag">How It Works</div>

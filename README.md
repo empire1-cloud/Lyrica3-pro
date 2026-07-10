@@ -75,13 +75,13 @@ Dataset: Chicano Soul, R&B, Souldies — deep emotional metadata. Cultural authe
 ## Economic Infrastructure
 
 ### DNA Tagging
-Blockchain-verified cryptographic watermark embedded in every audio file. Immutable provenance tracking — no exploitation, no royalty theft.
+Cryptographically signed, server-verified provenance. Every track gets an HMAC-SHA256 signature (`vics_ledger.py`) at generation plus a mint record in the ledger; `GET /api/music/{id}/proof` recomputes and re-checks that signature on every request. Tamper-evident: altering a track invalidates its signature on the next verification — no exploitation, no royalty theft.
 
 ### Remix Economics
 Every remix via **Flip It** earns the original producer a micro-royalty automatically. $0.025 per remix payout.
 
-### BigQuery Tracking
-Dedicated MVP infrastructure for real-time micro-royalty tracking and DNA tag performance monitoring.
+### Ledger Tracking
+Royalty and DNA-mint events are recorded in the application ledger (MongoDB) today, checked live by the proof-verification endpoint. Dedicated BigQuery infrastructure for real-time analytics and DNA tag performance monitoring is planned / roadmap, not yet built.
 
 ---
 
@@ -111,10 +111,10 @@ Sonance Pro is the dominant revenue driver. Discord Premium is the highest margi
 
 | Component | Technology |
 |---|---|
-| Generative Engine | Vertex AI (Google Cloud native) |
+| Generative Engine | Zero-cost local procedural engine (`music_engine/`) by default; Vertex AI (Lyria/Soulfire) as an optional paid path when configured — cost discipline by design, not a limitation |
 | Multi-agent orchestration | Vertex Agent |
-| DNA Tagging | Blockchain-verified watermark |
-| Royalty tracking | BigQuery |
+| DNA Tagging | Cryptographically signed, server-verified provenance (HMAC-SHA256) |
+| Royalty tracking | Application ledger (MongoDB) today; BigQuery analytics planned / roadmap |
 | Frontend shell | React (App.tsx — sonance/universal/orchestrator modes) |
 | Backend | FastAPI, Cloud Run |
 | Voice synthesis | PFA + MMA sub-agents |
