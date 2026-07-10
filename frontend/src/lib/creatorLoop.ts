@@ -82,8 +82,12 @@ export function saveLocalTrack(track: CreatorTrack) {
 export function absoluteAudioUrl(url?: string) {
   if (!url) return undefined;
   if (url.startsWith('data:') || url.startsWith('blob:') || /^https?:\/\//.test(url)) return url;
-  const backend = import.meta.env.VITE_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL || '';
-  return backend ? `${backend.replace(/\/$/, '')}${url}` : url;
+  const rawBackend = import.meta.env.VITE_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL || '';
+  // `url` (audio_url from the API) already starts with /api/... — strip a
+  // trailing /api from the backend origin so we don't end up with /api/api/...
+  // regardless of whether VITE_BACKEND_URL was configured with or without it.
+  const backend = rawBackend.replace(/\/$/, '').replace(/\/api$/, '');
+  return backend ? `${backend}${url}` : url;
 }
 
 function hash(input: string) {
