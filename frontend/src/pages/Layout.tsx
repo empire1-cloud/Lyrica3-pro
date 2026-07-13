@@ -1,13 +1,18 @@
 import React from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
-import { Home, SquarePlay, Library, Settings, Flame, Cpu, Waves, Music, Disc, Shield, LogOut } from 'lucide-react';
+import { Home, Sliders, SquarePlay, Library, Settings, Flame, Cpu, Waves, Music, Shield, LogOut } from 'lucide-react';
 import { cn } from '../components/ui/Button';
 import { clearAuthToken, getAuthToken } from '../lib/api';
 
 const navItems = [
-  { path: '/', label: 'Home', icon: Home },
-  { path: '/radio', label: 'SL Universal', icon: Waves },
-  { path: '/music/make', label: 'Make Music', icon: Music },
+  { path: '/dashboard', label: 'Home', icon: Home },
+  { path: '/studio', label: 'Main Studio', icon: Waves },
+  { path: '/engine', label: 'Soulfire Engine', icon: Flame },
+  { path: '/timeline', label: 'Timeline', icon: SquarePlay },
+  { path: '/library', label: 'Library', icon: Library },
+  { path: '/system', label: 'System', icon: Cpu },
+  { path: '/radio', label: 'SL Universal', icon: Music },
+  { path: '/music/make', label: 'Make Music', icon: Sliders },
   { path: '/music/tracks', label: 'My Tracks', icon: Shield },
 ];
 
@@ -29,7 +34,7 @@ export function Layout() {
 
         <nav className="flex-1 flex flex-col gap-2">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || (item.path === '/make-music' && location.pathname === '/music/make') || (item.path === '/my-tracks' && location.pathname === '/music/tracks') || (item.path === '/radio' && location.pathname === '/sl-universal');
             const Icon = item.icon;
             return (
               <NavLink
@@ -37,8 +42,8 @@ export function Layout() {
                 to={item.path}
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium group",
-                  isActive 
-                    ? "bg-zinc-900 text-white" 
+                  isActive
+                    ? "bg-zinc-900 text-white"
                     : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/50"
                 )}
               >
@@ -86,7 +91,7 @@ export function Layout() {
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-800/50 flex items-center justify-around px-4 z-50">
         {[ ...navItems, { path: '/settings', label: 'Settings', icon: Settings } ].map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || (item.path === '/make-music' && location.pathname === '/music/make') || (item.path === '/my-tracks' && location.pathname === '/music/tracks') || (item.path === '/radio' && location.pathname === '/sl-universal');
           const Icon = item.icon;
           return (
             <NavLink

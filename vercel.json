@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "npm install && npm run build",
-  "outputDirectory": "dist",
-  "installCommand": "echo 'Skipping root install'",
+  "installCommand": "cd frontend && npm install --legacy-peer-deps",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/dist",
   "framework": null,
   "cleanUrls": true,
   "env": {
@@ -27,7 +27,7 @@
       ]
     },
     {
-      "source": "/static/(.*)",
+      "source": "/assets/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -67,8 +67,12 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!service-worker\\.js|manifest\\.json|icon-.*|favicon\\.ico|static/.*).*)",
+      "source": "/api/(.*)",
+      "destination": "https://lyrica3-pro.onrender.com/api/$1"
+    },
+    {
+      "source": "/((?!service-worker\\.js|manifest\\.json|icon-.*|favicon\\.ico|assets/.*).*)",
       "destination": "/index.html"
     }
-  ],
+  ]
 }

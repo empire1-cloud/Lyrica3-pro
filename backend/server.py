@@ -409,7 +409,9 @@ async def register(request: Request, req: RegisterReq):
 async def login(request: Request, req: LoginReq):
     handle = req.handle.strip().lower()
     user = await db.users.find_one({"handle": handle})
-    if not user or not bcrypt.checkpw(req.password.encode(), user["password_hash"].encode()):
+    if not user:
+        raise HTTPException(401, "Invalid credentials.")
+    if not bcrypt.checkpw(req.password.encode(), user["password_hash"].encode()):
         raise HTTPException(401, "Invalid credentials.")
     token = _make_token(handle)
     return {"token": token, "handle": handle, "wallet": user["wallet"]}
@@ -653,6 +655,15 @@ Hard rules:
 - Lyrics should evoke place (El Monte, Rosemead, SGV, Valle), people (abuelita, carnal, mija), and texture (tape hiss, requinto, 808, corridos, oldies).
 - Never sanitize pain. The Matriarch demands bruised subtext."""
 
+CORRIDO_DIRECTIVE = """
+If the request is Corrido, Corrido Tumbado, Regional Mexicano, or Bélico, enforce this:
+- Pick a specific protagonist archetype: valiente de la frontera, bandido generoso, emigrante indomable, or compadre traicionado.
+- Write a complete beginning/middle/end narrative in Spanish: saludo and place/date, central conflict or betrayal, then despedida and legacy.
+- Use authentic corrido vocabulary and images: cuerno de chivo, sierra querida, gallo de pelea, acero templado, fuego cruzado, soplón cobarde, tierra bendita, riendas de su destino.
+- Favor octosyllabic copla cadence, direct quoted defiance, and a classic farewell such as "Ya con esta me despido" or "Vuela, vuela, palomita".
+- Instrumentation should imply requinto, bajo sexto, accordion, tololoche/tuba, and a galloping 2/4 or waltzing 3/4 pulse.
+"""
+
 async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dict:
     """Call Claude / Gemini via EMERGENT_LLM_KEY (OpenAI-compatible endpoint).
     Internal prompt-engineering — never exposed to client."""
@@ -674,6 +685,7 @@ async def _generate_lml(req: GenerateRequest, matrix: str, recipe: tuple) -> dic
         f"vocal_fry={fry:.2f}, emotional_cracks={eff_crack:.3f}\n"
         f"Ghost audio artifact: {req.ghost_audio_name or 'none'}{swing_note}\n"
         f"Raw lyric seed:\n{req.lyrics}\n\n"
+        f"{CORRIDO_DIRECTIVE if re.search(r'corrido|tumbado|regional|bélico|belico', (req.genre or '') + ' ' + (req.lyrics or ''), re.I) else ''}\n"
         f"Compose the Soulfire. Return JSON only."
     )
     # --- Primary: Vertex AI Gemini (IAM auth, no API key needed) ---
@@ -1960,6 +1972,98 @@ async def api_my_music_tracks(user: Dict = Depends(current_user)):
     ).sort("created_at", -1).limit(50)
     tracks = await cursor.to_list(50)
     return tracks
+
+
+@api_router.post("/tracks/reactions")
+async def api_track_reaction(payload: Dict = Body(...)):
+    event = {
+        "id": f"reaction_{uuid.uuid4().hex[:12]}",
+        "track_id": payload.get("track_id"),
+        "reaction": payload.get("reaction"),
+        "at_seconds": payload.get("at_seconds", 0),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if not event["track_id"] or not event["reaction"]:
+        raise HTTPException(400, "track_id and reaction are required")
+    await db.track_reactions.insert_one(event)
+    event.pop("_id", None)
+    return {"saved": True, "event": event}
+
+
+@api_router.post("/tracks/notes")
+async def api_track_note(payload: Dict = Body(...)):
+    note = {
+        "id": f"note_{uuid.uuid4().hex[:12]}",
+        "track_id": payload.get("track_id"),
+        "at_seconds": payload.get("at_seconds", 0),
+        "text": payload.get("text", ""),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if not note["track_id"] or not note["text"]:
+        raise HTTPException(400, "track_id and text are required")
+    await db.track_notes.insert_one(note)
+    note.pop("_id", None)
+    return {"saved": True, "note": note}
+
+
+@api_router.post("/livesession/route")
+async def api_livesession_route(payload: Dict = Body(...)):
+    session = {
+        "id": f"session_{uuid.uuid4().hex[:12]}",
+        "prompt": payload.get("prompt", ""),
+        "creator_id": payload.get("creator_id"),
+        "target_vibe": payload.get("target_vibe"),
+        "culture": payload.get("culture", "SGV / Chicano Soul"),
+        "genre": payload.get("genre", "SL Universal"),
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.live_sessions.insert_one(session)
+    session.pop("_id", None)
+    return session
+
+
+@api_router.get("/livesession/status")
+async def api_livesession_status():
+    session = await db.live_sessions.find_one({}, {"_id": 0}, sort=[("created_at", -1)])
+    return session or {"status": "idle"}
+
+
+@api_router.post("/livesession/input")
+async def api_livesession_input(payload: Dict = Body(...)):
+    event = {
+        "id": f"input_{uuid.uuid4().hex[:12]}",
+        **payload,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.live_session_inputs.insert_one(event)
+    event.pop("_id", None)
+    return {"saved": True, "event": event}
+
+
+@api_router.post("/livesession/inspiration")
+async def api_livesession_inspiration(payload: Dict = Body(...)):
+    event = {
+        "id": payload.get("id") or f"inspiration_{uuid.uuid4().hex[:12]}",
+        **payload,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.live_session_inspirations.insert_one(event)
+    event.pop("_id", None)
+    return {"saved": True, "event": event}
+
+
+@api_router.post("/livesession/ownership")
+async def api_livesession_ownership(payload: Dict = Body(...)):
+    event = {
+        "id": f"ownership_{uuid.uuid4().hex[:12]}",
+        **payload,
+        "status": "recorded",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.live_session_ownership_events.insert_one(event)
+    event.pop("_id", None)
+    return {"saved": True, "event": event}
 
 app.include_router(api_router)
 
