@@ -6,8 +6,13 @@ function getClient(): GoogleGenAI | null {
   if (ai) return ai;
   const key = import.meta.env.VITE_GEMINI_API_KEY;
   if (!key) return null;
-  ai = new GoogleGenAI({ apiKey: key });
-  return ai;
+  try {
+    ai = new GoogleGenAI({ apiKey: key });
+    return ai;
+  } catch (e) {
+    console.warn("Gemini client init failed — falling back to offline mode:", e);
+    return null;
+  }
 }
 
 export type DjResponseType =
@@ -62,7 +67,7 @@ export async function generateDjResponse(
 ): Promise<DjResponse> {
   try {
     const client = getClient();
-    if (!client) return FALLBACK_DJ_RESPONSE;
+    if (!client) return FALLBACK_RESPONSE;
 
     const response = await client.models.generateContent({
       model: "gemini-3.5-flash",

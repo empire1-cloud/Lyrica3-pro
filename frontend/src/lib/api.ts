@@ -43,6 +43,39 @@ export async function login(handle: string, password: string) {
   return data;
 }
 
+const GUEST_FLAG_KEY = "lyrica_is_guest";
+let guestSessionPromise: Promise<void> | null = null;
+
+/**
+ * The backend has no anonymous/demo generation path -- /generate requires a
+ * real authenticated user. Rather than let logged-out visitors hit a 401 (or
+ * silently fake a result client-side), transparently mint a real registered
+ * account behind the scenes so generation is genuinely backed by the real
+ * pipeline. Deduped so concurrent calls don't race-register multiple accounts.
+ */
+export async function ensureGuestSession(): Promise<void> {
+  if (authToken) return;
+  if (guestSessionPromise) return guestSessionPromise;
+
+  guestSessionPromise = (async () => {
+    const handle = `guest_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    const password = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    const { data } = await api.post("/auth/register", { handle, password });
+    if (data.token) {
+      setAuthToken(data.token);
+      localStorage.setItem(GUEST_FLAG_KEY, "1");
+    }
+  })().finally(() => {
+    guestSessionPromise = null;
+  });
+
+  return guestSessionPromise;
+}
+
+export function isGuestSession(): boolean {
+  return localStorage.getItem(GUEST_FLAG_KEY) === "1";
+}
+
 export async function createTrack(lyrics: string, genre: string, mood: string, title?: string) {
   const { data } = await api.post("/music/create", { lyrics, genre, mood, title });
   return data;

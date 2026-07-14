@@ -105,3 +105,7 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Local investor demo recording (screenshots/video/audio) — not committed
+/demo/
+frontend/build/

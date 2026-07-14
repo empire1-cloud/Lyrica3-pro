@@ -5,8 +5,13 @@ function getClient(): GoogleGenAI | null {
   if (ai) return ai;
   const key = import.meta.env.VITE_GEMINI_API_KEY;
   if (!key) return null;
-  ai = new GoogleGenAI({ apiKey: key });
-  return ai;
+  try {
+    ai = new GoogleGenAI({ apiKey: key });
+    return ai;
+  } catch (e) {
+    console.warn("Gemini client init failed — falling back to offline mode:", e);
+    return null;
+  }
 }
 
 export type InputType = "lyrics" | "feeling" | "dedication" | "shoutout" | "vibe_request" | "remix_request";

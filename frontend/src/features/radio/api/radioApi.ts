@@ -1,4 +1,4 @@
-import api from '../../../lib/api';
+import api, { ensureGuestSession } from '../../../lib/api';
 import type { VibeParams } from '../../../radio/lib/gemini';
 
 export type FulfillmentTier = "primary" | "secondary" | "fallback";
@@ -29,6 +29,7 @@ export interface TrackData {
 }
 
 export async function generateTrack(vibe: string, context?: any, emotionalMode?: string) {
+  await ensureGuestSession();
   const contextText = context
     ? `\n\nListener context: time=${context.time || "unknown"}, weather=${context.weather || "unknown"}, heartRate=${context.heartRate || "unavailable"}.`
       + (context.auraContext ? ` Aura context: ${context.auraContext}` : "")
