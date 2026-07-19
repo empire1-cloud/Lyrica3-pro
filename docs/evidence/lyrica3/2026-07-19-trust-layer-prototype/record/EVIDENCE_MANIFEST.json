@@ -1,0 +1,18 @@
+{
+  "exhibit_id": "LYRICA3-SOULFIRE-TRUST-2026-07-19-C",
+  "preserved_on": "2026-07-19",
+  "source_filename": "Pasted text(102).txt",
+  "source_sha256": "0bfdaa46b90b7561e1f1d151631bbdc9cef0fc65176fb3db832aef86a44491d3",
+  "evidence_archive_sha256": "52613af0efa752ab793bf908ea36343dd545ae24c2c091633a1273e07271d978",
+  "size_bytes": 17089,
+  "line_count": 391,
+  "preserved_source": "source/LYRICA3_TRUST_LAYER_EVIDENCE_2026-07-19_C.zip.b64",
+  "classification": "supporting chronology and trust-layer prototype evidence",
+  "implementation_status": {
+    "persona_validator": "research prototype",
+    "watermark": "unvalidated experiment",
+    "ledger": "in-memory financial simulation",
+    "api": "integration sketch"
+  },
+  "evidence_boundary": "Not proof of authorship, watermark robustness, durable accounting, payable royalties, or production readiness."
+}
