@@ -1,0 +1,28 @@
+{
+  "schema": "empire1.evidence-manifest.v1",
+  "exhibit_id": "LYRICA3-SOULFIRE-2026-05-23-A",
+  "title": "Early Lyrica 3 Pro / Soulfire System Specification",
+  "classification": "supporting_chronology_record",
+  "source": {
+    "received_filename": "Pasted text(97).txt",
+    "preserved_filename": "EXHIBIT_A_ORIGINAL_LYRICA3_SOULFIRE_2026-05-23.txt",
+    "embedded_timestamp_text": "May 23, 2026, 5:52:14 AM",
+    "embedded_timestamp_status": "self-stated; not independently authenticated by this packet",
+    "container_ingest_mtime_utc": "2026-07-19T21:14:29.441711+00:00",
+    "byte_length": 20045,
+    "line_count": 217,
+    "encoding": "UTF-8 Unicode text",
+    "sha256": "48c52e81aa578b7b00369fefd3aefb05384aca3baca1448d336f12089acce559"
+  },
+  "preservation": {
+    "assembled_utc": "2026-07-19T21:18:39Z",
+    "copy_method": "filesystem byte copy; repository copy stored as ordered Base64 parts",
+    "source_modified": false,
+    "hash_verified_after_copy": true
+  },
+  "scope_notes": [
+    "The source documents product concepts and names present by the embedded timestamp.",
+    "The source does not alone establish patent priority, copyright ownership, trade-secret status, or independent invention.",
+    "Later AI-generated market and revenue assertions are separated from approved product canon."
+  ]
+}
