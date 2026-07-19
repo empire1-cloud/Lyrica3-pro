@@ -9,7 +9,7 @@
 
 This packet preserves a long-form development transcript containing early and evolving Lyrica 3 / Soulfire product, architecture, monetization, local-inference, vocal-persona, dataset, and deployment proposals.
 
-The exact source is preserved byte-for-byte inside the encoded archive parts under `source/`. Analysis files do not alter or replace the source.
+The exact source is preserved byte-for-byte in the downloadable evidence archive. The repository record stores its cryptographic hashes, audit, and corrected scaffold; analysis files do not alter or replace the source.
 
 ## Evidence boundary
 
@@ -17,7 +17,7 @@ This exhibit supports chronology and design-history review. It does **not**, by 
 
 ## Included
 
-- exact original transcript inside a lossless archive;
+- exact original transcript in the downloadable archive;
 - SHA-256 integrity records;
 - implementation/readiness audit;
 - rights, consent, and dataset-governance boundary;
