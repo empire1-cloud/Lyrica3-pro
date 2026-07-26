@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.lyrica3.com/schemas/track_create_v1.json",
+  "title": "Lyrica 3 Full Runtime Track Create v1",
+  "type": "object",
+  "required": ["title"],
+  "properties": {
+    "creator_id": {"type": "string", "maxLength": 128},
+    "title": {"type": "string", "minLength": 1, "maxLength": 160},
+    "prompt": {"type": "string", "maxLength": 4000},
+    "lyrics": {"type": "string", "maxLength": 12000},
+    "genre": {"type": "string", "maxLength": 120, "default": "SGV Chicano Soul"},
+    "mood": {"type": "string", "maxLength": 120, "default": "Late-Night Honesty"},
+    "culture": {"type": "string", "maxLength": 160, "default": "SGV / El Monte"},
+    "duration_seconds": {"type": "integer", "minimum": 8, "maximum": 60, "default": 32},
+    "bpm": {"type": "integer", "minimum": 40, "maximum": 220, "default": 90},
+    "musical_key": {"type": "string", "maxLength": 8, "default": "C"},
+    "voice_consent_id": {"type": ["string", "null"], "maxLength": 200},
+    "parent_dna": {"type": ["string", "null"], "maxLength": 200},
+    "idempotency_key": {"type": ["string", "null"], "maxLength": 200},
+    "contributors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["creator_id", "role", "split"],
+        "properties": {
+          "creator_id": {"type": "string", "minLength": 1, "maxLength": 128},
+          "role": {"type": "string", "minLength": 1, "maxLength": 64},
+          "split": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
