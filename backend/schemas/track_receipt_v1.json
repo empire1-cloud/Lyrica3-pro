@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.lyrica3.com/schemas/track_receipt_v1.json",
+  "title": "Lyrica 3 Track Registration Receipt v1",
+  "type": "object",
+  "required": ["dna_tag", "vics", "soulprint", "archisynapse"],
+  "properties": {
+    "dna_tag": {"type": "string", "pattern": "^trk_"},
+    "vics": {
+      "type": "object",
+      "required": ["status", "voice_use", "consent_required", "key_status"]
+    },
+    "soulprint": {
+      "type": "object",
+      "required": ["status", "algorithm", "audio_sha256", "watermark_status"]
+    },
+    "archisynapse": {
+      "type": "object",
+      "required": ["status", "event_id", "rights_status", "payout_status"]
+    }
+  },
+  "additionalProperties": false
+}
