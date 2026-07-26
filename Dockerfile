@@ -14,8 +14,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ /app/backend/
 
+# Focused Empire-1 integration package. We intentionally do not copy the full
+# optional Duo-Soul application dependency tree into the backend image.
+RUN mkdir -p /app/backend/api
+COPY api/__init__.py \
+     api/vics_bridge.py \
+     api/royalty_outbox.py \
+     api/royalty_dispatch.py \
+     /app/backend/api/
+
 WORKDIR /app/backend
 
 EXPOSE 8080
 
-CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-8080} --workers ${WORKERS:-2} --proxy-headers"]
+CMD ["sh", "-c", "uvicorn production_app:app --host 0.0.0.0 --port ${PORT:-8080} --workers ${WORKERS:-2} --proxy-headers"]

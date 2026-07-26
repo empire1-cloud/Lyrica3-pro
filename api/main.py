@@ -6,6 +6,7 @@ from pathlib import Path
 from .vocal_engine import generate_duo_soul, analyze_and_suggest_dna
 from .models import DuoSoulRequest, DuoSoulResponse, DNAResponse
 from .vics_bridge import create_vics_router
+from .royalty_dispatch import create_safe_royalty_outbox_router
 
 from lyrica3_soulfire.soul_card.models import SoulCard, GenerateResponse, InspectResponse
 from lyrica3_soulfire.two_pass_pipeline import generate_track_from_soul_card
@@ -20,10 +21,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mounted by backend/server.py under /duo-soul. The production Archisynapse
-# verifier URL is therefore:
+# Mounted by backend/server.py under /duo-soul. Production internal routes:
 #   POST /duo-soul/internal/v1/vics/verify
+#   POST /duo-soul/internal/v1/royalties/dispatch/{child_track_reference}
 app.include_router(create_vics_router())
+app.include_router(create_safe_royalty_outbox_router())
 
 
 @app.post("/analyze-voice", response_model=DNAResponse)
