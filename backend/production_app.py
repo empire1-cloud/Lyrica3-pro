@@ -19,6 +19,7 @@ from fastapi.routing import APIRoute
 from starlette.routing import Mount
 
 import server
+from api.beat_discovery import create_beat_discovery_router
 from api.royalty_dispatch import (
     create_safe_royalty_outbox_router,
     safe_send_outbox_event,
@@ -36,6 +37,20 @@ ROYALTY_INTEGRATION_ENABLED = (
 
 def _context():
     return server.db, Path(server.ROOT_DIR), Path(server.MUSIC_OUTPUT_DIR)
+
+
+def _discovery_context():
+    return server.db, server.ensure_seed
+
+
+# Beat discovery is read-only against the canonical tracks collection. Feedback
+# is authenticated and persists separately without changing royalty behavior.
+app.include_router(
+    create_beat_discovery_router(
+        context_provider=_discovery_context,
+        user_dependency=server.current_user,
+    )
+)
 
 
 # In a full source checkout server.py may already mount api.main at /duo-soul.
