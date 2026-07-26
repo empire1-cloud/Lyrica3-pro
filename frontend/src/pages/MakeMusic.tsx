@@ -217,7 +217,7 @@ export function MakeMusic() {
       {error && <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
       {loading && runtimeStage && (
         <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-4 text-sm text-cyan-100 flex items-center gap-3">
-          <Loader2 className="h-5 w-5 animate-spin" /> Full Runtime: {runtimeStage.replaceAll("_", " ")}
+          <Loader2 className="h-5 w-5 animate-spin" /> Full Runtime: {runtimeStage.replace(/_/g, " ")}
         </div>
       )}
 
