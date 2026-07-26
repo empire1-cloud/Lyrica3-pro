@@ -18,6 +18,7 @@ COPY backend/ /app/backend/
 # optional Duo-Soul application dependency tree into the backend image.
 RUN mkdir -p /app/backend/api
 COPY api/__init__.py \
+     api/beat_discovery.py \
      api/vics_bridge.py \
      api/royalty_outbox.py \
      api/royalty_dispatch.py \
