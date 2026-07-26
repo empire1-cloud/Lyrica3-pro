@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .vocal_engine import generate_duo_soul, analyze_and_suggest_dna
 from .models import DuoSoulRequest, DuoSoulResponse, DNAResponse
+from .vics_bridge import create_vics_router
 
 from lyrica3_soulfire.soul_card.models import SoulCard, GenerateResponse, InspectResponse
 from lyrica3_soulfire.two_pass_pipeline import generate_track_from_soul_card
@@ -19,6 +20,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mounted by backend/server.py under /duo-soul. The production Archisynapse
+# verifier URL is therefore:
+#   POST /duo-soul/internal/v1/vics/verify
+app.include_router(create_vics_router())
+
+
 @app.post("/analyze-voice", response_model=DNAResponse)
 async def analyze_voice_endpoint(file: UploadFile = File(...)):
     try:
@@ -30,12 +37,14 @@ async def analyze_voice_endpoint(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @app.post("/duo/generate", response_model=DuoSoulResponse)
 async def duo_generate(req: DuoSoulRequest):
     try:
         return generate_duo_soul(req)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
 
 # ─── Lyrica 3 Soulfire Universe ───
 
@@ -50,9 +59,11 @@ async def soulfire_generate(card: SoulCard, dna_tag: str = None):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @app.post("/soulfire/soul-card")
 async def soulfire_validate_card(card: SoulCard):
     return {"valid": True, "card": card.model_dump()}
+
 
 @app.post("/soulfire/clone")
 async def soulfire_clone(source_dna_tag: str, remixer: str, s2_mutation: str = None):
@@ -63,6 +74,7 @@ async def soulfire_clone(source_dna_tag: str, remixer: str, s2_mutation: str = N
         "s2_mutation": s2_mutation or "none",
         "new_dna_tag": f"trk_flip_{uuid.uuid4().hex[:8]}",
     }
+
 
 @app.post("/soulfire/inspect")
 async def soulfire_inspect(audio_path: str, dna_tag: str = None):
