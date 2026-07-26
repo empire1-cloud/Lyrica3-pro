@@ -26,6 +26,19 @@ export type CreatorTrack = {
   ledger_valid?: boolean;
   royalty_trust?: boolean;
   soulprint_verified?: boolean;
+  runtime_job_id?: string;
+  runtime_status?: string;
+  proof_status?: "UNREGISTERED_PREVIEW" | string;
+  proof?: {
+    dna_tag?: string;
+    vics?: { status?: string; signature?: string | null; reason?: string | null };
+    soulprint?: { status?: string; watermark_status?: string; audio_sha256?: string };
+    archisynapse?: { status?: string; receipt_id?: string | null; reason?: string | null };
+  };
+  artifacts?: {
+    master?: { url?: string; sha256?: string; duration_seconds?: number };
+    stems?: Array<{ name?: string; url?: string; sha256?: string }>;
+  };
   protection?: {
     dna_verified?: boolean;
     soulprint_verified?: boolean;
@@ -82,8 +95,10 @@ export function saveLocalTrack(track: CreatorTrack) {
 export function absoluteAudioUrl(url?: string) {
   if (!url) return undefined;
   if (url.startsWith('data:') || url.startsWith('blob:') || /^https?:\/\//.test(url)) return url;
-  const backend = import.meta.env.VITE_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL || '';
-  return backend ? `${backend.replace(/\/$/, '')}${url}` : url;
+  const configured = import.meta.env.VITE_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL || '';
+  if (!configured) return url;
+  const backendRoot = configured.replace(/\/api\/?$/, '').replace(/\/$/, '');
+  return url.startsWith('/api/') ? `${backendRoot}${url}` : `${configured.replace(/\/$/, '')}${url}`;
 }
 
 function hash(input: string) {
@@ -92,13 +107,15 @@ function hash(input: string) {
   return Math.abs(value).toString(16).padStart(8, '0');
 }
 
+/**
+ * Legacy local preview reference. This is deliberately not DNA, Soulprint, or
+ * VICS proof and must never be rendered as verified protection.
+ */
 export function buildProof(input: { title: string; lyrics: string; genre: string; mood: string; culture: string }) {
   const base = `${input.title}|${input.lyrics}|${input.genre}|${input.mood}|${input.culture}`;
-  const digest = hash(base + Date.now());
   return {
-    dna_tag: `DNA-L3P-${digest.slice(0, 12).toUpperCase()}`,
-    soulprint_id: `SOUL-${hash(base + 'soul').slice(0, 10).toUpperCase()}`,
-    vics_signature: `VICS-${input.culture.toUpperCase().replace(/\s+/g, '-')}-${hash(base + 'vics').slice(0, 8).toUpperCase()}`,
+    preview_reference: `PREVIEW-${hash(base + Date.now()).slice(0, 12).toUpperCase()}`,
+    proof_status: 'UNREGISTERED_PREVIEW' as const,
   };
 }
 
