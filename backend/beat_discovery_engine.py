@@ -202,7 +202,7 @@ def _public(track: Mapping[str, Any]) -> dict[str, Any]:
         "created_at": track.get("created_at"),
         "ownership": {
             "dna_tagged": bool(track.get("dna_tag")),
-            "vics_verified": _vics(track),
+            "vics_proof_attached": _vics(track),
             "soulprint_present": bool(track.get("soulprint_hash") or track.get("soulprint")),
             "royalty_chain_present": bool(track.get("royalty_chain")),
         },
