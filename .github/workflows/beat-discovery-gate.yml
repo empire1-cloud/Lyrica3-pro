@@ -1,0 +1,70 @@
+name: Beat Discovery Gate
+
+on:
+  push:
+    branches:
+      - codex/beat-discovery-engine
+  pull_request:
+    paths:
+      - "backend/beat_discovery_engine.py"
+      - "api/beat_discovery.py"
+      - "backend/production_app.py"
+      - "backend/tests/test_beat_discovery_engine.py"
+      - "BEAT_DISCOVERY_ENGINE.md"
+      - "Dockerfile"
+      - ".github/workflows/beat-discovery-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  discovery-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "fastapi==0.104.1" \
+            "pydantic==2.5.0" \
+            "pytest>=8,<9"
+
+      - name: Compile discovery production path
+        run: |
+          python -m py_compile \
+            backend/beat_discovery_engine.py \
+            api/beat_discovery.py \
+            backend/production_app.py
+
+      - name: Run discovery tests
+        env:
+          PYTHONPATH: .
+        run: pytest -q backend/tests/test_beat_discovery_engine.py
+
+  production-image:
+    needs: discovery-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build production backend image
+        run: docker build --tag lyrica3-beat-discovery:${{ github.sha }} --file Dockerfile .
+
+      - name: Verify production entrypoint
+        run: |
+          docker image inspect lyrica3-beat-discovery:${{ github.sha }} \
+            --format '{{json .Config.Cmd}}' \
+            | tee docker-entrypoint.txt
+          grep -q 'production_app:app' docker-entrypoint.txt
