@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://api.lyrica3.com/schemas/track_result_v1.json",
+  "title": "Lyrica 3 Full Runtime Track Result v1",
+  "type": "object",
+  "required": ["id", "dna_tag", "creator", "title", "status", "audio_url", "stems", "artifacts", "proof"],
+  "properties": {
+    "id": {"type": "string"},
+    "dna_tag": {"type": "string", "pattern": "^trk_"},
+    "creator": {"type": "string"},
+    "title": {"type": "string"},
+    "status": {"const": "COMPLETE"},
+    "audio_url": {"type": "string"},
+    "duration_sec": {"type": "number", "exclusiveMinimum": 0},
+    "stems": {"type": "array", "minItems": 4},
+    "provider_mode": {"const": "empire_local"},
+    "soulfire_blueprint": {"type": "object"},
+    "artifacts": {"type": "object"},
+    "proof": {"type": "object"}
+  },
+  "additionalProperties": true
+}
