@@ -25,12 +25,16 @@ from api.royalty_dispatch import (
 )
 from api.royalty_outbox import ROYALTY_AMOUNT, queue_flip_obligation
 from api.vics_bridge import create_vics_router, issue_track_proof
+from full_runtime_router import build_full_runtime_router
 
 
 logger = logging.getLogger("lyrica3.production")
 app = server.app
 ROYALTY_INTEGRATION_ENABLED = (
     os.getenv("LYRICA_ARCHISYNAPSE_V2_ENABLED", "false").strip().lower() == "true"
+)
+FULL_RUNTIME_V1_ENABLED = (
+    os.getenv("LYRICA_FULL_RUNTIME_V1_ENABLED", "false").strip().lower() == "true"
 )
 
 
@@ -168,3 +172,18 @@ else:
     logger.warning(
         "Archisynapse v2 Flip cutover disabled; original Flip route remains active"
     )
+
+if FULL_RUNTIME_V1_ENABLED:
+    if not getattr(app.state, "lyrica_full_runtime_v1_mounted", False):
+        app.include_router(
+            build_full_runtime_router(
+                db=server.db,
+                current_user=server.current_user,
+                root_dir=Path(server.ROOT_DIR),
+                logger=logger,
+            )
+        )
+        app.state.lyrica_full_runtime_v1_mounted = True
+    logger.info("Lyrica Full Runtime v1 ENABLED")
+else:
+    logger.warning("Lyrica Full Runtime v1 disabled; legacy creation route remains active")
