@@ -93,6 +93,14 @@ def _stable_creator_id(handle: str) -> str:
     return f"cre_{digest[:20]}"
 
 
+def _stable_track_id(source_id: str, dna_tag: str) -> str:
+    """Return the canonical trk_ identity without rewriting the legacy id."""
+    if source_id.startswith("trk_"):
+        return source_id
+    digest = hashlib.sha256(f"{source_id}|{dna_tag}".encode("utf-8")).hexdigest()
+    return f"trk_{digest[:20]}"
+
+
 def _stable_proof_id(track_id: str, dna_tag: str, soulprint_hash: str, creator_id: str) -> str:
     seed = f"{track_id}|{dna_tag}|{soulprint_hash}|{creator_id}".encode("utf-8")
     return f"vics_{hashlib.sha256(seed).hexdigest()[:24]}"
@@ -108,9 +116,9 @@ def _hash_file(path: Path) -> str:
 
 def _candidate_audio_paths(track: dict[str, Any], root_dir: Path, music_output_dir: Path) -> list[Path]:
     candidates: list[Path] = []
-    track_id = str(track.get("id") or "")
-    if track_id:
-        track_dir = music_output_dir / track_id
+    source_id = str(track.get("id") or "")
+    if source_id:
+        track_dir = music_output_dir / source_id
         candidates.extend(sorted(track_dir.glob("*.mp3")))
         candidates.extend(sorted(track_dir.glob("*.wav")))
 
@@ -181,7 +189,13 @@ async def issue_track_proof(
     music_output_dir: Path,
 ) -> dict[str, Any]:
     track = await db.tracks.find_one(
-        {"$or": [{"id": track_id}, {"dna_tag": track_id}]},
+        {
+            "$or": [
+                {"id": track_id},
+                {"canonical_track_id": track_id},
+                {"dna_tag": track_id},
+            ]
+        },
         {"_id": 0},
     )
     if not track:
@@ -193,18 +207,22 @@ async def issue_track_proof(
 
     audio_path = _resolve_audio_path(track, root_dir, music_output_dir)
     soulprint_hash = _hash_file(audio_path)
-    canonical_track_id = str(track.get("id") or track_id)
+    source_record_id = str(track.get("id") or "")
     dna_tag = str(track.get("dna_tag") or "")
     creator_handle = str(track.get("creator") or "")
-    if not canonical_track_id or not dna_tag or not creator_handle:
+    if not source_record_id or not dna_tag or not creator_handle:
         raise HTTPException(status_code=422, detail="Track identity is incomplete.")
 
+    canonical_track_id = str(
+        track.get("canonical_track_id") or _stable_track_id(source_record_id, dna_tag)
+    )
     creator_id = str(track.get("creator_id") or _stable_creator_id(creator_handle))
     proof_id = _stable_proof_id(canonical_track_id, dna_tag, soulprint_hash, creator_id)
     proof: dict[str, Any] = {
         "schema_version": PROOF_SCHEMA_VERSION,
         "proof_id": proof_id,
         "track_id": canonical_track_id,
+        "source_record_id": source_record_id,
         "dna_tag": dna_tag,
         "soulprint_hash": soulprint_hash,
         "creator_id": creator_id,
@@ -216,9 +234,10 @@ async def issue_track_proof(
     proof["signature"] = _sign_proof(proof)
 
     await db.tracks.update_one(
-        {"id": canonical_track_id},
+        {"id": source_record_id},
         {
             "$set": {
+                "canonical_track_id": canonical_track_id,
                 "creator_id": creator_id,
                 "soulprint_hash": soulprint_hash,
                 "vics_proof": proof,
@@ -232,7 +251,13 @@ async def issue_track_proof(
 
 async def verify_track_proof(*, db: Any, request: VicsProofRequest) -> dict[str, Any]:
     track = await db.tracks.find_one(
-        {"$or": [{"id": request.track_id}, {"dna_tag": request.dna_tag}]},
+        {
+            "$or": [
+                {"id": request.track_id},
+                {"canonical_track_id": request.track_id},
+                {"dna_tag": request.dna_tag},
+            ]
+        },
         {"_id": 0},
     )
     if not track:
