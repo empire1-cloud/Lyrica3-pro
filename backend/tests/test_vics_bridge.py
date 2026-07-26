@@ -51,7 +51,7 @@ def configured_keys(monkeypatch):
 @pytest.fixture
 def track_document():
     return {
-        "id": "trk_test_001",
+        "id": "track_test_001",
         "dna_tag": "dna_v2_test_001",
         "creator": "manda.mora",
         "title": "Proof Track",
@@ -59,7 +59,7 @@ def track_document():
 
 
 @pytest.mark.asyncio
-async def test_issue_binds_proof_to_real_audio_bytes(tmp_path, track_document):
+async def test_issue_binds_proof_to_real_audio_bytes_and_adds_canonical_track_id(tmp_path, track_document):
     music_output = tmp_path / "music_output"
     track_dir = music_output / track_document["id"]
     track_dir.mkdir(parents=True)
@@ -73,14 +73,36 @@ async def test_issue_binds_proof_to_real_audio_bytes(tmp_path, track_document):
         music_output_dir=music_output,
     )
 
-    assert proof["track_id"] == track_document["id"]
+    assert proof["track_id"].startswith("trk_")
+    assert proof["track_id"] != track_document["id"]
+    assert proof["source_record_id"] == track_document["id"]
     assert proof["dna_tag"] == track_document["dna_tag"]
     assert proof["soulprint_hash"].startswith("sp_sha256_")
     assert proof["proof_id"].startswith("vics_")
     assert proof["creator_id"].startswith("cre_")
     assert proof["signature"].startswith("vics_hmac_sha256_")
+    assert db.tracks.document["canonical_track_id"] == proof["track_id"]
     assert db.tracks.document["vics_proof"] == proof
     assert db.tracks.update_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_existing_trk_identity_is_preserved(tmp_path, track_document):
+    track_document["id"] = "trk_existing_001"
+    music_output = tmp_path / "music_output"
+    track_dir = music_output / track_document["id"]
+    track_dir.mkdir(parents=True)
+    (track_dir / "master.mp3").write_bytes(b"existing-canonical-audio")
+    db = FakeDB(track_document)
+
+    proof = await issue_track_proof(
+        db=db,
+        track_id=track_document["id"],
+        root_dir=tmp_path,
+        music_output_dir=music_output,
+    )
+
+    assert proof["track_id"] == "trk_existing_001"
 
 
 @pytest.mark.asyncio
