@@ -68,7 +68,8 @@ def test_high_diversity_avoids_creator_monopoly(corpus):
 def test_provenance_is_exposed_without_secret_fields(corpus):
     result = BeatDiscoveryEngine(corpus, now=NOW).discover(DiscoveryQuery(text="sgv", limit=1))
     item = result["results"][0]
-    assert item["ownership"]["vics_verified"] is True
+    assert item["ownership"]["vics_proof_attached"] is True
+    assert "vics_verified" not in item["ownership"]
     assert "lml" not in item
     assert "cultural_subtext" not in item
 
