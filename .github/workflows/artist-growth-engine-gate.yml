@@ -9,8 +9,18 @@ on:
       - "backend/artist_growth_core.py"
       - "backend/artist_growth_engine.py"
       - "backend/artist_growth_api.py"
+      - "backend/paid_growth_core.py"
+      - "backend/paid_growth_connectors.py"
+      - "backend/paid_growth_engine.py"
+      - "backend/artist_zero_core.py"
+      - "backend/artist_zero_engine.py"
+      - "backend/digital_birth_certificate_core.py"
+      - "backend/digital_birth_certificate_engine.py"
       - "backend/tests/test_artist_growth_core.py"
+      - "backend/tests/test_paid_growth_core.py"
+      - "backend/tests/test_digital_birth_certificate_core.py"
       - "docs/ARTIST_GROWTH_ROYALTY_ENGINE.md"
+      - "docs/LUZARIA_DIGITAL_BIRTH_CERTIFICATE.md"
       - ".github/workflows/artist-growth-engine-gate.yml"
 
 permissions:
@@ -40,10 +50,20 @@ jobs:
           python -m py_compile \
             backend/artist_growth_core.py \
             backend/artist_growth_engine.py \
+            backend/paid_growth_core.py \
+            backend/paid_growth_connectors.py \
+            backend/paid_growth_engine.py \
+            backend/artist_zero_core.py \
+            backend/artist_zero_engine.py \
+            backend/digital_birth_certificate_core.py \
+            backend/digital_birth_certificate_engine.py \
             backend/artist_growth_api.py
 
       - name: Run deterministic business-rule tests
         env:
           PYTHONPATH: backend
         run: |
-          pytest -q backend/tests/test_artist_growth_core.py
+          pytest -q \
+            backend/tests/test_artist_growth_core.py \
+            backend/tests/test_paid_growth_core.py \
+            backend/tests/test_digital_birth_certificate_core.py
