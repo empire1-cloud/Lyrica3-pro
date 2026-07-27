@@ -24,6 +24,10 @@ from luzaria_model_gateway import (
     load_model_gateway_config,
     model_gateway_status,
 )
+from luzaria_single_identity_policy import (
+    identity_policy_status,
+    validate_single_identity_policy,
+)
 from server import current_user, db
 
 
@@ -67,6 +71,9 @@ class IdentityKernelUpsert(BaseModel):
     blueprint_id: str = Field(min_length=3, max_length=200)
     public_name: Literal["LUZARIA"] = "LUZARIA"
     identity_mode: Literal["original_digital_artist"] = "original_digital_artist"
+    identity_continuity_mode: Literal["single_identity"] = "single_identity"
+    expression_policy: Literal["one_identity_many_expressions"] = "one_identity_many_expressions"
+    multi_persona_enabled: Literal[False] = False
     core_values: List[str] = Field(min_length=3, max_length=12)
     creative_mission: str = Field(min_length=20, max_length=1500)
     emotional_principle: str = Field(min_length=10, max_length=800)
@@ -109,6 +116,10 @@ async def _active_kernel(owner: str) -> dict[str, Any]:
     )
     if not kernel:
         raise HTTPException(409, "LUZARIA identity kernel has not been activated.")
+    try:
+        validate_single_identity_policy(kernel)
+    except ValueError as exc:
+        raise HTTPException(409, f"LUZARIA identity policy violation: {exc}") from exc
     return kernel
 
 
@@ -126,6 +137,7 @@ async def cognition_status(user: Dict = Depends(current_user)):
     memory_count = await db.luzaria_memories.count_documents(
         {"owner": user["handle"], "status": "active"}
     )
+    policy = identity_policy_status()
     return {
         "artist": "LUZARIA",
         "architecture": "identity_kernel_plus_consent_rag_plus_provider_independent_llm",
@@ -136,7 +148,13 @@ async def cognition_status(user: Dict = Depends(current_user)):
         "model_gateway": model_gateway_status(),
         "autonomous_actions_enabled": False,
         "automatic_personal_memory_enabled": False,
+        "identity_policy": policy,
     }
+
+
+@router.get("/identity-policy")
+async def get_identity_policy(user: Dict = Depends(current_user)):
+    return identity_policy_status()
 
 
 @router.put("/identity-kernel")
@@ -152,6 +170,7 @@ async def upsert_identity_kernel(body: IdentityKernelUpsert, user: Dict = Depend
     payload = jsonable_encoder(body)
     try:
         validate_identity_kernel(payload)
+        validate_single_identity_policy(payload)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
@@ -284,6 +303,8 @@ async def generate_grounded_response(body: RespondRequest, user: Dict = Depends(
         "model": generation["model"],
         "mode": generation["mode"],
         "autonomous_action": False,
+        "identity_continuity_mode": "single_identity",
+        "multi_persona_enabled": False,
     }
     await db.luzaria_response_receipts.insert_one(receipt)
     receipt.pop("_id", None)
