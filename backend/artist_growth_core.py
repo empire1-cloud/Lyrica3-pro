@@ -108,8 +108,10 @@ def audit_statement_rows(
     contract-specific rates instead of pretending every DSP has one universal
     rate. A row without an expectation remains visible as ``no_expectation``.
     """
+    # Per-unit royalty rates are often fractions of one cent. Preserve their
+    # full decimal precision here, then round only the extended row total.
     expected_rates = {
-        str(key).strip().upper(): money(value)
+        str(key).strip().upper(): Decimal(str(value or 0))
         for key, value in (expected_rate_usd_by_isrc or {}).items()
     }
     tolerance = Decimal(str(variance_tolerance_pct))
