@@ -7,12 +7,14 @@ This preserves every existing ``server.py`` route and adds:
 - ``/api/growth/*`` for artist operations, CRM, royalties, and analytics
 - ``/api/growth/paid/*`` for approval-gated advertising execution
 - ``/api/artist-zero/*`` for Lyrica's original AI artist and strategy engine
+- ``/api/artist-zero/birth-certificates/*`` for public identity provenance
 """
 
 from server import app
 from artist_growth_engine import router as artist_growth_router
 from paid_growth_engine import router as paid_growth_router
 from artist_zero_engine import router as artist_zero_router
+from digital_birth_certificate_engine import router as birth_certificate_router
 
 
 if not any(
@@ -32,3 +34,9 @@ if not any(
     for route in app.routes
 ):
     app.include_router(artist_zero_router)
+
+if not any(
+    getattr(route, "path", "").startswith("/api/artist-zero/birth-certificates")
+    for route in app.routes
+):
+    app.include_router(birth_certificate_router)
