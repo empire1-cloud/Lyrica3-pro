@@ -16,11 +16,18 @@ on:
       - "backend/artist_zero_engine.py"
       - "backend/digital_birth_certificate_core.py"
       - "backend/digital_birth_certificate_engine.py"
+      - "backend/luzaria_cognition_core.py"
+      - "backend/luzaria_cognition_engine.py"
+      - "backend/luzaria_model_gateway.py"
+      - "backend/luzaria_single_identity_policy.py"
       - "backend/tests/test_artist_growth_core.py"
       - "backend/tests/test_paid_growth_core.py"
       - "backend/tests/test_digital_birth_certificate_core.py"
+      - "backend/tests/test_luzaria_cognition_core.py"
+      - "backend/tests/test_luzaria_single_identity_policy.py"
       - "docs/ARTIST_GROWTH_ROYALTY_ENGINE.md"
       - "docs/LUZARIA_DIGITAL_BIRTH_CERTIFICATE.md"
+      - "docs/LUZARIA_SINGLE_IDENTITY_CANON.md"
       - ".github/workflows/artist-growth-engine-gate.yml"
 
 permissions:
@@ -43,7 +50,7 @@ jobs:
       - name: Install focused dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "pytest>=8,<9"
+          python -m pip install "pytest>=8,<9" "pydantic==2.5.0"
 
       - name: Compile growth modules
         run: |
@@ -57,6 +64,10 @@ jobs:
             backend/artist_zero_engine.py \
             backend/digital_birth_certificate_core.py \
             backend/digital_birth_certificate_engine.py \
+            backend/luzaria_cognition_core.py \
+            backend/luzaria_model_gateway.py \
+            backend/luzaria_single_identity_policy.py \
+            backend/luzaria_cognition_engine.py \
             backend/artist_growth_api.py
 
       - name: Run deterministic business-rule tests
@@ -66,4 +77,6 @@ jobs:
           pytest -q \
             backend/tests/test_artist_growth_core.py \
             backend/tests/test_paid_growth_core.py \
-            backend/tests/test_digital_birth_certificate_core.py
+            backend/tests/test_digital_birth_certificate_core.py \
+            backend/tests/test_luzaria_cognition_core.py \
+            backend/tests/test_luzaria_single_identity_policy.py
