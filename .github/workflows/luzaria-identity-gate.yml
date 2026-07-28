@@ -9,10 +9,12 @@ on:
       - "api/luzaria.py"
       - "api/main.py"
       - "backend/tests/test_luzaria_identity.py"
+      - "backend/tests/test_luzaria_release.py"
       - "canon/luzaria/**"
       - "docs/luzaria/**"
       - "frontend/src/pages/Luzaria.tsx"
       - "frontend/src/pages/luzaria.css"
+      - "frontend/src/pages/luzaria-release.css"
       - "frontend/src/routes.tsx"
       - ".github/workflows/luzaria-identity-gate.yml"
 
@@ -46,11 +48,13 @@ jobs:
         run: |
           python -m py_compile api/luzaria.py api/main.py
 
-      - name: Run Luzaria identity tests
+      - name: Run Luzaria identity and release tests
         env:
           PYTHONPATH: .
         run: |
-          pytest -q backend/tests/test_luzaria_identity.py
+          pytest -q \
+            backend/tests/test_luzaria_identity.py \
+            backend/tests/test_luzaria_release.py
 
   public-profile-build:
     runs-on: ubuntu-latest
@@ -63,11 +67,11 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm install --legacy-peer-deps
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Build public profile
         working-directory: frontend
