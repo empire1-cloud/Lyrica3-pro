@@ -12,6 +12,7 @@ on:
       - "backend/tests/test_luzaria_release.py"
       - "canon/luzaria/**"
       - "docs/luzaria/**"
+      - "frontend/src/main.tsx"
       - "frontend/src/pages/Luzaria.tsx"
       - "frontend/src/pages/luzaria.css"
       - "frontend/src/pages/luzaria-release.css"
