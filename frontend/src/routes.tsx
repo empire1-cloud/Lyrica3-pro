@@ -12,6 +12,7 @@ import { Auth } from "./pages/Auth";
 import { MakeMusic } from "./pages/MakeMusic";
 import { MyTracks } from "./pages/MyTracks";
 import { TrackProof } from "./pages/TrackProof";
+import { Luzaria } from "./pages/Luzaria";
 import LyricaPublicLanding from "./LyricaPublicLanding";
 
 function PublicLandingRoute() {
@@ -27,6 +28,7 @@ function PublicLandingRoute() {
 
 export const router = createBrowserRouter([
   { path: "/", Component: PublicLandingRoute },
+  { path: "/luzaria", Component: Luzaria },
   {
     path: "/",
     Component: Layout,
