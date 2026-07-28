@@ -13,7 +13,9 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
 
-CANON_PATH = Path(__file__).resolve().parents[1] / "canon" / "luzaria" / "identity_v1.json"
+CANON_ROOT = Path(__file__).resolve().parents[1] / "canon" / "luzaria"
+CANON_PATH = CANON_ROOT / "identity_v1.json"
+FIRST_RELEASE_PATH = CANON_ROOT / "releases" / "sleep_on_the_floor_v1.json"
 
 
 def _utc_now() -> datetime:
@@ -24,12 +26,18 @@ def _iso(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat()
 
 
-def load_luzaria_canon() -> dict[str, Any]:
+def _load_json(path: Path, label: str) -> dict[str, Any]:
     try:
-        payload = json.loads(CANON_PATH.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise RuntimeError("Luzaria identity canon is unavailable or invalid.") from exc
+        raise RuntimeError(f"{label} is unavailable or invalid.") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"{label} must be a JSON object.")
+    return payload
 
+
+def load_luzaria_canon() -> dict[str, Any]:
+    payload = _load_json(CANON_PATH, "Luzaria identity canon")
     required = {
         "schema_version",
         "artist_id",
@@ -48,14 +56,50 @@ def load_luzaria_canon() -> dict[str, Any]:
     return payload
 
 
+def load_first_release() -> dict[str, Any]:
+    payload = _load_json(FIRST_RELEASE_PATH, "Luzaria first release canon")
+    required = {
+        "schema_version",
+        "release_id",
+        "artist_id",
+        "artist_name",
+        "title",
+        "release_status",
+        "creative_intent_trace",
+        "epd_vocal_blueprint",
+        "lyrics_payload",
+        "release_gates",
+    }
+    missing = sorted(required.difference(payload))
+    if missing:
+        raise RuntimeError(f"Luzaria first release canon is missing: {', '.join(missing)}")
+
+    canon = load_luzaria_canon()
+    if payload["artist_id"] != canon["artist_id"] or payload["artist_name"] != canon["name"]:
+        raise RuntimeError("Luzaria first release is not bound to the locked artist identity.")
+    voice_alignment = payload.get("epd_vocal_blueprint", {}).get("luzaria_voice_alignment", {})
+    if voice_alignment.get("register") != canon["voice_identity"]["register"]:
+        raise RuntimeError("Luzaria first release voice register drifts from canon.")
+    if voice_alignment.get("identity_drift") is not False:
+        raise RuntimeError("Luzaria first release must explicitly clear identity drift.")
+    return payload
+
+
+def _digest(prefix: str, payload: dict[str, Any]) -> str:
+    body = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return f"{prefix}{hashlib.sha256(body).hexdigest()}"
+
+
 def canonical_identity() -> dict[str, Any]:
     return copy.deepcopy(load_luzaria_canon())
 
 
 def identity_digest(identity: Optional[dict[str, Any]] = None) -> str:
-    canonical = identity or load_luzaria_canon()
-    body = json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return f"lzr_sha256_{hashlib.sha256(body).hexdigest()}"
+    return _digest("lzr_sha256_", identity or load_luzaria_canon())
+
+
+def release_digest(release: Optional[dict[str, Any]] = None) -> str:
+    return _digest("lzr_release_sha256_", release or load_first_release())
 
 
 def digital_birth_certificate(identity: Optional[dict[str, Any]] = None) -> dict[str, Any]:
@@ -144,12 +188,13 @@ def _proof_complete(payload: LuzariaTrackRegistration) -> bool:
 
 async def bootstrap_luzaria_identity(db: Any, now_factory: Callable[[], datetime] = _utc_now) -> dict[str, Any]:
     canon = load_luzaria_canon()
+    now = _iso(now_factory())
     document = {
         **copy.deepcopy(canon),
         "identity_digest": identity_digest(canon),
         "birth_certificate": digital_birth_certificate(canon),
-        "bootstrapped_at": _iso(now_factory()),
-        "updated_at": _iso(now_factory()),
+        "bootstrapped_at": now,
+        "updated_at": now,
     }
     await db.artist_identities.update_one(
         {"artist_id": canon["artist_id"]},
@@ -195,6 +240,38 @@ async def register_catalog_track(
     }
     await db.artist_catalog.insert_one(copy.deepcopy(document))
     return document
+
+
+async def first_release_snapshot(db: Any) -> dict[str, Any]:
+    release = copy.deepcopy(load_first_release())
+    artist_id = release["artist_id"]
+    registered = await db.artist_catalog.find_one(
+        {"artist_id": artist_id, "title": release["title"]},
+        {"_id": 0},
+    )
+    if registered:
+        release.update(
+            {
+                "release_status": "royalty_closed" if registered.get("royalty_closed") else "registered",
+                "final_track_id": registered.get("track_id"),
+                "final_dna_tag": registered.get("dna_tag"),
+                "soulprint_hash": registered.get("soulprint_hash"),
+                "vics_proof_id": registered.get("vics_proof_id"),
+                "archisynapse_receipt_id": registered.get("archisynapse_receipt_id"),
+                "audio_url": registered.get("audio_url"),
+            }
+        )
+        release["release_gates"]["final_audio_master"] = "complete" if registered.get("audio_url") else "pending"
+        release["release_gates"]["final_dna_tag"] = "complete" if registered.get("dna_tag") else "pending"
+        release["release_gates"]["soulprint_hash"] = "complete" if registered.get("soulprint_hash") else "pending"
+        release["release_gates"]["vics_proof"] = "complete" if registered.get("vics_proof_id") else "pending"
+        release["release_gates"]["catalog_registration"] = "complete"
+        release["release_gates"]["archisynapse_receipt"] = (
+            "complete" if registered.get("archisynapse_receipt_id") else "pending"
+        )
+    release["release_digest"] = release_digest(load_first_release())
+    release["release_ready"] = all(value == "complete" for value in release["release_gates"].values())
+    return release
 
 
 def launch_readiness_from_counts(*, total_tracks: int, verified_tracks: int, receipted_tracks: int) -> dict[str, Any]:
@@ -278,6 +355,7 @@ def create_luzaria_router(db_provider: Optional[Callable[[], Any]] = None) -> AP
             "artist": canonical_identity(),
             "identity_digest": identity_digest(),
             "birth_certificate": digital_birth_certificate(),
+            "first_release": await first_release_snapshot(db),
             "launch_readiness": launch_readiness_from_counts(
                 total_tracks=total,
                 verified_tracks=verified,
@@ -288,6 +366,10 @@ def create_luzaria_router(db_provider: Optional[Callable[[], Any]] = None) -> AP
     @router.get("/artist/luzaria/birth-certificate")
     async def get_birth_certificate():
         return digital_birth_certificate()
+
+    @router.get("/artist/luzaria/releases/first")
+    async def get_first_release():
+        return await first_release_snapshot(db_provider())
 
     @router.post("/artist/luzaria/validate-identity")
     async def validate_identity(payload: LuzariaIdentityCheck):
