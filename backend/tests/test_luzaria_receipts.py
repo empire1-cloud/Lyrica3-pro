@@ -6,10 +6,10 @@ from datetime import datetime, timezone
 import pytest
 from fastapi import HTTPException
 
-from api.luzaria_receipts import LuzariaReceiptClosure, attach_archisynapse_receipt
+from api.luzaria_receipts import attach_archisynapse_receipt
 
 
-class FakeCatalog:
+class FakeCollection:
     def __init__(self, documents=None):
         self.documents = [deepcopy(document) for document in (documents or [])]
 
@@ -34,8 +34,9 @@ class FakeCatalog:
 
 
 class FakeDB:
-    def __init__(self, documents=None):
-        self.artist_catalog = FakeCatalog(documents)
+    def __init__(self, catalog=None, outbox=None):
+        self.artist_catalog = FakeCollection(catalog)
+        self.royalty_outbox = FakeCollection(outbox)
 
 
 def _now():
@@ -55,54 +56,65 @@ def _registered_track(**overrides):
     return document
 
 
-def _receipt(**overrides):
-    payload = {
-        "receipt_id": "rcp_luzaria_001",
+def _outbox(**overrides):
+    document = {
         "event_id": "evt_luzaria_001",
-        "transaction_id": "txn_luzaria_001",
-        "ledger_transaction_id": "ldg_luzaria_001",
-        "status": "paid",
-        "gross": "1.2500",
-        "net": "1.2500",
-        "platform_fee": "0.0000",
+        "state": "receipted",
+        "event": {
+            "event_id": "evt_luzaria_001",
+            "track": {"track_id": "trk_luzaria_001"},
+        },
+        "receipt": {
+            "receipt_id": "rcp_luzaria_001",
+            "event_id": "evt_luzaria_001",
+            "status": "paid",
+            "transaction_id": "txn_luzaria_001",
+            "ledger_transaction_id": "ldg_luzaria_001",
+            "amounts": {
+                "gross": "1.2500",
+                "net": "1.2500",
+                "platform_fee": "0.0000",
+            },
+        },
     }
-    payload.update(overrides)
-    return LuzariaReceiptClosure(**payload)
+    document.update(overrides)
+    return document
 
 
 @pytest.mark.asyncio
-async def test_receipt_closure_is_persisted_and_marks_royalty_closed():
-    db = FakeDB([_registered_track()])
+async def test_verified_outbox_receipt_closes_catalog_royalty_gate():
+    db = FakeDB([_registered_track()], [_outbox()])
 
     result = await attach_archisynapse_receipt(
         db,
         track_id="trk_luzaria_001",
-        payload=_receipt(),
+        event_id="evt_luzaria_001",
         now_factory=_now,
     )
 
     assert result["archisynapse_receipt_id"] == "rcp_luzaria_001"
+    assert result["archisynapse_event_id"] == "evt_luzaria_001"
     assert result["royalty_closed"] is True
     assert result["release_status"] == "royalty_closed"
-    assert result["archisynapse_receipt"]["platform_fee"] == "0.0000"
+    assert result["archisynapse_receipt"]["amounts"]["platform_fee"] == "0.0000"
 
 
 @pytest.mark.asyncio
-async def test_same_receipt_retry_is_idempotent():
+async def test_same_verified_receipt_retry_is_idempotent():
     db = FakeDB(
         [
             _registered_track(
                 royalty_closed=True,
                 archisynapse_receipt_id="rcp_luzaria_001",
-                archisynapse_receipt=_receipt().model_dump(),
             )
-        ]
+        ],
+        [_outbox()],
     )
 
     result = await attach_archisynapse_receipt(
         db,
         track_id="trk_luzaria_001",
-        payload=_receipt(),
+        event_id="evt_luzaria_001",
         now_factory=_now,
     )
 
@@ -110,62 +122,103 @@ async def test_same_receipt_retry_is_idempotent():
 
 
 @pytest.mark.asyncio
-async def test_different_receipt_cannot_replace_closed_record():
+async def test_different_verified_receipt_cannot_replace_closed_record():
+    outbox = _outbox(
+        receipt={
+            **_outbox()["receipt"],
+            "receipt_id": "rcp_replacement",
+        }
+    )
     db = FakeDB(
         [
             _registered_track(
                 royalty_closed=True,
                 archisynapse_receipt_id="rcp_original",
             )
-        ]
+        ],
+        [outbox],
     )
 
     with pytest.raises(HTTPException) as exc:
         await attach_archisynapse_receipt(
             db,
             track_id="trk_luzaria_001",
-            payload=_receipt(receipt_id="rcp_replacement"),
+            event_id="evt_luzaria_001",
             now_factory=_now,
         )
     assert exc.value.status_code == 409
 
 
 @pytest.mark.asyncio
-async def test_receipt_rejects_platform_fee_or_unpaid_status():
-    db = FakeDB([_registered_track()])
-
-    for payload in (
-        _receipt(platform_fee="0.0400"),
-        _receipt(status="pending"),
-    ):
-        with pytest.raises(HTTPException) as exc:
-            await attach_archisynapse_receipt(
-                db,
-                track_id="trk_luzaria_001",
-                payload=payload,
-                now_factory=_now,
-            )
-        assert exc.value.status_code == 422
-
-
-@pytest.mark.asyncio
-async def test_receipt_requires_registered_proof_complete_track():
-    missing_db = FakeDB()
+async def test_unreceipted_or_missing_outbox_cannot_close_gate():
+    missing_db = FakeDB([_registered_track()])
     with pytest.raises(HTTPException) as missing:
         await attach_archisynapse_receipt(
             missing_db,
-            track_id="trk_missing",
-            payload=_receipt(),
+            track_id="trk_luzaria_001",
+            event_id="evt_missing",
             now_factory=_now,
         )
     assert missing.value.status_code == 404
 
-    incomplete_db = FakeDB([_registered_track(proof_complete=False)])
+    pending_db = FakeDB([_registered_track()], [_outbox(state="pending", receipt=None)])
+    with pytest.raises(HTTPException) as pending:
+        await attach_archisynapse_receipt(
+            pending_db,
+            track_id="trk_luzaria_001",
+            event_id="evt_luzaria_001",
+            now_factory=_now,
+        )
+    assert pending.value.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_receipt_must_match_track_event_and_creator_pool():
+    wrong_track = _outbox()
+    wrong_track["event"]["track"]["track_id"] = "trk_other"
+
+    wrong_event = _outbox()
+    wrong_event["receipt"]["event_id"] = "evt_other"
+
+    fee_deducted = _outbox()
+    fee_deducted["receipt"]["amounts"]["platform_fee"] = "0.0400"
+
+    for outbox, expected_status in (
+        (wrong_track, 409),
+        (wrong_event, 409),
+        (fee_deducted, 422),
+    ):
+        db = FakeDB([_registered_track()], [outbox])
+        with pytest.raises(HTTPException) as exc:
+            await attach_archisynapse_receipt(
+                db,
+                track_id="trk_luzaria_001",
+                event_id="evt_luzaria_001",
+                now_factory=_now,
+            )
+        assert exc.value.status_code == expected_status
+
+
+@pytest.mark.asyncio
+async def test_catalog_track_must_exist_and_have_complete_proof():
+    outbox = [_outbox()]
+
+    missing_db = FakeDB([], outbox)
+    with pytest.raises(HTTPException) as missing:
+        await attach_archisynapse_receipt(
+            missing_db,
+            track_id="trk_luzaria_001",
+            event_id="evt_luzaria_001",
+            now_factory=_now,
+        )
+    assert missing.value.status_code == 404
+
+    incomplete_db = FakeDB([_registered_track(proof_complete=False)], outbox)
     with pytest.raises(HTTPException) as incomplete:
         await attach_archisynapse_receipt(
             incomplete_db,
             track_id="trk_luzaria_001",
-            payload=_receipt(),
+            event_id="evt_luzaria_001",
             now_factory=_now,
         )
     assert incomplete.value.status_code == 409
