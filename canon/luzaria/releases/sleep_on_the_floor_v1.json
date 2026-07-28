@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "release_id": "LZR-RC-0001",
+  "artist_id": "LZR-00000001",
+  "artist_name": "LUZARIA",
+  "title": "Sleep On The Floor",
+  "release_status": "candidate",
+  "core_genre": "SGV Sub-genre — Chicano Soul / Trap fusion",
+  "s2_mutation": "Pitched-down 70s soul sample fused with late-pocket, off-grid Trap 808s and live, imperfect hi-hats.",
+  "dna_tag_preview": "trk_alpha_4e8a1c_empire1",
+  "final_dna_tag": null,
+  "final_track_id": null,
+  "soulprint_hash": null,
+  "vics_proof_id": null,
+  "archisynapse_receipt_id": null,
+  "creative_intent_trace": {
+    "cultural_justification": "The narrative reflects a street-level matriarchal struggle, a core theme in SGV/Chicano oral history. The use of 'ain't no bitch' is not slang for aggression, but a declaration of profound resilience and refusal to be victimized, a key distinction in Chicana cultural context.",
+    "poetic_divergence": "The rhyme scheme is intentionally fractured in the second verse to mirror the psychological break of witnessing death. Predictable AI couplets were penalized. The focus is on raw, narrative delivery over flawless poetic structure to amplify authenticity."
+  },
+  "epd_vocal_blueprint": {
+    "vulnerability_level": 0.98,
+    "biometric_artifacts": [
+      "<adaptive_inhale>",
+      "<vocal_fry>",
+      "<emotional_crack>",
+      "<chest_resonance>"
+    ],
+    "phonation": "Intimate, close-mic delivery with heavy chest resonance, simulating a voice strained from exhaustion and grief.",
+    "luzaria_voice_alignment": {
+      "register": "Warm smoky alto",
+      "delivery": "Emotionally honest, intimate, protective, and grounded",
+      "language_behavior": "English-first with natural Spanish",
+      "identity_drift": false
+    }
+  },
+  "acoustic_primitives": {
+    "groove": "78 BPM, heavy late-pocket swing on the kick and snare. Hi-hats have slight, unquantized human timing variations.",
+    "texture": "Simulated sound of a small, carpeted room with one window rattling. A subtle, low-frequency hum of a streetlamp outside. Analog tape saturation on the master to add warmth and slight compression."
+  },
+  "lyrics_payload": [
+    {
+      "line": "Another night, the window sings that same broken song...",
+      "artifact_trigger": "<adaptive_inhale>"
+    },
+    {
+      "line": "Glass hummin' a lullaby that's all wrong.",
+      "artifact_trigger": ""
+    },
+    {
+      "line": "Got the babies on the floor... they lookin' at me.",
+      "artifact_trigger": "<vocal_fry>"
+    },
+    {
+      "line": "And in their eyes, I see the woman I'm supposed to be.",
+      "artifact_trigger": ""
+    },
+    {
+      "line": "They need to know their mama ain't no bitch.",
+      "artifact_trigger": "<chest_resonance>"
+    },
+    {
+      "line": "That I can weave a future from this... this ditch.",
+      "artifact_trigger": ""
+    },
+    {
+      "line": "I see my brother's eyes... goin' distant, goin' gray...",
+      "artifact_trigger": "<emotional_crack>"
+    },
+    {
+      "line": "Watched the life just... drift away.",
+      "artifact_trigger": ""
+    },
+    {
+      "line": "I can still feel his last breath on my face.",
+      "artifact_trigger": "<adaptive_inhale>"
+    },
+    {
+      "line": "I refuse to let my kids get lost in this place. I refuse to lose.",
+      "artifact_trigger": ""
+    }
+  ],
+  "canon_review": {
+    "drift_guard": "pass",
+    "mode": "Testimony",
+    "note": "Direct testimony is an intentional departure from Soulfire's default playful masking of sadness. The warm soul bed carries the hug while the vocal carries the bruise.",
+    "cultural_identity": "honored as grammar, not costume"
+  },
+  "cross_platform_proof": {
+    "suno_payload_sung_as_lyrics": true,
+    "evidence_status": "documented",
+    "meaning": "The external system treated instructions, metadata, structure, and lyrics as one undifferentiated block. Lyrica preserves their separate roles."
+  },
+  "release_gates": {
+    "identity_alignment": "complete",
+    "lyrics_locked": "complete",
+    "creative_intent_locked": "complete",
+    "drift_guard_review": "complete",
+    "final_audio_master": "pending",
+    "final_dna_tag": "pending",
+    "soulprint_hash": "pending",
+    "vics_proof": "pending",
+    "catalog_registration": "pending",
+    "archisynapse_receipt": "pending"
+  }
+}
