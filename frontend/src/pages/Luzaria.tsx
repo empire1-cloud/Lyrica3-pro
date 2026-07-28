@@ -46,6 +46,36 @@ type LuzariaResponse = {
     created_by: string;
     version: string;
   };
+  first_release: {
+    release_id: string;
+    title: string;
+    release_status: string;
+    core_genre: string;
+    s2_mutation: string;
+    dna_tag_preview: string;
+    final_dna_tag?: string | null;
+    soulprint_hash?: string | null;
+    vics_proof_id?: string | null;
+    archisynapse_receipt_id?: string | null;
+    release_digest?: string;
+    release_ready?: boolean;
+    epd_vocal_blueprint: {
+      vulnerability_level: number;
+      phonation: string;
+      biometric_artifacts: string[];
+    };
+    canon_review: {
+      mode: string;
+      note: string;
+      cultural_identity: string;
+    };
+    cross_platform_proof: {
+      suno_payload_sung_as_lyrics: boolean;
+      evidence_status: string;
+      meaning: string;
+    };
+    release_gates: Record<string, GateStatus>;
+  };
   launch_readiness: {
     launch_ready: boolean;
     gates: Record<string, GateStatus>;
@@ -115,6 +145,46 @@ const FALLBACK: LuzariaResponse = {
     created_by: "EMPIRE-1",
     version: "1.0.0",
   },
+  first_release: {
+    release_id: "LZR-RC-0001",
+    title: "Sleep On The Floor",
+    release_status: "candidate",
+    core_genre: "SGV Sub-genre — Chicano Soul / Trap fusion",
+    s2_mutation:
+      "Pitched-down 70s soul sample fused with late-pocket, off-grid Trap 808s and live, imperfect hi-hats.",
+    dna_tag_preview: "trk_alpha_4e8a1c_empire1",
+    release_ready: false,
+    epd_vocal_blueprint: {
+      vulnerability_level: 0.98,
+      phonation:
+        "Intimate, close-mic delivery with heavy chest resonance, simulating a voice strained from exhaustion and grief.",
+      biometric_artifacts: ["Adaptive inhale", "Vocal fry", "Emotional crack", "Chest resonance"],
+    },
+    canon_review: {
+      mode: "Testimony",
+      note:
+        "The warm soul bed carries the hug while the vocal carries the bruise.",
+      cultural_identity: "honored as grammar, not costume",
+    },
+    cross_platform_proof: {
+      suno_payload_sung_as_lyrics: true,
+      evidence_status: "documented",
+      meaning:
+        "The external system treated instructions, metadata, structure, and lyrics as one undifferentiated block. Lyrica preserves their separate roles.",
+    },
+    release_gates: {
+      identity_alignment: "complete",
+      lyrics_locked: "complete",
+      creative_intent_locked: "complete",
+      drift_guard_review: "complete",
+      final_audio_master: "pending",
+      final_dna_tag: "pending",
+      soulprint_hash: "pending",
+      vics_proof: "pending",
+      catalog_registration: "pending",
+      archisynapse_receipt: "pending",
+    },
+  },
   launch_readiness: {
     launch_ready: false,
     gates: {
@@ -144,6 +214,19 @@ function prettyGate(value: string) {
     .join(" ");
 }
 
+function GateGrid({ gates }: { gates: Record<string, GateStatus> }) {
+  return (
+    <div className="luzaria-gates">
+      {Object.entries(gates).map(([gate, status]) => (
+        <div key={gate} className={`luzaria-gate luzaria-gate--${status}`}>
+          <span>{prettyGate(gate)}</span>
+          <strong>{status.toUpperCase()}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Luzaria() {
   const navigate = useNavigate();
   const [data, setData] = useState<LuzariaResponse>(FALLBACK);
@@ -171,6 +254,10 @@ export function Luzaria() {
     [data.launch_readiness.gates],
   );
   const totalGates = Object.keys(data.launch_readiness.gates).length;
+  const completedReleaseGates = Object.values(data.first_release.release_gates).filter(
+    (value) => value === "complete",
+  ).length;
+  const totalReleaseGates = Object.keys(data.first_release.release_gates).length;
 
   return (
     <main className="luzaria-page">
@@ -236,22 +323,55 @@ export function Luzaria() {
           </div>
         </article>
 
+        <article className="luzaria-panel luzaria-panel--wide luzaria-release">
+          <div className="luzaria-readiness-head">
+            <div>
+              <p className="luzaria-section-label">First Release Candidate · {data.first_release.release_id}</p>
+              <h2>{data.first_release.title}</h2>
+              <p className="luzaria-release-genre">{data.first_release.core_genre}</p>
+            </div>
+            <div className="luzaria-score">{completedReleaseGates}/{totalReleaseGates}</div>
+          </div>
+
+          <div className="luzaria-release-story">
+            <div>
+              <span>Performance</span>
+              <strong>{Math.round(data.first_release.epd_vocal_blueprint.vulnerability_level * 100)}% vulnerability</strong>
+              <p>{data.first_release.epd_vocal_blueprint.phonation}</p>
+            </div>
+            <div>
+              <span>Canon mode</span>
+              <strong>{data.first_release.canon_review.mode}</strong>
+              <p>{data.first_release.canon_review.note}</p>
+            </div>
+            <div>
+              <span>Cross-platform proof</span>
+              <strong>Suno sang the payload as lyrics</strong>
+              <p>{data.first_release.cross_platform_proof.meaning}</p>
+            </div>
+          </div>
+
+          <div className="luzaria-release-tags">
+            {data.first_release.epd_vocal_blueprint.biometric_artifacts.map((artifact) => (
+              <span key={artifact}>{artifact.replace(/[<>_]/g, " ").trim()}</span>
+            ))}
+          </div>
+
+          <GateGrid gates={data.first_release.release_gates} />
+          <p className="luzaria-digest" title={data.first_release.release_digest || data.first_release.dna_tag_preview}>
+            {data.first_release.release_digest || `DNA preview · ${data.first_release.dna_tag_preview}`}
+          </p>
+        </article>
+
         <article className="luzaria-panel luzaria-panel--wide">
           <div className="luzaria-readiness-head">
             <div>
-              <p className="luzaria-section-label">Launch Readiness</p>
+              <p className="luzaria-section-label">Artist Launch Readiness</p>
               <h2>{data.launch_readiness.launch_ready ? "Ready to release" : "Proof gates still open"}</h2>
             </div>
             <div className="luzaria-score">{completedGates}/{totalGates}</div>
           </div>
-          <div className="luzaria-gates">
-            {Object.entries(data.launch_readiness.gates).map(([gate, status]) => (
-              <div key={gate} className={`luzaria-gate luzaria-gate--${status}`}>
-                <span>{prettyGate(gate)}</span>
-                <strong>{status.toUpperCase()}</strong>
-              </div>
-            ))}
-          </div>
+          <GateGrid gates={data.launch_readiness.gates} />
           <div className="luzaria-catalog-stats">
             <div><strong>{data.launch_readiness.catalog.total_tracks}</strong><span>Catalog tracks</span></div>
             <div><strong>{data.launch_readiness.catalog.verified_tracks}</strong><span>VICS verified</span></div>
