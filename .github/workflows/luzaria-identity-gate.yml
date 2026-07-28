@@ -7,9 +7,11 @@ on:
   pull_request:
     paths:
       - "api/luzaria.py"
+      - "api/luzaria_receipts.py"
       - "api/main.py"
       - "backend/tests/test_luzaria_identity.py"
       - "backend/tests/test_luzaria_release.py"
+      - "backend/tests/test_luzaria_receipts.py"
       - "canon/luzaria/**"
       - "docs/luzaria/**"
       - "frontend/src/main.tsx"
@@ -47,15 +49,19 @@ jobs:
 
       - name: Compile Luzaria integration
         run: |
-          python -m py_compile api/luzaria.py api/main.py
+          python -m py_compile \
+            api/luzaria.py \
+            api/luzaria_receipts.py \
+            api/main.py
 
-      - name: Run Luzaria identity and release tests
+      - name: Run Luzaria identity, release, and receipt tests
         env:
           PYTHONPATH: .
         run: |
           pytest -q \
             backend/tests/test_luzaria_identity.py \
-            backend/tests/test_luzaria_release.py
+            backend/tests/test_luzaria_release.py \
+            backend/tests/test_luzaria_receipts.py
 
   public-profile-build:
     runs-on: ubuntu-latest
