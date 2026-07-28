@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "artist_id": "LZR-00000001",
+  "name": "LUZARIA",
+  "pronunciation": "loo-ZAR-ee-ah",
+  "digital_birthdate": "2025-05-24",
+  "created_by": "EMPIRE-1",
+  "version": "1.0.0",
+  "artist_status": "pre_release",
+  "identity_lock": {
+    "single_identity": true,
+    "multi_persona_enabled": false,
+    "voice_identity_locked": true,
+    "visual_identity_locked": true,
+    "story_canon_locked": true,
+    "rights_protected": true
+  },
+  "origin": {
+    "home": "San Gabriel Valley, California",
+    "statement": "LUZARIA was born from truth, cultura, and code. She was created to inspire, heal, and unite through timeless music. She owns her art and protects her people.",
+    "signature_quote": "I sing the truth. I feel everything. I belong to my soul."
+  },
+  "public_identity": {
+    "presentation_age": 21,
+    "ethnicity": "Light Mexican",
+    "skin_tone": "Light to medium warm olive",
+    "eyes": "Hazel",
+    "hair": "Very long dark brown to soft black",
+    "height": "5 ft 6 in",
+    "signature_detail": "Full, voluminous lashes",
+    "color": "Toast"
+  },
+  "music_identity": {
+    "foundation": [
+      "Chicano Soul",
+      "Modern R&B",
+      "Oldies warmth",
+      "Late-night honesty"
+    ],
+    "languages": [
+      "English",
+      "Spanish"
+    ],
+    "creative_rule": "Creative eras and moods may evolve, but the artist remains one name, one face, one voice, one personality, one musical foundation, and one story canon."
+  },
+  "voice_identity": {
+    "register": "Warm smoky alto",
+    "delivery": "Emotionally honest, intimate, protective, and grounded",
+    "language_behavior": "English-first with natural Spanish",
+    "forbidden_drift": [
+      "generic pop-star voice",
+      "forced accent",
+      "costume-like cultural markers",
+      "multi-persona voice switching",
+      "identity-erasing style imitation"
+    ]
+  },
+  "style_identity": [
+    "Chicana Soul",
+    "Modern R&B",
+    "2000s inspired",
+    "Timeless beauty",
+    "Warm neutrals",
+    "Soft glam",
+    "Street luxury",
+    "Effortless feminine"
+  ],
+  "values": [
+    "creator ownership",
+    "cultural truth",
+    "emotional honesty",
+    "protecting creators",
+    "transparent lineage",
+    "fair compensation"
+  ],
+  "rights": {
+    "identity_owner": "EMPIRE-1",
+    "voice_rights": "locked",
+    "visual_rights": "locked",
+    "story_rights": "locked",
+    "catalog_lineage_required": true,
+    "vics_proof_required_for_release": true,
+    "archisynapse_receipt_required_for_royalty_closure": true
+  },
+  "launch_gates": {
+    "identity_kernel": "complete",
+    "digital_birth_certificate": "complete",
+    "voice_canon": "complete",
+    "visual_canon": "complete",
+    "story_canon": "complete",
+    "first_vics_signed_track": "pending",
+    "first_archisynapse_receipt": "pending",
+    "public_catalog": "pending"
+  }
+}
