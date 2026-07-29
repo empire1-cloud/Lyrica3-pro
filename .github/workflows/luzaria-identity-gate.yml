@@ -7,10 +7,12 @@ on:
   pull_request:
     paths:
       - "api/luzaria.py"
+      - "api/luzaria_assets.py"
       - "api/luzaria_receipts.py"
       - "api/luzaria_voice_math.py"
       - "api/luzaria_voice_performance.py"
       - "api/main.py"
+      - "backend/tests/test_luzaria_assets.py"
       - "backend/tests/test_luzaria_identity.py"
       - "backend/tests/test_luzaria_release.py"
       - "backend/tests/test_luzaria_receipts.py"
@@ -57,17 +59,19 @@ jobs:
         run: |
           python -m py_compile \
             api/luzaria.py \
+            api/luzaria_assets.py \
             api/luzaria_receipts.py \
             api/luzaria_voice_math.py \
             api/luzaria_voice_performance.py \
             api/main.py \
             scripts/render_luzaria_voice_v0.py
 
-      - name: Run Luzaria identity, release, receipt, and voice tests
+      - name: Run Luzaria identity, release, receipt, voice, and asset tests
         env:
           PYTHONPATH: .
         run: |
           pytest -q \
+            backend/tests/test_luzaria_assets.py \
             backend/tests/test_luzaria_identity.py \
             backend/tests/test_luzaria_release.py \
             backend/tests/test_luzaria_receipts.py \
