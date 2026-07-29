@@ -1,11 +1,36 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "artist_id": "LZR-00000001",
   "voice_model_id": "LZR-VOICE-MATH-V0",
   "founder_directions": [
     "Ana Gabriel felt, not cloned.",
-    "Teena Marie pitch and soul-funk lift, not cloned."
+    "Teena Marie pitch and soul-funk lift, not cloned.",
+    "90s SWV/TLC/Janet warmth with modern SZA/Doja conversational edge, never copied."
   ],
+  "vocal_north_star": {
+    "name": "Velvet Grit",
+    "summary": "A warm smoky alto with 90s R&B harmony depth, intimate close-mic restraint, modern alt-R&B phrasing, and playful rap-sung agility.",
+    "core_layers": [
+      "lush 90s R&B stacked harmonies",
+      "breathy intimate lead vocal",
+      "low-mid chest warmth",
+      "conversational melodic phrasing",
+      "soft spoken-to-sung transitions",
+      "playful rhythmic ad-libs",
+      "occasional rap-sung cadence",
+      "controlled upper-register soul lift",
+      "emotional cracks used sparingly",
+      "natural English and Spanish phrasing"
+    ],
+    "luzaria_signature": [
+      "smoke before shine",
+      "bruise under sweetness",
+      "late-pocket phrasing",
+      "protective matriarchal gravity",
+      "SGV warmth",
+      "one lead identity across every layer"
+    ]
+  },
   "performance_modes": {
     "testimony_grit": {
       "target_emotion": "classic Mexican dramatic-ballad gravity",
@@ -34,6 +59,41 @@
         "funk syncopation around the pocket",
         "call-and-response ad-lib energy"
       ]
+    },
+    "velvet_90s_harmony": {
+      "target_emotion": "lush 90s R&B intimacy and sister-harmony warmth",
+      "allowed_traits": [
+        "three-part close harmony",
+        "soft breath-led consonants",
+        "minor-third and sixth harmony movement",
+        "unison lead with delayed harmony bloom",
+        "low harmony tucked under the lead",
+        "airy upper double used only for lift",
+        "call-and-response background phrases"
+      ]
+    },
+    "modern_alt_rnb_pocket": {
+      "target_emotion": "conversational vulnerability with unpredictable melodic turns",
+      "allowed_traits": [
+        "speech-like phrase starts",
+        "behind-the-beat entrances",
+        "short melodic slides",
+        "broken-line phrasing",
+        "whisper-to-tone transitions",
+        "dry intimate delivery",
+        "melodic fragments that resolve late"
+      ]
+    },
+    "playful_rap_sung_switch": {
+      "target_emotion": "confident wit and rhythmic personality",
+      "allowed_traits": [
+        "half-rapped melodic cadence",
+        "percussive consonants",
+        "fast pocket changes",
+        "spoken asides",
+        "stacked punch-line doubles",
+        "quick return to sung tone"
+      ]
     }
   },
   "luzaria_specific_expression": [
@@ -45,7 +105,8 @@
     "Chicano Soul warmth",
     "modern R&B control",
     "Testimony-mode emotional cracks",
-    "upper lift appears as an extension, never a replacement voice"
+    "upper lift appears as an extension, never a replacement voice",
+    "background harmonies sound like Luzaria multiplied, not separate personas"
   ],
   "blocked": [
     "matching any named singer's vocal fingerprint",
@@ -54,7 +115,8 @@
     "performing as or claiming to be a named singer",
     "copying signature recordings note-for-note",
     "using a celebrity name as a synthesis target",
-    "replacing Luzaria's locked formants with an influence profile"
+    "replacing Luzaria's locked formants with an influence profile",
+    "making each harmony layer sound like a different artist"
   ],
-  "identity_rule": "Luzaria may carry the emotional gravity, vocal courage, upper-register freedom, and soul-funk agility associated with major musical traditions, but every acoustic parameter must resolve to Luzaria's own locked mathematical identity."
+  "identity_rule": "Luzaria may carry the emotional gravity, harmony richness, intimacy, vocal courage, upper-register freedom, and rhythmic agility associated with major R&B traditions, but every acoustic parameter must resolve to Luzaria's own locked mathematical identity."
 }
