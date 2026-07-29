@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "voice_model_id": "LZR-VOICE-MATH-V0",
   "artist_id": "LZR-00000001",
   "ownership": {
@@ -20,6 +20,7 @@
     "home_frequency_hz": 220.0,
     "comfortable_low_hz": 164.81,
     "comfortable_high_hz": 440.0,
+    "extension_high_hz": 698.46,
     "vibrato_rate_hz": 5.15,
     "vibrato_depth_cents": 18.0,
     "micro_jitter_cents": 2.4
@@ -52,8 +53,50 @@
     "close_mic_proximity_gain_db": 2.2,
     "late_pocket_delay_ms": 14
   },
+  "performance_modes": {
+    "home": {
+      "pitch_offset_semitones": 0.0,
+      "vibrato_rate_multiplier": 1.0,
+      "vibrato_depth_multiplier": 1.0,
+      "brightness_multiplier": 1.0,
+      "chest_multiplier": 1.0,
+      "grit_multiplier": 1.0,
+      "portamento_cents": 0.0,
+      "melisma_rate": 1.0
+    },
+    "testimony_grit": {
+      "pitch_offset_semitones": -0.5,
+      "vibrato_rate_multiplier": 0.88,
+      "vibrato_depth_multiplier": 1.38,
+      "brightness_multiplier": 0.88,
+      "chest_multiplier": 1.42,
+      "grit_multiplier": 1.58,
+      "portamento_cents": 42.0,
+      "melisma_rate": 0.72
+    },
+    "soul_funk_upper_lift": {
+      "pitch_offset_semitones": 5.0,
+      "vibrato_rate_multiplier": 1.22,
+      "vibrato_depth_multiplier": 0.86,
+      "brightness_multiplier": 1.28,
+      "chest_multiplier": 0.82,
+      "grit_multiplier": 0.94,
+      "portamento_cents": 24.0,
+      "melisma_rate": 1.65
+    },
+    "corrido_tumbado_grit": {
+      "pitch_offset_semitones": -1.0,
+      "vibrato_rate_multiplier": 0.92,
+      "vibrato_depth_multiplier": 1.24,
+      "brightness_multiplier": 0.9,
+      "chest_multiplier": 1.3,
+      "grit_multiplier": 1.45,
+      "portamento_cents": 36.0,
+      "melisma_rate": 1.18
+    }
+  },
   "identity_constraints": {
-    "register": "warm smoky alto",
+    "register": "warm smoky alto with an approved upper extension",
     "delivery": "emotionally honest, intimate, protective, grounded",
     "language_behavior": "English-first with natural Spanish",
     "blocked": [
@@ -68,6 +111,7 @@
     "timbre_engine": "implemented",
     "vowel_singing": "implemented",
     "artifact_engine": "implemented",
+    "performance_modes": "implemented",
     "full_lyric_intelligibility": "prototype",
     "release_master_approved": false
   }
