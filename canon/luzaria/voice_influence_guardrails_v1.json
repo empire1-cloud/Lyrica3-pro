@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "artist_id": "LZR-00000001",
+  "voice_model_id": "LZR-VOICE-MATH-V0",
+  "founder_direction": "Ana Gabriel felt, not cloned.",
+  "safe_translation": {
+    "target_emotion": "classic Mexican dramatic ballad intensity",
+    "allowed_traits": [
+      "chest-forward alto power",
+      "smoky grain and controlled rasp",
+      "dramatic but disciplined vibrato",
+      "portamento into emotionally important notes",
+      "clear Spanish diction with lived-in phrasing",
+      "a restrained sob-like catch at emotional peaks",
+      "strong low-mid resonance",
+      "defiant tenderness",
+      "long held vowels that bloom rather than shout"
+    ],
+    "luzaria_specific_expression": [
+      "younger SGV edge",
+      "closer microphone intimacy",
+      "late-pocket phrasing",
+      "less theatrical projection",
+      "more conversational breath",
+      "Chicano Soul warmth",
+      "modern R&B control",
+      "Testimony-mode emotional cracks"
+    ]
+  },
+  "blocked": [
+    "matching Ana Gabriel's vocal fingerprint",
+    "training on unlicensed Ana Gabriel recordings",
+    "celebrity timbre imitation",
+    "performing as or claiming to be Ana Gabriel",
+    "copying signature recordings note-for-note",
+    "using a celebrity name as a synthesis target"
+  ],
+  "identity_rule": "Luzaria may carry the emotional gravity and vocal courage associated with classic Mexican dramatic singers, but every acoustic parameter must resolve to Luzaria's own locked mathematical identity."
+}
