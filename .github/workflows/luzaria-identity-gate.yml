@@ -8,12 +8,16 @@ on:
     paths:
       - "api/luzaria.py"
       - "api/luzaria_receipts.py"
+      - "api/luzaria_voice_math.py"
+      - "api/luzaria_voice_performance.py"
       - "api/main.py"
       - "backend/tests/test_luzaria_identity.py"
       - "backend/tests/test_luzaria_release.py"
       - "backend/tests/test_luzaria_receipts.py"
+      - "backend/tests/test_luzaria_voice_math.py"
       - "canon/luzaria/**"
       - "docs/luzaria/**"
+      - "scripts/render_luzaria_voice_v0.py"
       - "frontend/src/main.tsx"
       - "frontend/src/pages/Luzaria.tsx"
       - "frontend/src/pages/luzaria.css"
@@ -27,7 +31,7 @@ permissions:
 jobs:
   identity-api-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
 
     steps:
       - name: Check out repository
@@ -45,23 +49,42 @@ jobs:
             "fastapi==0.104.1" \
             "pydantic==2.5.0" \
             "pytest>=8,<9" \
-            "pytest-asyncio>=0.23,<1"
+            "pytest-asyncio>=0.23,<1" \
+            "numpy>=1.26,<3" \
+            "scipy>=1.11,<2"
 
       - name: Compile Luzaria integration
         run: |
           python -m py_compile \
             api/luzaria.py \
             api/luzaria_receipts.py \
-            api/main.py
+            api/luzaria_voice_math.py \
+            api/luzaria_voice_performance.py \
+            api/main.py \
+            scripts/render_luzaria_voice_v0.py
 
-      - name: Run Luzaria identity, release, and receipt tests
+      - name: Run Luzaria identity, release, receipt, and voice tests
         env:
           PYTHONPATH: .
         run: |
           pytest -q \
             backend/tests/test_luzaria_identity.py \
             backend/tests/test_luzaria_release.py \
-            backend/tests/test_luzaria_receipts.py
+            backend/tests/test_luzaria_receipts.py \
+            backend/tests/test_luzaria_voice_math.py
+
+      - name: Render mathematical Luzaria Voice v0 artifact
+        env:
+          PYTHONPATH: .
+        run: python scripts/render_luzaria_voice_v0.py
+
+      - name: Upload voice prototype and fingerprint
+        uses: actions/upload-artifact@v4
+        with:
+          name: luzaria-voice-math-v0
+          path: artifacts/luzaria_voice_v0/
+          if-no-files-found: error
+          retention-days: 30
 
   public-profile-build:
     runs-on: ubuntu-latest
