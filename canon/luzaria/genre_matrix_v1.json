@@ -2,11 +2,12 @@
   "schema_version": "1.0",
   "artist_id": "LZR-00000001",
   "matrix_id": "LZR-GENRE-MATRIX-0001",
-  "identity_rule": "Chicano_Soul is Luzaria's permanent home grammar. Other genres may modify rhythm, texture, or arrangement only; they may not replace her voice identity, cultural grounding, or story canon.",
+  "identity_rule": "Chicano_Soul is Luzaria's permanent home grammar. Other genres may modify rhythm, texture, ornamentation, or arrangement only; they may not replace her voice identity, cultural grounding, or story canon.",
   "default_weights": {
     "Chicano_Soul": 0.72,
-    "Phonk": 0.18,
-    "Krautrock": 0.10
+    "Phonk": 0.12,
+    "Krautrock": 0.06,
+    "Corrido_Tumbado": 0.10
   },
   "genre_matrix": {
     "Chicano_Soul": {
@@ -47,6 +48,24 @@
       },
       "active_agent": "Analog_Warmth_Texture_Synth",
       "vocal_bias": "deadpan_observational"
+    },
+    "Corrido_Tumbado": {
+      "role": "controlled_cultural_extension",
+      "theme_corpus": "Struggle & Triumph",
+      "performance_style": "Grit & Gravel",
+      "primitives": {
+        "groove": "bajo_sexto_syncopation",
+        "melody": "corrido_ornamentation",
+        "texture": [
+          "dry_bajo_sexto_attack",
+          "upright_bass_weight",
+          "close_room_ambience"
+        ]
+      },
+      "active_agent": "Corrido_Ornamentation_Director",
+      "vocal_bias": "intimate_grit_with_defiant_tenderness",
+      "vulnerability_baseline": 0.8,
+      "identity_boundary": "Use Mexican dramatic-ballad gravity and corrido phrasing as technique, never another singer's timbre or fingerprint."
     }
   },
   "voice_invariants": {
