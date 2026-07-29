@@ -45,8 +45,8 @@ def midi_to_hz(note: float) -> float:
     return 440.0 * (2.0 ** ((float(note) - 69.0) / 12.0))
 
 
-def _cents_ratio(cents: np.ndarray | float) -> np.ndarray | float:
-    return 2.0 ** (np.asarray(cents) / 1200.0)
+def _cents_ratio(cents: np.ndarray | float) -> np.ndarray:
+    return 2.0 ** (np.asarray(cents, dtype=np.float64) / 1200.0)
 
 
 def _smooth_envelope(length: int, sample_rate: int, attack_ms: float, release_ms: float) -> np.ndarray:
@@ -61,12 +61,13 @@ def _smooth_envelope(length: int, sample_rate: int, attack_ms: float, release_ms
 
 
 def _normalize(signal: np.ndarray, peak: float = 0.92) -> np.ndarray:
-    if signal.size == 0:
-        return signal.astype(np.float64)
-    maximum = float(np.max(np.abs(signal)))
+    values = np.asarray(signal, dtype=np.float64)
+    if values.size == 0:
+        return values
+    maximum = float(np.max(np.abs(values)))
     if maximum <= 1e-12:
-        return signal.astype(np.float64)
-    return np.asarray(signal, dtype=np.float64) * (peak / maximum)
+        return values
+    return values * (peak / maximum)
 
 
 def _soft_saturate(signal: np.ndarray, drive: float) -> np.ndarray:
@@ -89,23 +90,45 @@ def _highpass(signal: np.ndarray, sample_rate: int, cutoff_hz: float) -> np.ndar
     return lfilter(b, a, signal)
 
 
-def _genre_voice_modifiers(matrix: dict[str, Any], weights: dict[str, float] | None = None) -> dict[str, float]:
+def _genre_voice_modifiers(
+    matrix: dict[str, Any],
+    weights: dict[str, float] | None = None,
+) -> dict[str, float]:
     selected = weights or matrix.get("default_weights", {})
     total = sum(max(0.0, float(value)) for value in selected.values()) or 1.0
     normalized = {key: max(0.0, float(value)) / total for key, value in selected.items()}
 
-    # These coefficients only alter performance texture. They never replace the
-    # locked formant identity or register.
+    # Genre weights alter texture and performance only. The locked formants,
+    # base register, artist id, and voice-profile digest never change.
     return {
-        "warmth": 0.88 * normalized.get("Chicano_Soul", 0.0)
-        + 0.42 * normalized.get("Phonk", 0.0)
-        + 0.62 * normalized.get("Krautrock", 0.0),
-        "grit": 0.16 * normalized.get("Chicano_Soul", 0.0)
-        + 0.72 * normalized.get("Phonk", 0.0)
-        + 0.28 * normalized.get("Krautrock", 0.0),
-        "steadiness": 0.44 * normalized.get("Chicano_Soul", 0.0)
-        + 0.34 * normalized.get("Phonk", 0.0)
-        + 0.90 * normalized.get("Krautrock", 0.0),
+        "warmth": (
+            0.88 * normalized.get("Chicano_Soul", 0.0)
+            + 0.68 * normalized.get("Contemporary_Freestyle", 0.0)
+            + 0.42 * normalized.get("Phonk", 0.0)
+            + 0.62 * normalized.get("Krautrock", 0.0)
+            + 0.74 * normalized.get("Corrido_Tumbado", 0.0)
+        ),
+        "grit": (
+            0.16 * normalized.get("Chicano_Soul", 0.0)
+            + 0.24 * normalized.get("Contemporary_Freestyle", 0.0)
+            + 0.72 * normalized.get("Phonk", 0.0)
+            + 0.28 * normalized.get("Krautrock", 0.0)
+            + 0.64 * normalized.get("Corrido_Tumbado", 0.0)
+        ),
+        "steadiness": (
+            0.44 * normalized.get("Chicano_Soul", 0.0)
+            + 0.56 * normalized.get("Contemporary_Freestyle", 0.0)
+            + 0.34 * normalized.get("Phonk", 0.0)
+            + 0.90 * normalized.get("Krautrock", 0.0)
+            + 0.48 * normalized.get("Corrido_Tumbado", 0.0)
+        ),
+        "air": (
+            0.62 * normalized.get("Chicano_Soul", 0.0)
+            + 0.74 * normalized.get("Contemporary_Freestyle", 0.0)
+            + 0.28 * normalized.get("Phonk", 0.0)
+            + 0.34 * normalized.get("Krautrock", 0.0)
+            + 0.46 * normalized.get("Corrido_Tumbado", 0.0)
+        ),
     }
 
 
@@ -175,9 +198,9 @@ def synthesize_event(
     vowel = event.vowel.lower() if event.vowel.lower() in profile["formants_hz"] else "a"
     formants = profile["formants_hz"][vowel]
     bandwidths = profile["formant_bandwidth_hz"]
-    weights = (1.0, 0.72, 0.42, 0.24)
+    formant_weights = (1.0, 0.72, 0.42, 0.24)
     voiced = np.zeros(length, dtype=np.float64)
-    for formant, bandwidth, weight in zip(formants, bandwidths, weights):
+    for formant, bandwidth, weight in zip(formants, bandwidths, formant_weights):
         voiced += weight * _bandpass(excitation, sample_rate, float(formant), float(bandwidth))
 
     chest_center = 185.0 if fundamental < 260.0 else 220.0
@@ -187,7 +210,7 @@ def synthesize_event(
         chest_mix *= 1.55
     voiced += chest_mix * chest
 
-    breath_mix = float(source["breath_noise_mix"])
+    breath_mix = float(source["breath_noise_mix"]) * (0.75 + 0.5 * modifiers["air"])
     if event.artifact == "<adaptive_inhale>":
         breath_mix *= 1.55
     breath = _highpass(rng.normal(0.0, 1.0, size=length), sample_rate, 1900.0)
@@ -208,7 +231,10 @@ def synthesize_event(
         envelope[start:end] *= np.linspace(1.0, 0.48, end - start)
 
     voiced *= envelope * float(np.clip(event.intensity, 0.05, 1.0))
-    voiced = _soft_saturate(voiced, float(source["soft_saturation_drive"]) + 0.35 * modifiers["grit"])
+    voiced = _soft_saturate(
+        voiced,
+        float(source["soft_saturation_drive"]) + 0.35 * modifiers["grit"],
+    )
     return _normalize(voiced, 0.9)
 
 
