@@ -8,6 +8,7 @@ from .models import DuoSoulRequest, DuoSoulResponse, DNAResponse
 from .vics_bridge import create_vics_router
 from .royalty_dispatch import create_safe_royalty_outbox_router
 from .luzaria import create_luzaria_router
+from .luzaria_assets import create_luzaria_assets_router
 from .luzaria_receipts import create_luzaria_receipt_router
 
 from lyrica3_soulfire.soul_card.models import SoulCard, GenerateResponse, InspectResponse
@@ -32,11 +33,17 @@ app.add_middleware(
 #   GET  /duo-soul/artist/luzaria
 #   GET  /duo-soul/artist/luzaria/birth-certificate
 #   GET  /duo-soul/artist/luzaria/releases/first
+#   GET  /duo-soul/artist/luzaria/releases/first/creative-system
+#   GET  /duo-soul/artist/luzaria/voice-system
+#   GET  /duo-soul/artist/luzaria/wardrobe
+#   GET  /duo-soul/artist/luzaria/genre-matrix
+#   GET  /duo-soul/artist/luzaria/track-payload-template
 #   GET  /duo-soul/artist/luzaria/catalog
 #   GET  /duo-soul/artist/luzaria/launch-readiness
 app.include_router(create_vics_router())
 app.include_router(create_safe_royalty_outbox_router())
 app.include_router(create_luzaria_router())
+app.include_router(create_luzaria_assets_router())
 app.include_router(create_luzaria_receipt_router())
 
 
