@@ -1,12 +1,13 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "artist_id": "LZR-00000001",
   "matrix_id": "LZR-GENRE-MATRIX-0001",
   "identity_rule": "Chicano_Soul is Luzaria's permanent home grammar. Other genres may modify rhythm, texture, ornamentation, or arrangement only; they may not replace her voice identity, cultural grounding, or story canon.",
   "default_weights": {
-    "Chicano_Soul": 0.72,
-    "Phonk": 0.12,
-    "Krautrock": 0.06,
+    "Chicano_Soul": 0.62,
+    "Contemporary_Freestyle": 0.16,
+    "Phonk": 0.08,
+    "Krautrock": 0.04,
     "Corrido_Tumbado": 0.10
   },
   "genre_matrix": {
@@ -22,6 +23,30 @@
       },
       "active_agent": "Harmonic_Emotion_Cartographer",
       "vocal_bias": "bruised_subtext"
+    },
+    "Contemporary_Freestyle": {
+      "role": "controlled_generational_bridge",
+      "era_reference": "classic Latin freestyle and electro-R&B energy translated for current production",
+      "primitives": {
+        "groove": "syncopated_electro_bass_with_dry_kick_clap",
+        "melody": "romantic_urgent_hook_fragments",
+        "texture": [
+          "slightly_detuned_synth_stabs",
+          "digital_bell_accents",
+          "modern_sub_bass",
+          "short_dark_plate_reverb"
+        ]
+      },
+      "active_agent": "Generational_Freestyle_Translator",
+      "vocal_bias": "breathy_romantic_urgency_with_playful_call_response",
+      "modernization": [
+        "current transient control",
+        "negative space around the lead",
+        "alt-R&B broken phrasing in verses",
+        "one identity-safe rap-sung switch",
+        "full low-end extension without retro parody"
+      ],
+      "identity_boundary": "Borrow the emotional mechanics of freestyle, not any known melody, cadence fingerprint, or singer timbre."
     },
     "Phonk": {
       "role": "controlled_mutation",
@@ -75,6 +100,7 @@
     "english_first_natural_spanish": true,
     "generic_pop_drift": "blocked",
     "celebrity_similarity_targeting": "blocked",
-    "multi_persona_switching": "blocked"
+    "multi_persona_switching": "blocked",
+    "vocal_north_star": "Velvet Grit"
   }
 }
