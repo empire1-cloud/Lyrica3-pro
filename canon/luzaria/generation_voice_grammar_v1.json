@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "artist_id": "LZR-00000001",
+  "voice_model_id": "LZR-VOICE-MATH-V0",
+  "founder_direction": "90s girl-group velvet and whisper control, old-school freestyle sparkle, with current-generation conversational intimacy, attitude, melodic looseness, and emotional unpredictability.",
+  "identity_rule": "These are performance primitives only. Luzaria must never match, clone, impersonate, or claim the vocal fingerprint of any named artist.",
+  "core_timbre": {
+    "register": "warm_smoky_alto",
+    "chest_resonance": 0.86,
+    "breath_mix": 0.18,
+    "rasp": 0.22,
+    "forward_presence": 0.64,
+    "intimacy": 0.91,
+    "vibrato_depth": 0.44,
+    "melismatic_agility": 0.62,
+    "spoken_sung_blend": 0.58
+  },
+  "era_primitives": {
+    "90s_rnb_group_velvet": {
+      "weight": 0.27,
+      "traits": [
+        "stacked velvet harmonies",
+        "breathy close-mic lead",
+        "soft chest-to-head transitions",
+        "restrained runs",
+        "call-and-response background phrases"
+      ]
+    },
+    "90s_pop_rnb_whisper_control": {
+      "weight": 0.18,
+      "traits": [
+        "whisper-forward phrasing",
+        "tight rhythmic diction",
+        "understated sensuality",
+        "small controlled vibrato",
+        "spoken melodic pickups"
+      ]
+    },
+    "old_school_freestyle_sparkle": {
+      "weight": 0.15,
+      "traits": [
+        "bright emotional lift",
+        "minor-key dance melancholy",
+        "clean hook attack",
+        "youthful urgency",
+        "echo-ready phrase endings"
+      ]
+    },
+    "current_alt_rnb_intimacy": {
+      "weight": 0.22,
+      "traits": [
+        "conversational melody",
+        "imperfect phrase lengths",
+        "diary-like vulnerability",
+        "soft pitch slides",
+        "emotion before polish"
+      ]
+    },
+    "current_pop_rap_attitude": {
+      "weight": 0.18,
+      "traits": [
+        "playful attack",
+        "rhythmic half-sung delivery",
+        "switches between sweet and sharp",
+        "confident ad-libs",
+        "modern pocket awareness"
+      ]
+    }
+  },
+  "approved_modes": {
+    "velvet_confession": {
+      "use_for": ["intimate verses", "late-night reflection", "heartbreak confession"],
+      "parameters": {
+        "breath_mix": 0.24,
+        "chest_resonance": 0.72,
+        "spoken_sung_blend": 0.68,
+        "vibrato_depth": 0.28
+      }
+    },
+    "girl_group_lift": {
+      "use_for": ["hooks", "survival declarations", "stacked choruses"],
+      "parameters": {
+        "forward_presence": 0.76,
+        "melismatic_agility": 0.70,
+        "harmony_stack_count": 4,
+        "vibrato_depth": 0.48
+      }
+    },
+    "freestyle_afterglow": {
+      "use_for": ["bridge lift", "nostalgic dance sadness", "outro refrain"],
+      "parameters": {
+        "brightness": 0.68,
+        "echo_tail_ms": 240,
+        "attack_strength": 0.61,
+        "youthful_urgency": 0.74
+      }
+    },
+    "modern_edge": {
+      "use_for": ["ad-libs", "rhythmic turnarounds", "defiant lines"],
+      "parameters": {
+        "spoken_sung_blend": 0.72,
+        "attitude": 0.71,
+        "pitch_looseness": 0.36,
+        "adlib_density": 0.42
+      }
+    }
+  },
+  "sleep_on_the_floor_arc": {
+    "verse": "velvet_confession",
+    "pre_hook": "modern_edge",
+    "hook": "girl_group_lift",
+    "bridge": "freestyle_afterglow",
+    "outro": "velvet_confession",
+    "rule": "The lead remains one Luzaria voice. Background stacks are derived from the same locked mathematical identity with controlled interval and timing variation."
+  },
+  "blocked": [
+    "celebrity voice cloning",
+    "named-artist timbre matching",
+    "generic bright pop soprano drift",
+    "over-polished runs that erase emotional truth",
+    "multi-persona switching",
+    "forced accent",
+    "nostalgia cosplay without current-generation phrasing"
+  ]
+}
