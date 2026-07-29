@@ -61,7 +61,8 @@
     ],
     "phonation": "Intimate close-mic testimony that moves from warm smoky alto and chest-forward grit into short, controlled soul-funk upper-register lifts.",
     "luzaria_voice_alignment": {
-      "register": "Warm smoky alto with approved upper extension",
+      "register": "Warm smoky alto",
+      "approved_upper_extension": true,
       "delivery": "Emotionally honest, intimate, protective, grounded, and fearless at the declarations",
       "language_behavior": "English-first with natural Spanish",
       "identity_drift": false,
