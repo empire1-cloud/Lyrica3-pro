@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0",
+  "registry_id": "LYRICA-MUSIC-ENGINES-0001",
+  "updated_at": "2026-07-28",
+  "ownership_rule": "External open-source models are replaceable generation engines. Lyrica owns orchestration, creator identity, cultural canon, selection, lineage, proof, catalog state, and payout records.",
+  "providers": {
+    "ace_step_1_5": {
+      "display_name": "ACE-Step 1.5",
+      "role": "default_full_song_generator",
+      "license": "MIT",
+      "source_repository": "ACE-Step/ACE-Step-1.5",
+      "endpoint_env": "LYRICA_ACE_STEP_URL",
+      "token_env": "LYRICA_ACE_STEP_TOKEN",
+      "priority": 100,
+      "capabilities": [
+        "full_song",
+        "lyrics_to_song",
+        "instrumental",
+        "audio_edit",
+        "remix",
+        "reference_audio",
+        "metadata_control",
+        "multilingual",
+        "lora_personalization",
+        "quality_scoring"
+      ],
+      "constraints": {
+        "max_duration_seconds": 600,
+        "recommended_min_vram_gb": 6,
+        "reference_audio_requires_consent": true
+      }
+    },
+    "yue": {
+      "display_name": "YuE",
+      "role": "long_form_lyrics_and_reference_specialist",
+      "license": "Apache-2.0",
+      "source_repository": "multimodal-art-projection/YuE",
+      "endpoint_env": "LYRICA_YUE_URL",
+      "token_env": "LYRICA_YUE_TOKEN",
+      "priority": 80,
+      "capabilities": [
+        "full_song",
+        "lyrics_to_song",
+        "long_form",
+        "multilingual",
+        "reference_audio",
+        "incremental_generation",
+        "lora_personalization"
+      ],
+      "constraints": {
+        "recommended_vram_gb": 24,
+        "full_song_recommended_vram_gb": 80,
+        "reference_audio_requires_consent": true
+      }
+    },
+    "heartmula": {
+      "display_name": "HeartMuLa",
+      "role": "lyrics_and_tags_candidate_generator",
+      "license": "Apache-2.0",
+      "source_repository": "HeartMuLa/heartlib",
+      "endpoint_env": "LYRICA_HEARTMULA_URL",
+      "token_env": "LYRICA_HEARTMULA_TOKEN",
+      "priority": 72,
+      "capabilities": [
+        "full_song",
+        "lyrics_to_song",
+        "tag_conditioning",
+        "multilingual",
+        "batch_candidates"
+      ],
+      "constraints": {
+        "max_duration_seconds": 240,
+        "reference_audio_supported": false
+      }
+    },
+    "openvpi_diffsinger": {
+      "display_name": "OpenVPI DiffSinger",
+      "role": "precision_singing_voice_renderer",
+      "license": "Apache-2.0",
+      "source_repository": "openvpi/DiffSinger",
+      "endpoint_env": "LYRICA_DIFFSINGER_URL",
+      "token_env": "LYRICA_DIFFSINGER_TOKEN",
+      "priority": 90,
+      "capabilities": [
+        "singing_voice",
+        "exact_melody",
+        "phoneme_control",
+        "midi_control",
+        "personalized_singer",
+        "vocoder_render"
+      ],
+      "constraints": {
+        "requires_score_or_midi": true,
+        "personalized_singer_requires_consent": true
+      }
+    },
+    "amphion_vevo2": {
+      "display_name": "Amphion Vevo2",
+      "role": "voice_editing_and_style_refinement",
+      "license": "research_toolkit_review_required",
+      "source_repository": "open-mmlab/Amphion",
+      "endpoint_env": "LYRICA_VEVO2_URL",
+      "token_env": "LYRICA_VEVO2_TOKEN",
+      "priority": 88,
+      "capabilities": [
+        "singing_voice",
+        "voice_edit",
+        "voice_conversion",
+        "singing_style_conversion",
+        "melody_control",
+        "humming_to_singing",
+        "instrument_to_singing"
+      ],
+      "constraints": {
+        "reference_voice_requires_consent": true,
+        "commercial_license_review_required": true
+      }
+    }
+  },
+  "default_pipeline": {
+    "candidate_generation": [
+      "ace_step_1_5",
+      "heartmula",
+      "yue"
+    ],
+    "precision_voice": [
+      "openvpi_diffsinger",
+      "amphion_vevo2"
+    ],
+    "selection_owner": "Lyrica Quality Gate",
+    "proof_owner": "Lyrica DNA + Soulprint + VICS",
+    "money_owner": "Archisynapse"
+  }
+}
