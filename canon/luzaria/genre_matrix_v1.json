@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "artist_id": "LZR-00000001",
+  "matrix_id": "LZR-GENRE-MATRIX-0001",
+  "identity_rule": "Chicano_Soul is Luzaria's permanent home grammar. Other genres may modify rhythm, texture, or arrangement only; they may not replace her voice identity, cultural grounding, or story canon.",
+  "default_weights": {
+    "Chicano_Soul": 0.72,
+    "Phonk": 0.18,
+    "Krautrock": 0.10
+  },
+  "genre_matrix": {
+    "Chicano_Soul": {
+      "role": "identity_anchor",
+      "primitives": {
+        "groove": "slow_cruising_swing",
+        "melody": "nostalgic_falsetto_friendly",
+        "texture": [
+          "warm_horns",
+          "analog_organ_pads"
+        ]
+      },
+      "active_agent": "Harmonic_Emotion_Cartographer",
+      "vocal_bias": "bruised_subtext"
+    },
+    "Phonk": {
+      "role": "controlled_mutation",
+      "primitives": {
+        "groove": "memphis_underground_drums",
+        "melody": "dark_hypnotic",
+        "texture": [
+          "distorted_cowbells",
+          "heavy_sub_bass"
+        ]
+      },
+      "active_agent": "Late_Pocket_Groove_Sculptor",
+      "vocal_bias": "gritty_lo_fi_syncopation"
+    },
+    "Krautrock": {
+      "role": "controlled_mutation",
+      "primitives": {
+        "groove": "motorik_relentless_4_4",
+        "melody": "minimal_hypnotic",
+        "texture": [
+          "analog_modular_synths",
+          "tape_delay"
+        ]
+      },
+      "active_agent": "Analog_Warmth_Texture_Synth",
+      "vocal_bias": "deadpan_observational"
+    }
+  },
+  "voice_invariants": {
+    "register": "warm_smoky_alto",
+    "formant_identity": "locked",
+    "chest_resonance": "required",
+    "english_first_natural_spanish": true,
+    "generic_pop_drift": "blocked",
+    "celebrity_similarity_targeting": "blocked",
+    "multi_persona_switching": "blocked"
+  }
+}
