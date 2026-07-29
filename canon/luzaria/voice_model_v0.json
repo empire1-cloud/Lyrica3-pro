@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "voice_model_id": "LZR-VOICE-MATH-V0",
+  "artist_id": "LZR-00000001",
+  "ownership": {
+    "owner": "EMPIRE-1",
+    "source": "original mathematical synthesis",
+    "uses_human_voice_recordings": false,
+    "uses_licensed_seed_voice": false,
+    "celebrity_similarity_targeting": false
+  },
+  "rendering": {
+    "sample_rate_hz": 48000,
+    "bit_depth": 24,
+    "channels": 1,
+    "deterministic_seed": 1130524
+  },
+  "fundamental": {
+    "home_note": "A3",
+    "home_frequency_hz": 220.0,
+    "comfortable_low_hz": 164.81,
+    "comfortable_high_hz": 440.0,
+    "vibrato_rate_hz": 5.15,
+    "vibrato_depth_cents": 18.0,
+    "micro_jitter_cents": 2.4
+  },
+  "source_model": {
+    "harmonic_count": 42,
+    "harmonic_rolloff": 1.32,
+    "odd_harmonic_bias": 1.12,
+    "subharmonic_mix": 0.055,
+    "glottal_open_quotient": 0.57,
+    "vocal_fry_mix": 0.075,
+    "breath_noise_mix": 0.085,
+    "chest_resonance_mix": 0.22,
+    "soft_saturation_drive": 1.45
+  },
+  "formants_hz": {
+    "a": [760, 1180, 2460, 3350],
+    "e": [520, 1840, 2480, 3420],
+    "i": [310, 2260, 2960, 3500],
+    "o": [560, 940, 2440, 3260],
+    "u": [350, 780, 2240, 3180]
+  },
+  "formant_bandwidth_hz": [95, 120, 170, 220],
+  "performance": {
+    "attack_ms": 34,
+    "release_ms": 120,
+    "phrase_breath_ms": 165,
+    "emotional_crack_probability": 0.08,
+    "adaptive_inhale_gain": 0.18,
+    "close_mic_proximity_gain_db": 2.2,
+    "late_pocket_delay_ms": 14
+  },
+  "identity_constraints": {
+    "register": "warm smoky alto",
+    "delivery": "emotionally honest, intimate, protective, grounded",
+    "language_behavior": "English-first with natural Spanish",
+    "blocked": [
+      "generic bright pop soprano",
+      "forced accent",
+      "celebrity imitation",
+      "multi-persona switching",
+      "identity-erasing timbre replacement"
+    ]
+  },
+  "status": {
+    "timbre_engine": "implemented",
+    "vowel_singing": "implemented",
+    "artifact_engine": "implemented",
+    "full_lyric_intelligibility": "prototype",
+    "release_master_approved": false
+  }
+}
