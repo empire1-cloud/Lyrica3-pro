@@ -1,39 +1,60 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "artist_id": "LZR-00000001",
   "voice_model_id": "LZR-VOICE-MATH-V0",
-  "founder_direction": "Ana Gabriel felt, not cloned.",
-  "safe_translation": {
-    "target_emotion": "classic Mexican dramatic ballad intensity",
-    "allowed_traits": [
-      "chest-forward alto power",
-      "smoky grain and controlled rasp",
-      "dramatic but disciplined vibrato",
-      "portamento into emotionally important notes",
-      "clear Spanish diction with lived-in phrasing",
-      "a restrained sob-like catch at emotional peaks",
-      "strong low-mid resonance",
-      "defiant tenderness",
-      "long held vowels that bloom rather than shout"
-    ],
-    "luzaria_specific_expression": [
-      "younger SGV edge",
-      "closer microphone intimacy",
-      "late-pocket phrasing",
-      "less theatrical projection",
-      "more conversational breath",
-      "Chicano Soul warmth",
-      "modern R&B control",
-      "Testimony-mode emotional cracks"
-    ]
-  },
-  "blocked": [
-    "matching Ana Gabriel's vocal fingerprint",
-    "training on unlicensed Ana Gabriel recordings",
-    "celebrity timbre imitation",
-    "performing as or claiming to be Ana Gabriel",
-    "copying signature recordings note-for-note",
-    "using a celebrity name as a synthesis target"
+  "founder_directions": [
+    "Ana Gabriel felt, not cloned.",
+    "Teena Marie pitch and soul-funk lift, not cloned."
   ],
-  "identity_rule": "Luzaria may carry the emotional gravity and vocal courage associated with classic Mexican dramatic singers, but every acoustic parameter must resolve to Luzaria's own locked mathematical identity."
+  "performance_modes": {
+    "testimony_grit": {
+      "target_emotion": "classic Mexican dramatic-ballad gravity",
+      "allowed_traits": [
+        "chest-forward alto power",
+        "smoky grain and controlled rasp",
+        "dramatic but disciplined vibrato",
+        "portamento into emotionally important notes",
+        "clear Spanish diction with lived-in phrasing",
+        "restrained sob-like catch at emotional peaks",
+        "strong low-mid resonance",
+        "defiant tenderness",
+        "long held vowels that bloom rather than shout"
+      ]
+    },
+    "soul_funk_upper_lift": {
+      "target_emotion": "high-energy soul-funk freedom and vocal fearlessness",
+      "allowed_traits": [
+        "bright forward upper-register resonance",
+        "agile octave movement",
+        "elastic melisma",
+        "playful rhythmic attack",
+        "quick controlled vibrato",
+        "head-and-chest register blending",
+        "clean high-note onset with smoky release",
+        "funk syncopation around the pocket",
+        "call-and-response ad-lib energy"
+      ]
+    }
+  },
+  "luzaria_specific_expression": [
+    "warm smoky alto remains the home register",
+    "younger SGV edge",
+    "closer microphone intimacy",
+    "late-pocket phrasing",
+    "conversational breath",
+    "Chicano Soul warmth",
+    "modern R&B control",
+    "Testimony-mode emotional cracks",
+    "upper lift appears as an extension, never a replacement voice"
+  ],
+  "blocked": [
+    "matching any named singer's vocal fingerprint",
+    "training on unlicensed celebrity recordings",
+    "celebrity timbre imitation",
+    "performing as or claiming to be a named singer",
+    "copying signature recordings note-for-note",
+    "using a celebrity name as a synthesis target",
+    "replacing Luzaria's locked formants with an influence profile"
+  ],
+  "identity_rule": "Luzaria may carry the emotional gravity, vocal courage, upper-register freedom, and soul-funk agility associated with major musical traditions, but every acoustic parameter must resolve to Luzaria's own locked mathematical identity."
 }
