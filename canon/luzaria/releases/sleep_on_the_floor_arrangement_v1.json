@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "arrangement_id": "LZR-ARR-0001",
+  "release_id": "LZR-RC-0001",
+  "artist_id": "LZR-00000001",
+  "title": "Sleep On The Floor",
+  "vocal_north_star": "Velvet Grit",
+  "tempo_bpm": 78,
+  "meter": "4/4",
+  "tonal_center": "C minor with E-flat major light at declaration moments",
+  "production_thesis": "A small-room testimony begins almost unprotected, gains old-school freestyle motion as survival takes over, blooms into lush 90s R&B harmony on the declarations, and ends with a current-generation rap-sung refusal.",
+  "instrument_palette": {
+    "identity_anchor": [
+      "pitched-down 70s soul fragment",
+      "warm analog organ pad",
+      "muted horn sighs",
+      "tape-softened electric piano",
+      "streetlamp-frequency room hum"
+    ],
+    "rhythm": [
+      "late-pocket trap kick",
+      "dry drum-machine clap",
+      "unquantized live hi-hats",
+      "syncopated contemporary-freestyle electro bass pulse",
+      "deep modern sub-bass under the hook"
+    ],
+    "transitions": [
+      "reverse breath swells",
+      "short digital-bell answers",
+      "window-rattle percussion",
+      "tape-stop half beat before the final declaration"
+    ]
+  },
+  "sections": [
+    {
+      "name": "cold_open",
+      "bars": 4,
+      "vocal_modes": [
+        "modern_alt_rnb_pocket",
+        "testimony_grit"
+      ],
+      "production": "Window rattle, streetlamp hum, one organ chord, no full drums. The first inhale is audible before the lyric.",
+      "purpose": "Put the listener inside the room before the beat arrives."
+    },
+    {
+      "name": "verse_1",
+      "bars": 12,
+      "vocal_modes": [
+        "testimony_grit",
+        "modern_alt_rnb_pocket"
+      ],
+      "production": "Late kick enters under line two; low electro pulse appears only at phrase endings; hi-hats remain imperfect and sparse.",
+      "harmony": "One low smoky double appears on 'woman I'm supposed to be.'",
+      "purpose": "Confession first, momentum second."
+    },
+    {
+      "name": "declaration_1",
+      "bars": 4,
+      "vocal_modes": [
+        "soul_funk_upper_lift",
+        "velvet_90s_harmony"
+      ],
+      "production": "Dry clap and syncopated freestyle bass lock together; horns answer the final stressed word without copying a known melody.",
+      "harmony": "Three-part bloom: low third, center lead, upper fourth; airy octave appears only on the tail.",
+      "purpose": "The first moment survival becomes power."
+    },
+    {
+      "name": "verse_2",
+      "bars": 12,
+      "vocal_modes": [
+        "testimony_grit"
+      ],
+      "production": "Remove the bright synths. Let the 808 and room texture carry the weight. Bajo-sexto-like syncopation may appear as an original muted-guitar gesture, not a genre costume.",
+      "harmony": "No harmony on the brother line. One low shadow enters after the emotional crack.",
+      "purpose": "Protect the grief from overproduction."
+    },
+    {
+      "name": "bridge",
+      "bars": 6,
+      "vocal_modes": [
+        "modern_alt_rnb_pocket",
+        "playful_rap_sung_switch"
+      ],
+      "production": "Drums fall to sub pulse and finger snap. Broken phrases sit behind the beat, then tighten into a short rhythmic vow.",
+      "purpose": "Move from memory into decision using a current-generation phrasing switch."
+    },
+    {
+      "name": "final_declaration",
+      "bars": 8,
+      "vocal_modes": [
+        "soul_funk_upper_lift",
+        "velvet_90s_harmony",
+        "freestyle_electro_lift"
+      ],
+      "production": "Full late-pocket drums, modern sub, electro bass counterline, organ, restrained horns, and a short synth-bell answer. No celebratory gloss.",
+      "harmony": "Five Luzaria layers: lead, tight unison, low third, upper sixth, airy octave accent. Every layer keeps the same formant identity.",
+      "purpose": "Make 'I refuse to lose' feel earned, not motivational."
+    },
+    {
+      "name": "outro",
+      "bars": 4,
+      "vocal_modes": [
+        "playful_rap_sung_switch",
+        "home"
+      ],
+      "production": "Beat drops away. A dry whispered echo of the refusal remains with the window hum and one unresolved organ extension.",
+      "purpose": "End close to the listener, not on a giant pop finish."
+    }
+  ],
+  "mix_rules": {
+    "lead": "Dry and close, centered, with short dark plate and selective eighth-note delay on phrase tails.",
+    "harmonies": "Wider than the lead but below it; slight timing differences create 90s warmth without losing intelligibility.",
+    "low_end": "Electro pulse occupies upper bass; modern sub owns the bottom octave; trap 808 cannot mask the vocal chest range.",
+    "master": "48kHz/24-bit, warm transient shape, no crushed vocal dynamics, final loudness chosen after lyric intelligibility passes."
+  },
+  "blocked_drift": [
+    "retro freestyle parody",
+    "generic trap-soul preset",
+    "arena-ballad belting throughout",
+    "celebrity cadence imitation",
+    "overstacked choir vocals",
+    "glossy empowerment-commercial ending",
+    "turning testimony into a dance novelty"
+  ],
+  "status": {
+    "arrangement_locked": true,
+    "vocal_stack_locked": true,
+    "instrumental_render": "pending",
+    "full_lyric_vocal_render": "pending",
+    "mix_approval": "pending",
+    "master_approval": "pending"
+  }
+}
