@@ -6,6 +6,7 @@ on:
       - codex/luzaria-identity-kernel
       - agent/vocal-forge-nahuatl-pronunciation
       - agent/vocal-forge-score-locked-guide
+      - agent/vocal-forge-performance-controls
   pull_request:
     paths:
       - "api/luzaria.py"
@@ -15,6 +16,8 @@ on:
       - "api/luzaria_voice_performance.py"
       - "api/cultura_pronunciation.py"
       - "api/vocal_forge.py"
+      - "api/vocal_expression.py"
+      - "api/vocal_performance.py"
       - "api/main.py"
       - "backend/tests/test_luzaria_assets.py"
       - "backend/tests/test_luzaria_identity.py"
@@ -23,11 +26,13 @@ on:
       - "backend/tests/test_luzaria_voice_math.py"
       - "backend/tests/test_cultura_pronunciation.py"
       - "backend/tests/test_vocal_forge.py"
+      - "backend/tests/test_vocal_performance.py"
       - "canon/luzaria/**"
       - "canon/cultura/**"
       - "docs/luzaria/**"
       - "docs/CULTURA_VOCAL_FORGE_LANGUAGE_ETHICS.md"
       - "docs/VOCAL_FORGE_SCORE_LOCKED_GUIDE.md"
+      - "docs/VOCAL_FORGE_PERFORMANCE_CONTROLS.md"
       - "scripts/render_luzaria_voice_v0.py"
       - "frontend/src/main.tsx"
       - "frontend/src/pages/Luzaria.tsx"
@@ -74,6 +79,8 @@ jobs:
             api/luzaria_voice_performance.py \
             api/cultura_pronunciation.py \
             api/vocal_forge.py \
+            api/vocal_expression.py \
+            api/vocal_performance.py \
             api/main.py \
             scripts/render_luzaria_voice_v0.py
 
@@ -88,7 +95,8 @@ jobs:
             backend/tests/test_luzaria_receipts.py \
             backend/tests/test_luzaria_voice_math.py \
             backend/tests/test_cultura_pronunciation.py \
-            backend/tests/test_vocal_forge.py
+            backend/tests/test_vocal_forge.py \
+            backend/tests/test_vocal_performance.py
 
       - name: Render mathematical Luzaria Voice v0 artifact
         env:
