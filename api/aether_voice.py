@@ -355,7 +355,8 @@ def _synthesize_event(
     vibrato = vibrato_depth * np.sin(2 * math.pi * vibrato_rate * t)
 
     jitter = rng.normal(0.0, 1.6 + 2.4 * request.emotion.vulnerability, size=length)
-    jitter = np.convolve(jitter, np.ones(21) / 21.0, mode="same")
+    smoothing = min(21, length)
+    jitter = np.convolve(jitter, np.ones(smoothing) / smoothing, mode="same")[:length]
     frequency_curve = frequency * (2.0 ** ((vibrato + jitter) / 1200.0))
 
     if request.mode == "singing" and request.emotion.melodic_runs > 0.35 and length > sample_rate * 0.35:
@@ -508,7 +509,7 @@ def engine_status() -> dict[str, Any]:
                 "id": profile_id,
                 "label": profile["label"],
                 "kind": profile["kind"],
-                "is_platform_default": profile_id != "luzaria_velvet_grit",
+                "is_platform_default": profile_id == "aether_warm_alto",
             }
             for profile_id, profile in registry["voice_profiles"].items()
         ],
