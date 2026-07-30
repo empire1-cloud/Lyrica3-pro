@@ -3,6 +3,7 @@ name: Lyrica Voice + Identity Gate
 on:
   push:
     branches:
+      - main
       - codex/luzaria-identity-kernel
       - agent/vocal-forge-nahuatl-pronunciation
       - agent/vocal-forge-score-locked-guide
