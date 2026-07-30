@@ -37,7 +37,8 @@ def test_engine_is_multi_artist_and_luzaria_is_not_default():
     assert status["truth_boundary"]["lyrica_is_multi_artist"] is True
     luzaria = next(item for item in status["voice_profiles"] if item["id"] == "luzaria_velvet_grit")
     assert luzaria["is_platform_default"] is False
-    assert any(item["id"] == "aether_warm_alto" for item in status["voice_profiles"])
+    defaults = [item["id"] for item in status["voice_profiles"] if item["is_platform_default"]]
+    assert defaults == ["aether_warm_alto"]
 
 
 def test_singing_requires_notes():
@@ -121,6 +122,16 @@ def test_release_render_can_sign_with_clear_plan(tmp_path, monkeypatch):
     )
     result = render_aether_voice(singing_request(release_intent="release", pronunciation_plan=plan))
     assert result["receipt"]["signature"]["status"] == "signed"
+
+
+def test_extremely_short_note_renders_without_shape_error(tmp_path, monkeypatch):
+    monkeypatch.setenv("VOCAL_FORGE_ARTIFACT_DIR", str(tmp_path))
+    request = singing_request(
+        bpm=240,
+        notes=[AetherNote(midi_note=60, start_beat=0, duration_beats=0.0001, syllable="a")],
+    )
+    result = render_aether_voice(request)
+    assert result["status"] == "rendered"
 
 
 def test_internal_token_fails_closed(monkeypatch):
