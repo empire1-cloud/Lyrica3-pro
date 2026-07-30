@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "policy_id": "CULTURA-PRONUNCIATION-ETHICS-0001",
+  "owner": "EMPIRE-1",
+  "product_surface": "Lyrica 3 Vocal Forge",
+  "purpose": "Preserve pronunciation, linguistic agency, cultural context, attribution, permission, and compensation when English, Spanish, Spanglish, Calo, or Nahuatl appear in generated or performed music.",
+  "founder_principles": [
+    "Code-switching is a skilled bicultural language behavior, not defective Spanish or English.",
+    "Code-switching and linguistic borrowing are distinct and must be represented separately.",
+    "Calo and barrio language must not be automatically normalized into institutional Spanish.",
+    "Chicano Soul is a bicultural musical grammar, not a generic genre preset.",
+    "Pronunciation accuracy does not replace cultural meaning, community permission, attribution, or compensation.",
+    "Inclusive datasets and human review are required because Western-only analytical assumptions can erase other musical and linguistic systems.",
+    "A technical DNA identifier can support provenance but cannot by itself authorize use of intangible cultural heritage."
+  ],
+  "supported_language_behaviors": {
+    "english": "English wording and pronunciation.",
+    "spanish": "Spanish wording and pronunciation with dialect-aware review where material.",
+    "spanglish": "Intentional alternation between English and Spanish while preserving the supplied words and code-switch boundaries.",
+    "calo": "Chicano barrio vocabulary and speech patterns preserved as cultural expression rather than corrected as an error.",
+    "nahuatl": "A specific Nahuatl language or variant with IPA, vowel-length and saltillo declarations, traceable sources, and human review."
+  },
+  "language_distinctions": {
+    "code_switching": "Alternating between unchanged words or structures from more than one language.",
+    "linguistic_borrowing": "Adapting a word from one language into the phonetic or grammatical system of another.",
+    "product_rule": "The system records both behaviors independently and does not collapse either into a generic bilingual label."
+  },
+  "nahuatl_requirements": [
+    "Use a specific Nahuatl language or variant rather than the collective code when possible.",
+    "Provide an IPA transcription for each release-bound Nahuatl token or phrase.",
+    "Declare how vowel length is represented.",
+    "Declare how saltillo or glottal behavior is represented for the selected variant.",
+    "Attach a release-grade linguistic or community source; a category page or search index is not sufficient evidence.",
+    "Receive human pronunciation approval before a release master can pass.",
+    "Receive traceable community review for heritage, ceremonial, sacred, or otherwise culturally sensitive material."
+  ],
+  "release_gates": [
+    "cultural context documented",
+    "code-switching preserved unless the creator explicitly requests a change",
+    "surface forms preserved",
+    "Nahuatl variant specified",
+    "IPA and phonological handling complete",
+    "source traceability complete",
+    "human pronunciation review approved",
+    "community review approved where required",
+    "ceremonial or sacred permission documented",
+    "attribution present",
+    "training-data rights resolved",
+    "contributor compensation documented when material becomes a reusable training asset"
+  ],
+  "reference_index": {
+    "name": "Wikipedia category: Pages with Nahuatl languages IPA",
+    "url": "https://en.wikipedia.org/wiki/Category:Pages_with_Nahuatl_languages_IPA",
+    "role": "discovery and coverage index only",
+    "tracking_category": true,
+    "approximately_indexed_pages": 253,
+    "classical_nahuatl_subcategory_pages": 33,
+    "license": "Creative Commons Attribution-ShareAlike 4.0",
+    "release_evidence": false,
+    "training_permission": false,
+    "implementation_rule": "Do not scrape the category into a voice model. Resolve entries to specific sources, preserve attribution and license metadata, identify the language or variant, and require human review."
+  },
+  "ethical_ai_music_controls": {
+    "licensed_or_approved_data": "required for any reusable training asset",
+    "source_metadata": "required",
+    "usage_based_compensation": "required when contributor material becomes a reusable commercial training asset",
+    "community_permission": "required for ceremonial or sacred material",
+    "technical_provenance_limit": "DNA, Soulprint, VICS, and traceable exports support evidence but do not replace consent or cultural authority."
+  },
+  "blocked": [
+    "generic Nahuatl without a stated variant",
+    "release-bound Nahuatl without IPA and human review",
+    "using a reference index as authoritative pronunciation evidence",
+    "automatic correction of intentional Spanglish or Calo",
+    "unlicensed cultural recordings used as training data",
+    "ceremonial or sacred language used without permission",
+    "cultural styling without context or attribution",
+    "claiming that provenance technology alone grants cultural permission"
+  ]
+}
