@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - codex/luzaria-identity-kernel
+      - agent/vocal-forge-nahuatl-pronunciation
   pull_request:
     paths:
       - "api/luzaria.py"
@@ -11,14 +12,18 @@ on:
       - "api/luzaria_receipts.py"
       - "api/luzaria_voice_math.py"
       - "api/luzaria_voice_performance.py"
+      - "api/cultura_pronunciation.py"
       - "api/main.py"
       - "backend/tests/test_luzaria_assets.py"
       - "backend/tests/test_luzaria_identity.py"
       - "backend/tests/test_luzaria_release.py"
       - "backend/tests/test_luzaria_receipts.py"
       - "backend/tests/test_luzaria_voice_math.py"
+      - "backend/tests/test_cultura_pronunciation.py"
       - "canon/luzaria/**"
+      - "canon/cultura/**"
       - "docs/luzaria/**"
+      - "docs/CULTURA_VOCAL_FORGE_LANGUAGE_ETHICS.md"
       - "scripts/render_luzaria_voice_v0.py"
       - "frontend/src/main.tsx"
       - "frontend/src/pages/Luzaria.tsx"
@@ -55,7 +60,7 @@ jobs:
             "numpy>=1.26,<3" \
             "scipy>=1.11,<2"
 
-      - name: Compile Luzaria integration
+      - name: Compile Luzaria and Cultura integration
         run: |
           python -m py_compile \
             api/luzaria.py \
@@ -63,10 +68,11 @@ jobs:
             api/luzaria_receipts.py \
             api/luzaria_voice_math.py \
             api/luzaria_voice_performance.py \
+            api/cultura_pronunciation.py \
             api/main.py \
             scripts/render_luzaria_voice_v0.py
 
-      - name: Run Luzaria identity, release, receipt, voice, and asset tests
+      - name: Run identity, release, receipt, voice, asset, and Cultura tests
         env:
           PYTHONPATH: .
         run: |
@@ -75,7 +81,8 @@ jobs:
             backend/tests/test_luzaria_identity.py \
             backend/tests/test_luzaria_release.py \
             backend/tests/test_luzaria_receipts.py \
-            backend/tests/test_luzaria_voice_math.py
+            backend/tests/test_luzaria_voice_math.py \
+            backend/tests/test_cultura_pronunciation.py
 
       - name: Render mathematical Luzaria Voice v0 artifact
         env:
