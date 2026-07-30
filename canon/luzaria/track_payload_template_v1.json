@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "artist_id": "LZR-00000001",
+  "voice_model_id": "LZR-VOICE-MATH-V0",
+  "track_metadata": {
+    "title": "[Title]",
+    "core_genre": "[Genre]",
+    "s2_mutation": "[Optional fused genre or controlled mutation]",
+    "dna_tag_preview": "trk_alpha_[random_hash]"
+  },
+  "ccna_ghostwriter_directive": {
+    "corpus": "[Heartbreak | Struggle | Diversity | Corrido]",
+    "subtext": "[e.g. smiling_through_tears]",
+    "cultural_justification": "[Why the language, story, and feeling belong together]"
+  },
+  "aether_voice_parameters": {
+    "performance_mode": "[home | testimony_grit | soul_funk_upper_lift | corrido_tumbado_grit]",
+    "vocal_technique": "[e.g. corrido_ornamentation | soul_funk_melisma | close_mic_testimony]",
+    "cadence_lock": "[e.g. bajo_sexto_syncopation | late_pocket_swing]",
+    "vulnerability_baseline": 0.85,
+    "identity_anchor": "warm_smoky_alto",
+    "identity_drift_allowed": false,
+    "celebrity_similarity_targeting": false
+  },
+  "epd_vocal_blueprint": {
+    "vulnerability_level": 0.85,
+    "biometric_artifacts": [
+      "<vocal_fry>",
+      "<adaptive_inhale>",
+      "<emotional_crack>",
+      "<chest_resonance>"
+    ],
+    "phonation": "[e.g. close_mic_whisper_to_belt]"
+  },
+  "acoustic_primitives": {
+    "groove": "[e.g. 85bpm_late_pocket_dilla_swing]",
+    "texture": "[e.g. vintage_ssl_console_warmth]"
+  },
+  "lyrics_payload": [
+    {
+      "line": "[Lyric]",
+      "emotional_nuance": "[e.g. intimate_confession]",
+      "artifact_trigger": "[e.g. <adaptive_inhale>]",
+      "performance_mode": "[optional line-level override]"
+    }
+  ],
+  "output_contract": {
+    "audio": "48kHz/24-bit WAV",
+    "voice_profile_digest_required": true,
+    "dna_tag_required": true,
+    "audio_bound_soulprint_required": true,
+    "vics_proof_required": true,
+    "catalog_registration_required": true,
+    "royalty_receipt_required_after_flip": true
+  }
+}

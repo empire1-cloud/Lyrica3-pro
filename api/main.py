@@ -7,6 +7,11 @@ from .vocal_engine import generate_duo_soul, analyze_and_suggest_dna
 from .models import DuoSoulRequest, DuoSoulResponse, DNAResponse
 from .vics_bridge import create_vics_router
 from .royalty_dispatch import create_safe_royalty_outbox_router
+from .luzaria import create_luzaria_router
+from .luzaria_assets import create_luzaria_assets_router
+from .luzaria_receipts import create_luzaria_receipt_router
+from .cultura_pronunciation import create_cultura_pronunciation_router
+from .vocal_forge import create_vocal_forge_router
 
 from lyrica3_soulfire.soul_card.models import SoulCard, GenerateResponse, InspectResponse
 from lyrica3_soulfire.two_pass_pipeline import generate_track_from_soul_card
@@ -24,8 +29,36 @@ app.add_middleware(
 # Mounted by backend/server.py under /duo-soul. Production internal routes:
 #   POST /duo-soul/internal/v1/vics/verify
 #   POST /duo-soul/internal/v1/royalties/dispatch/{child_track_reference}
+#   POST /duo-soul/internal/v1/artist/luzaria/catalog
+#   POST /duo-soul/internal/v1/artist/luzaria/catalog/{track_id}/receipt
+# Public artist routes:
+#   GET  /duo-soul/artist/luzaria
+#   GET  /duo-soul/artist/luzaria/birth-certificate
+#   GET  /duo-soul/artist/luzaria/releases/first
+#   GET  /duo-soul/artist/luzaria/releases/first/creative-system
+#   GET  /duo-soul/artist/luzaria/voice-system
+#   GET  /duo-soul/artist/luzaria/wardrobe
+#   GET  /duo-soul/artist/luzaria/genre-matrix
+#   GET  /duo-soul/artist/luzaria/track-payload-template
+#   GET  /duo-soul/artist/luzaria/catalog
+#   GET  /duo-soul/artist/luzaria/launch-readiness
+# Cultura language and pronunciation routes:
+#   GET  /duo-soul/cultura/pronunciation/capabilities
+#   POST /duo-soul/cultura/pronunciation/validate
+#   POST /duo-soul/cultura/release-language-gate
+# Vocal Forge guide routes:
+#   GET  /duo-soul/vocal-forge/capabilities
+#   POST /duo-soul/vocal-forge/provider-preflight
+#   POST /duo-soul/vocal-forge/guide/preflight
+#   POST /duo-soul/vocal-forge/guide/render
+#   GET  /duo-soul/vocal-forge/artifacts/{artifact_id}
 app.include_router(create_vics_router())
 app.include_router(create_safe_royalty_outbox_router())
+app.include_router(create_luzaria_router())
+app.include_router(create_luzaria_assets_router())
+app.include_router(create_luzaria_receipt_router())
+app.include_router(create_cultura_pronunciation_router())
+app.include_router(create_vocal_forge_router())
 
 
 @app.post("/analyze-voice", response_model=DNAResponse)

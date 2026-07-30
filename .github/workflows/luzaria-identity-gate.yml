@@ -1,0 +1,125 @@
+name: Luzaria Identity Gate
+
+on:
+  push:
+    branches:
+      - codex/luzaria-identity-kernel
+      - agent/vocal-forge-nahuatl-pronunciation
+      - agent/vocal-forge-score-locked-guide
+  pull_request:
+    paths:
+      - "api/luzaria.py"
+      - "api/luzaria_assets.py"
+      - "api/luzaria_receipts.py"
+      - "api/luzaria_voice_math.py"
+      - "api/luzaria_voice_performance.py"
+      - "api/cultura_pronunciation.py"
+      - "api/vocal_forge.py"
+      - "api/main.py"
+      - "backend/tests/test_luzaria_assets.py"
+      - "backend/tests/test_luzaria_identity.py"
+      - "backend/tests/test_luzaria_release.py"
+      - "backend/tests/test_luzaria_receipts.py"
+      - "backend/tests/test_luzaria_voice_math.py"
+      - "backend/tests/test_cultura_pronunciation.py"
+      - "backend/tests/test_vocal_forge.py"
+      - "canon/luzaria/**"
+      - "canon/cultura/**"
+      - "docs/luzaria/**"
+      - "docs/CULTURA_VOCAL_FORGE_LANGUAGE_ETHICS.md"
+      - "docs/VOCAL_FORGE_SCORE_LOCKED_GUIDE.md"
+      - "scripts/render_luzaria_voice_v0.py"
+      - "frontend/src/main.tsx"
+      - "frontend/src/pages/Luzaria.tsx"
+      - "frontend/src/pages/luzaria.css"
+      - "frontend/src/pages/luzaria-release.css"
+      - "frontend/src/routes.tsx"
+      - ".github/workflows/luzaria-identity-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  identity-api-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "fastapi==0.104.1" \
+            "pydantic==2.5.0" \
+            "pytest>=8,<9" \
+            "pytest-asyncio>=0.23,<1" \
+            "numpy>=1.26,<3" \
+            "scipy>=1.11,<2"
+
+      - name: Compile Luzaria, Cultura, and Vocal Forge integration
+        run: |
+          python -m py_compile \
+            api/luzaria.py \
+            api/luzaria_assets.py \
+            api/luzaria_receipts.py \
+            api/luzaria_voice_math.py \
+            api/luzaria_voice_performance.py \
+            api/cultura_pronunciation.py \
+            api/vocal_forge.py \
+            api/main.py \
+            scripts/render_luzaria_voice_v0.py
+
+      - name: Run identity, release, receipt, voice, asset, Cultura, and Vocal Forge tests
+        env:
+          PYTHONPATH: .
+        run: |
+          pytest -q \
+            backend/tests/test_luzaria_assets.py \
+            backend/tests/test_luzaria_identity.py \
+            backend/tests/test_luzaria_release.py \
+            backend/tests/test_luzaria_receipts.py \
+            backend/tests/test_luzaria_voice_math.py \
+            backend/tests/test_cultura_pronunciation.py \
+            backend/tests/test_vocal_forge.py
+
+      - name: Render mathematical Luzaria Voice v0 artifact
+        env:
+          PYTHONPATH: .
+        run: python scripts/render_luzaria_voice_v0.py
+
+      - name: Upload voice prototype and fingerprint
+        uses: actions/upload-artifact@v4
+        with:
+          name: luzaria-voice-math-v0
+          path: artifacts/luzaria_voice_v0/
+          if-no-files-found: error
+          retention-days: 30
+
+  public-profile-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Build public profile
+        working-directory: frontend
+        run: npm run build

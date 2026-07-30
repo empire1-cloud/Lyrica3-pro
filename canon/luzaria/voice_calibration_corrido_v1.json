@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "calibration_id": "LZR-VOICE-CAL-0001",
+  "artist_id": "LZR-00000001",
+  "voice_model_id": "LZR-VOICE-MATH-V0",
+  "purpose": "Calibrate Luzaria's Spanish phrasing, corrido ornamentation, chest-forward grit, controlled rasp, and emotional crack behavior without targeting any real singer's vocal fingerprint.",
+  "track_metadata": {
+    "genre": "Corrido Tumbado",
+    "theme_corpus": "Struggle & Triumph",
+    "performance_style": "Grit & Gravel"
+  },
+  "aether_voice_parameters": {
+    "vocal_technique": "corrido_ornamentation",
+    "cadence_lock": "bajo_sexto_syncopation",
+    "vulnerability_baseline": 0.8,
+    "identity_anchor": "warm smoky alto",
+    "performance_translation": [
+      "chest-forward power",
+      "smoky grain",
+      "dramatic disciplined vibrato",
+      "portamento into emotional words",
+      "restrained sob-like catch",
+      "natural Spanish diction",
+      "younger SGV intimacy"
+    ]
+  },
+  "lyrics_payload": [
+    {
+      "line": "Cruzando la frontera con el peso del mundo en la espalda...",
+      "emotional_nuance": "heavy_inhale",
+      "artifact_trigger": "<adaptive_inhale>"
+    },
+    {
+      "line": "Pero el hambre de mi madre me quitó el miedo.",
+      "emotional_nuance": "intimate_confession",
+      "artifact_trigger": "<emotional_crack>",
+      "artifact_scope": "miedo"
+    }
+  ],
+  "similarity_guard": {
+    "named_artist_reference_is_emotional_only": true,
+    "timbre_matching": "blocked",
+    "recording_training": "blocked_without_license",
+    "impersonation": "blocked",
+    "output_identity": "LUZARIA"
+  },
+  "status": "approved_for_mathematical_voice_calibration"
+}

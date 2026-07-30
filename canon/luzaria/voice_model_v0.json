@@ -1,0 +1,177 @@
+{
+  "schema_version": "1.2",
+  "voice_model_id": "LZR-VOICE-MATH-V0",
+  "artist_id": "LZR-00000001",
+  "ownership": {
+    "owner": "EMPIRE-1",
+    "source": "original mathematical synthesis",
+    "uses_human_voice_recordings": false,
+    "uses_licensed_seed_voice": false,
+    "celebrity_similarity_targeting": false
+  },
+  "rendering": {
+    "sample_rate_hz": 48000,
+    "bit_depth": 24,
+    "channels": 1,
+    "deterministic_seed": 1130524
+  },
+  "fundamental": {
+    "home_note": "A3",
+    "home_frequency_hz": 220.0,
+    "comfortable_low_hz": 164.81,
+    "comfortable_high_hz": 440.0,
+    "extension_high_hz": 698.46,
+    "vibrato_rate_hz": 5.15,
+    "vibrato_depth_cents": 18.0,
+    "micro_jitter_cents": 2.4
+  },
+  "source_model": {
+    "harmonic_count": 42,
+    "harmonic_rolloff": 1.32,
+    "odd_harmonic_bias": 1.12,
+    "subharmonic_mix": 0.055,
+    "glottal_open_quotient": 0.57,
+    "vocal_fry_mix": 0.075,
+    "breath_noise_mix": 0.085,
+    "chest_resonance_mix": 0.22,
+    "soft_saturation_drive": 1.45
+  },
+  "formants_hz": {
+    "a": [760, 1180, 2460, 3350],
+    "e": [520, 1840, 2480, 3420],
+    "i": [310, 2260, 2960, 3500],
+    "o": [560, 940, 2440, 3260],
+    "u": [350, 780, 2240, 3180]
+  },
+  "formant_bandwidth_hz": [95, 120, 170, 220],
+  "performance": {
+    "attack_ms": 34,
+    "release_ms": 120,
+    "phrase_breath_ms": 165,
+    "emotional_crack_probability": 0.08,
+    "adaptive_inhale_gain": 0.18,
+    "close_mic_proximity_gain_db": 2.2,
+    "late_pocket_delay_ms": 14
+  },
+  "performance_modes": {
+    "home": {
+      "pitch_offset_semitones": 0.0,
+      "vibrato_rate_multiplier": 1.0,
+      "vibrato_depth_multiplier": 1.0,
+      "brightness_multiplier": 1.0,
+      "chest_multiplier": 1.0,
+      "grit_multiplier": 1.0,
+      "breath_multiplier": 1.0,
+      "portamento_cents": 0.0,
+      "melisma_rate": 1.0,
+      "timing_offset_ms": 14.0
+    },
+    "testimony_grit": {
+      "pitch_offset_semitones": -0.5,
+      "vibrato_rate_multiplier": 0.88,
+      "vibrato_depth_multiplier": 1.38,
+      "brightness_multiplier": 0.88,
+      "chest_multiplier": 1.42,
+      "grit_multiplier": 1.58,
+      "breath_multiplier": 1.08,
+      "portamento_cents": 42.0,
+      "melisma_rate": 0.72,
+      "timing_offset_ms": 22.0
+    },
+    "soul_funk_upper_lift": {
+      "pitch_offset_semitones": 5.0,
+      "vibrato_rate_multiplier": 1.22,
+      "vibrato_depth_multiplier": 0.86,
+      "brightness_multiplier": 1.28,
+      "chest_multiplier": 0.82,
+      "grit_multiplier": 0.94,
+      "breath_multiplier": 0.92,
+      "portamento_cents": 24.0,
+      "melisma_rate": 1.65,
+      "timing_offset_ms": 5.0
+    },
+    "corrido_tumbado_grit": {
+      "pitch_offset_semitones": -1.0,
+      "vibrato_rate_multiplier": 0.92,
+      "vibrato_depth_multiplier": 1.24,
+      "brightness_multiplier": 0.9,
+      "chest_multiplier": 1.3,
+      "grit_multiplier": 1.45,
+      "breath_multiplier": 1.12,
+      "portamento_cents": 36.0,
+      "melisma_rate": 1.18,
+      "timing_offset_ms": 18.0
+    },
+    "velvet_90s_harmony": {
+      "pitch_offset_semitones": 0.0,
+      "vibrato_rate_multiplier": 1.03,
+      "vibrato_depth_multiplier": 0.94,
+      "brightness_multiplier": 1.05,
+      "chest_multiplier": 0.96,
+      "grit_multiplier": 0.82,
+      "breath_multiplier": 1.16,
+      "portamento_cents": 15.0,
+      "melisma_rate": 1.28,
+      "timing_offset_ms": 18.0
+    },
+    "freestyle_electro_lift": {
+      "pitch_offset_semitones": 2.0,
+      "vibrato_rate_multiplier": 1.16,
+      "vibrato_depth_multiplier": 0.72,
+      "brightness_multiplier": 1.22,
+      "chest_multiplier": 0.84,
+      "grit_multiplier": 0.86,
+      "breath_multiplier": 0.88,
+      "portamento_cents": 12.0,
+      "melisma_rate": 1.34,
+      "timing_offset_ms": -4.0
+    },
+    "modern_alt_rnb_pocket": {
+      "pitch_offset_semitones": -0.25,
+      "vibrato_rate_multiplier": 0.76,
+      "vibrato_depth_multiplier": 0.58,
+      "brightness_multiplier": 0.96,
+      "chest_multiplier": 0.9,
+      "grit_multiplier": 0.78,
+      "breath_multiplier": 1.42,
+      "portamento_cents": 28.0,
+      "melisma_rate": 1.12,
+      "timing_offset_ms": 26.0
+    },
+    "playful_rap_sung_switch": {
+      "pitch_offset_semitones": -2.0,
+      "vibrato_rate_multiplier": 0.42,
+      "vibrato_depth_multiplier": 0.28,
+      "brightness_multiplier": 1.08,
+      "chest_multiplier": 0.88,
+      "grit_multiplier": 1.08,
+      "breath_multiplier": 0.78,
+      "portamento_cents": 4.0,
+      "melisma_rate": 1.9,
+      "timing_offset_ms": -8.0
+    }
+  },
+  "identity_constraints": {
+    "register": "warm smoky alto with an approved upper extension",
+    "delivery": "emotionally honest, intimate, protective, grounded, rhythmically agile",
+    "language_behavior": "English-first with natural Spanish",
+    "vocal_north_star": "Velvet Grit",
+    "blocked": [
+      "generic bright pop soprano",
+      "forced accent",
+      "celebrity imitation",
+      "multi-persona switching",
+      "identity-erasing timbre replacement",
+      "retro parody"
+    ]
+  },
+  "status": {
+    "timbre_engine": "implemented",
+    "vowel_singing": "implemented",
+    "artifact_engine": "implemented",
+    "performance_modes": "implemented",
+    "harmony_architecture": "specified",
+    "full_lyric_intelligibility": "prototype",
+    "release_master_approved": false
+  }
+}

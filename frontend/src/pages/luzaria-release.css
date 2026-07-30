@@ -1,0 +1,102 @@
+.luzaria-release {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(215, 161, 104, 0.2);
+  background:
+    radial-gradient(circle at 85% 10%, rgba(215, 161, 104, 0.13), transparent 32%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.072), rgba(255, 255, 255, 0.025));
+}
+
+.luzaria-release::after {
+  content: "FIRST LIGHT";
+  position: absolute;
+  right: -18px;
+  top: 28px;
+  color: rgba(247, 241, 231, 0.025);
+  font-size: clamp(58px, 10vw, 138px);
+  font-weight: 950;
+  letter-spacing: -0.08em;
+  pointer-events: none;
+}
+
+.luzaria-release-genre {
+  margin: 2px 0 0 !important;
+  color: #d7a168 !important;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.luzaria-release-story {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 8px 0 22px;
+}
+
+.luzaria-release-story > div {
+  min-height: 158px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 17px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.luzaria-release-story span {
+  display: block;
+  margin-bottom: 11px;
+  color: rgba(247, 241, 231, 0.38);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.luzaria-release-story strong {
+  display: block;
+  color: #f7f1e7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.luzaria-release-story p {
+  margin: 12px 0 0;
+  color: rgba(247, 241, 231, 0.54);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.luzaria-release-tags {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 22px;
+}
+
+.luzaria-release-tags span {
+  padding: 7px 10px;
+  border: 1px solid rgba(181, 93, 99, 0.24);
+  border-radius: 999px;
+  color: #e7b1b2;
+  background: rgba(181, 93, 99, 0.07);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+@media (max-width: 820px) {
+  .luzaria-release-story {
+    grid-template-columns: 1fr;
+  }
+
+  .luzaria-release-story > div {
+    min-height: 0;
+  }
+}

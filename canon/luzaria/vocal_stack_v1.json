@@ -1,0 +1,166 @@
+{
+  "schema_version": "1.0",
+  "stack_id": "LZR-VOCAL-STACK-0001",
+  "artist_id": "LZR-00000001",
+  "voice_model_id": "LZR-VOICE-MATH-V0",
+  "name": "Velvet Grit",
+  "north_star": "90s R&B harmony warmth, classic freestyle urgency, intimate modern alt-R&B phrasing, and playful rap-sung confidence — all resolved through Luzaria's own locked mathematical voice.",
+  "identity_rule": "Every lead, double, harmony, whisper, ad-lib, and rap-sung layer is rendered from the same Luzaria voice profile. Pitch, timing, breath, intensity, and articulation may change; formant identity and artist identity may not.",
+  "lead_chain": {
+    "register": "warm smoky alto with approved upper extension",
+    "delivery": "close-mic, breath-led, emotionally direct, conversational until the declaration lines",
+    "timing": "8 to 22 milliseconds behind the instrumental pocket",
+    "dynamic_arc": "soft spoken onset to chest-supported declaration to controlled upper lift",
+    "processing": [
+      "high-pass at 78 Hz",
+      "gentle 2.4:1 compression",
+      "subtle tape saturation",
+      "short dark plate reverb",
+      "low-feedback eighth-note delay on phrase tails",
+      "parallel grit bus below the lead"
+    ]
+  },
+  "harmony_architecture": {
+    "verse": {
+      "layers": 2,
+      "components": [
+        "center lead",
+        "low smoky double at minus 3 semitones, minus 10 dB, 18 milliseconds late"
+      ],
+      "rule": "Keep the verse intimate; harmony should feel discovered, not announced."
+    },
+    "pre_chorus": {
+      "layers": 3,
+      "components": [
+        "center lead",
+        "low third or fourth",
+        "upper third or sixth"
+      ],
+      "spread": "18 percent left and right",
+      "rule": "Harmony blooms only after the emotional premise is clear."
+    },
+    "chorus": {
+      "layers": 5,
+      "components": [
+        "center lead",
+        "tight unison double",
+        "low third or fourth",
+        "upper third or sixth",
+        "airy octave accent on the final phrase"
+      ],
+      "rule": "Lush, warm, and emotionally stacked; never choir-like and never a collection of different personas."
+    },
+    "freestyle_hook": {
+      "layers": 4,
+      "components": [
+        "dry center lead",
+        "tight rhythmic double",
+        "short call-and-response answer",
+        "breathy octave tag"
+      ],
+      "timing": "answers land between drum-machine claps and syncopated bass hits",
+      "rule": "Use classic freestyle urgency without sounding like a museum recreation."
+    },
+    "bridge": {
+      "layers": 3,
+      "components": [
+        "near-whisper lead",
+        "low chest shadow",
+        "modern broken-line upper response"
+      ],
+      "rule": "The bridge strips the arrangement back and makes the voice feel dangerously close."
+    }
+  },
+  "performance_modes": {
+    "testimony_grit": {
+      "purpose": "grief, survival, protective gravity",
+      "traits": [
+        "chest-forward low-mid resonance",
+        "controlled rasp",
+        "slow dramatic vibrato",
+        "restrained emotional cracks"
+      ]
+    },
+    "velvet_90s_harmony": {
+      "purpose": "warmth, longing, sister-harmony depth",
+      "traits": [
+        "close thirds and sixths",
+        "delayed harmony bloom",
+        "soft breath-led consonants",
+        "lead identity preserved across every layer"
+      ]
+    },
+    "freestyle_electro_lift": {
+      "purpose": "romantic urgency, motion, hook energy",
+      "traits": [
+        "clean forward onset",
+        "short bright vowel lift",
+        "syncopated repeated hook fragments",
+        "quick call-and-response ad-libs",
+        "controlled drum-machine-era excitement"
+      ]
+    },
+    "modern_alt_rnb_pocket": {
+      "purpose": "private confession and unpredictable emotional phrasing",
+      "traits": [
+        "speech-like starts",
+        "behind-the-beat entrances",
+        "broken-line melody",
+        "whisper-to-tone transitions",
+        "late melodic resolution"
+      ]
+    },
+    "playful_rap_sung_switch": {
+      "purpose": "confidence, wit, and current-generation personality",
+      "traits": [
+        "half-rapped melodic cadence",
+        "percussive consonants",
+        "fast pocket changes",
+        "spoken asides",
+        "stacked punch-line doubles",
+        "quick return to full sung tone"
+      ]
+    },
+    "soul_funk_upper_lift": {
+      "purpose": "fearless declaration and controlled high-register release",
+      "traits": [
+        "head-and-chest blend",
+        "elastic melisma",
+        "fast emotional vibrato",
+        "smoky release after bright onset"
+      ]
+    }
+  },
+  "freestyle_generation": {
+    "old_school_elements": [
+      "syncopated electro bass",
+      "dry drum-machine kick and clap",
+      "bright but slightly detuned synth stabs",
+      "romantic urgency",
+      "short repeated vocal hooks",
+      "telephone-like response layers"
+    ],
+    "modernization_rules": [
+      "sub-bass extends below the classic electro bass",
+      "drums use modern transient control and negative space",
+      "lead vocal stays dry and intimate rather than arena-sized",
+      "verses use current alt-R&B broken phrasing",
+      "one rap-sung switch may appear without changing persona",
+      "mix preserves analog warmth while meeting current loudness and low-end expectations"
+    ],
+    "blocked": [
+      "retro parody",
+      "karaoke recreation",
+      "copying a known freestyle melody",
+      "period-costume vocal affect",
+      "thin novelty synth mix"
+    ]
+  },
+  "sleep_on_the_floor_application": {
+    "verse_1": "testimony_grit plus modern_alt_rnb_pocket",
+    "declaration_1": "soul_funk_upper_lift with a short velvet_90s_harmony bloom",
+    "verse_2": "testimony_grit with one freestyle_electro_lift pulse beneath the line endings",
+    "final_declaration": "soul_funk_upper_lift, five-layer chorus stack, then a dry playful_rap_sung_switch echo on the final refusal",
+    "rule": "Freestyle elements support survival momentum; they must not turn the testimony into a dance novelty."
+  }
+}

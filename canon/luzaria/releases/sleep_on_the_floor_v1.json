@@ -1,0 +1,153 @@
+{
+  "schema_version": "1.1",
+  "release_id": "LZR-RC-0001",
+  "artist_id": "LZR-00000001",
+  "artist_name": "LUZARIA",
+  "title": "Sleep On The Floor",
+  "release_status": "candidate",
+  "core_genre": "SGV Sub-genre — Chicano Soul / Trap fusion",
+  "s2_mutation": "Pitched-down 70s soul sample fused with late-pocket, off-grid Trap 808s and live, imperfect hi-hats.",
+  "dna_tag_preview": "trk_alpha_4e8a1c_empire1",
+  "final_dna_tag": null,
+  "final_track_id": null,
+  "soulprint_hash": null,
+  "vics_proof_id": null,
+  "archisynapse_receipt_id": null,
+  "voice_model": {
+    "voice_model_id": "LZR-VOICE-MATH-V0",
+    "voice_profile": "canon/luzaria/voice_model_v0.json",
+    "influence_guardrails": "canon/luzaria/voice_influence_guardrails_v1.json",
+    "identity_rule": "Warm smoky alto remains the permanent voice. Testimony grit and soul-funk upper lift are performance modes, not alternate personas.",
+    "performance_arc": [
+      {
+        "section": "verse_1",
+        "mode": "testimony_grit",
+        "weight": 0.9,
+        "direction": "Low, close, exhausted, chest-forward. Let the breath carry the room."
+      },
+      {
+        "section": "declaration_1",
+        "lyric": "They need to know their mama ain't no bitch.",
+        "mode": "soul_funk_upper_lift",
+        "weight": 0.42,
+        "direction": "Lift the pitch and attack without losing smoke; bloom on the last stressed word rather than imitating any singer."
+      },
+      {
+        "section": "verse_2",
+        "mode": "testimony_grit",
+        "weight": 1.0,
+        "direction": "Return to bruised low-mid resonance with controlled rasp and a restrained sob-like catch."
+      },
+      {
+        "section": "final_declaration",
+        "lyric": "I refuse to let my kids get lost in this place. I refuse to lose.",
+        "mode": "soul_funk_upper_lift",
+        "weight": 0.58,
+        "direction": "Begin in chest voice, climb through a blended register, and release the final word with fast emotional vibrato."
+      }
+    ]
+  },
+  "creative_intent_trace": {
+    "cultural_justification": "The narrative reflects a street-level matriarchal struggle, a core theme in SGV/Chicano oral history. The use of 'ain't no bitch' is not slang for aggression, but a declaration of profound resilience and refusal to be victimized, a key distinction in Chicana cultural context.",
+    "poetic_divergence": "The rhyme scheme is intentionally fractured in the second verse to mirror the psychological break of witnessing death. Predictable AI couplets were penalized. The focus is on raw, narrative delivery over flawless poetic structure to amplify authenticity."
+  },
+  "epd_vocal_blueprint": {
+    "vulnerability_level": 0.98,
+    "biometric_artifacts": [
+      "<adaptive_inhale>",
+      "<vocal_fry>",
+      "<emotional_crack>",
+      "<chest_resonance>"
+    ],
+    "phonation": "Intimate close-mic testimony that moves from warm smoky alto and chest-forward grit into short, controlled soul-funk upper-register lifts.",
+    "luzaria_voice_alignment": {
+      "register": "Warm smoky alto",
+      "approved_upper_extension": true,
+      "delivery": "Emotionally honest, intimate, protective, grounded, and fearless at the declarations",
+      "language_behavior": "English-first with natural Spanish",
+      "identity_drift": false,
+      "celebrity_similarity_targeting": false
+    }
+  },
+  "acoustic_primitives": {
+    "groove": "78 BPM, heavy late-pocket swing on the kick and snare. Hi-hats have slight, unquantized human timing variations.",
+    "texture": "Simulated sound of a small, carpeted room with one window rattling. A subtle, low-frequency hum of a streetlamp outside. Analog tape saturation on the master to add warmth and slight compression."
+  },
+  "lyrics_payload": [
+    {
+      "line": "Another night, the window sings that same broken song...",
+      "artifact_trigger": "<adaptive_inhale>",
+      "performance_mode": "testimony_grit"
+    },
+    {
+      "line": "Glass hummin' a lullaby that's all wrong.",
+      "artifact_trigger": "",
+      "performance_mode": "testimony_grit"
+    },
+    {
+      "line": "Got the babies on the floor... they lookin' at me.",
+      "artifact_trigger": "<vocal_fry>",
+      "performance_mode": "testimony_grit"
+    },
+    {
+      "line": "And in their eyes, I see the woman I'm supposed to be.",
+      "artifact_trigger": "",
+      "performance_mode": "testimony_grit"
+    },
+    {
+      "line": "They need to know their mama ain't no bitch.",
+      "artifact_trigger": "<chest_resonance>",
+      "performance_mode": "soul_funk_upper_lift"
+    },
+    {
+      "line": "That I can weave a future from this... this ditch.",
+      "artifact_trigger": "",
+      "performance_mode": "home"
+    },
+    {
+      "line": "I see my brother's eyes... goin' distant, goin' gray...",
+      "artifact_trigger": "<emotional_crack>",
+      "performance_mode": "testimony_grit"
+    },
+    {
+      "line": "Watched the life just... drift away.",
+      "artifact_trigger": "",
+      "performance_mode": "testimony_grit"
+    },
+    {
+      "line": "I can still feel his last breath on my face.",
+      "artifact_trigger": "<adaptive_inhale>",
+      "performance_mode": "testimony_grit"
+    },
+    {
+      "line": "I refuse to let my kids get lost in this place. I refuse to lose.",
+      "artifact_trigger": "<emotional_crack>",
+      "performance_mode": "soul_funk_upper_lift"
+    }
+  ],
+  "canon_review": {
+    "drift_guard": "pass",
+    "mode": "Testimony",
+    "note": "Direct testimony is an intentional departure from Soulfire's default playful masking of sadness. The warm soul bed carries the hug while the vocal carries the bruise. Upper-register lifts occur only on declarations of survival.",
+    "cultural_identity": "honored as grammar, not costume"
+  },
+  "cross_platform_proof": {
+    "suno_payload_sung_as_lyrics": true,
+    "evidence_status": "documented",
+    "meaning": "The external system treated instructions, metadata, structure, and lyrics as one undifferentiated block. Lyrica preserves their separate roles."
+  },
+  "release_gates": {
+    "identity_alignment": "complete",
+    "lyrics_locked": "complete",
+    "creative_intent_locked": "complete",
+    "drift_guard_review": "complete",
+    "voice_model_math_v0": "complete",
+    "wardrobe_testimony_armor": "complete",
+    "final_audio_master": "pending",
+    "final_dna_tag": "pending",
+    "soulprint_hash": "pending",
+    "vics_proof": "pending",
+    "catalog_registration": "pending",
+    "archisynapse_receipt": "pending"
+  }
+}

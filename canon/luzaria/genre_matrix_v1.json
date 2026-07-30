@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.1",
+  "artist_id": "LZR-00000001",
+  "matrix_id": "LZR-GENRE-MATRIX-0001",
+  "identity_rule": "Chicano_Soul is Luzaria's permanent home grammar. Other genres may modify rhythm, texture, ornamentation, or arrangement only; they may not replace her voice identity, cultural grounding, or story canon.",
+  "default_weights": {
+    "Chicano_Soul": 0.62,
+    "Contemporary_Freestyle": 0.16,
+    "Phonk": 0.08,
+    "Krautrock": 0.04,
+    "Corrido_Tumbado": 0.10
+  },
+  "genre_matrix": {
+    "Chicano_Soul": {
+      "role": "identity_anchor",
+      "primitives": {
+        "groove": "slow_cruising_swing",
+        "melody": "nostalgic_falsetto_friendly",
+        "texture": [
+          "warm_horns",
+          "analog_organ_pads"
+        ]
+      },
+      "active_agent": "Harmonic_Emotion_Cartographer",
+      "vocal_bias": "bruised_subtext"
+    },
+    "Contemporary_Freestyle": {
+      "role": "controlled_generational_bridge",
+      "era_reference": "classic Latin freestyle and electro-R&B energy translated for current production",
+      "primitives": {
+        "groove": "syncopated_electro_bass_with_dry_kick_clap",
+        "melody": "romantic_urgent_hook_fragments",
+        "texture": [
+          "slightly_detuned_synth_stabs",
+          "digital_bell_accents",
+          "modern_sub_bass",
+          "short_dark_plate_reverb"
+        ]
+      },
+      "active_agent": "Generational_Freestyle_Translator",
+      "vocal_bias": "breathy_romantic_urgency_with_playful_call_response",
+      "modernization": [
+        "current transient control",
+        "negative space around the lead",
+        "alt-R&B broken phrasing in verses",
+        "one identity-safe rap-sung switch",
+        "full low-end extension without retro parody"
+      ],
+      "identity_boundary": "Borrow the emotional mechanics of freestyle, not any known melody, cadence fingerprint, or singer timbre."
+    },
+    "Phonk": {
+      "role": "controlled_mutation",
+      "primitives": {
+        "groove": "memphis_underground_drums",
+        "melody": "dark_hypnotic",
+        "texture": [
+          "distorted_cowbells",
+          "heavy_sub_bass"
+        ]
+      },
+      "active_agent": "Late_Pocket_Groove_Sculptor",
+      "vocal_bias": "gritty_lo_fi_syncopation"
+    },
+    "Krautrock": {
+      "role": "controlled_mutation",
+      "primitives": {
+        "groove": "motorik_relentless_4_4",
+        "melody": "minimal_hypnotic",
+        "texture": [
+          "analog_modular_synths",
+          "tape_delay"
+        ]
+      },
+      "active_agent": "Analog_Warmth_Texture_Synth",
+      "vocal_bias": "deadpan_observational"
+    },
+    "Corrido_Tumbado": {
+      "role": "controlled_cultural_extension",
+      "theme_corpus": "Struggle & Triumph",
+      "performance_style": "Grit & Gravel",
+      "primitives": {
+        "groove": "bajo_sexto_syncopation",
+        "melody": "corrido_ornamentation",
+        "texture": [
+          "dry_bajo_sexto_attack",
+          "upright_bass_weight",
+          "close_room_ambience"
+        ]
+      },
+      "active_agent": "Corrido_Ornamentation_Director",
+      "vocal_bias": "intimate_grit_with_defiant_tenderness",
+      "vulnerability_baseline": 0.8,
+      "identity_boundary": "Use Mexican dramatic-ballad gravity and corrido phrasing as technique, never another singer's timbre or fingerprint."
+    }
+  },
+  "voice_invariants": {
+    "register": "warm_smoky_alto",
+    "formant_identity": "locked",
+    "chest_resonance": "required",
+    "english_first_natural_spanish": true,
+    "generic_pop_drift": "blocked",
+    "celebrity_similarity_targeting": "blocked",
+    "multi_persona_switching": "blocked",
+    "vocal_north_star": "Velvet Grit"
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "wardrobe_id": "LZR-WARDROBE-0001",
+  "artist_id": "LZR-00000001",
+  "identity_rule": "Wardrobe may evolve by era, but must preserve Luzaria's warm-neutral street-luxury identity, effortless femininity, and SGV grounding without caricature or costume.",
+  "permanent_signatures": {
+    "palette": [
+      "toast",
+      "smoke_black",
+      "warm_cream",
+      "oxblood",
+      "aged_gold"
+    ],
+    "materials": [
+      "soft leather",
+      "washed denim",
+      "ribbed cotton",
+      "matte satin",
+      "brushed metal"
+    ],
+    "beauty": {
+      "hair": "Very long dark brown to soft black, full movement, never hidden by the look",
+      "makeup": "Soft brown smoked liner, warm skin, nude-brown lip, full voluminous lashes",
+      "jewelry": "Medium aged-gold hoops, fine layered chain, one signet ring"
+    },
+    "blocked_drift": [
+      "generic glitter pop costume",
+      "celebrity outfit copying",
+      "cultural caricature",
+      "costume-like chola styling",
+      "logo-heavy luxury imitation",
+      "identity-obscuring masks",
+      "weapon styling"
+    ]
+  },
+  "eras": {
+    "sleep_on_the_floor": {
+      "era_name": "Testimony Armor",
+      "story": "She is exhausted, grieving, and still standing between danger and her children. The clothes read as protection built from ordinary life—not fantasy armor.",
+      "hero_look": {
+        "outerwear": "Toast-brown cropped leather moto jacket with structured shoulders, softened wear at the seams, and a warm-cream quilted lining visible at the collar",
+        "top": "Smoke-black ribbed square-neck bodysuit with full coverage and a clean close fit",
+        "bottom": "Oxblood-black wide-leg utility trousers in matte satin twill, high waist, reinforced knee panels, and subtle aged-gold hardware",
+        "footwear": "Black leather square-toe platform boots with a stable block heel and brushed-metal side zip",
+        "accessories": [
+          "Aged-gold medium hoops",
+          "Fine layered chain with a small LZR identity plate",
+          "Single toast leather wrist wrap",
+          "Slim signet ring engraved LZR-00000001"
+        ],
+        "hair": "Long, loose, slightly wind-tossed, center part; one side tucked behind the ear",
+        "makeup": "Soft smoked brown eyes, warm skin, nude-brown lip, visible tiredness preserved rather than airbrushed away"
+      },
+      "performance_variant": {
+        "outerwear": "Jacket removed after the first chorus and carried or placed nearby, revealing vulnerability without changing identity",
+        "top_layer": "Warm-cream fitted thermal under the black bodysuit for close-up texture at sleeves and neckline",
+        "movement_rule": "Nothing fragile, restrictive, or ornamental enough to distract from the testimony"
+      },
+      "cover_art_direction": {
+        "setting": "Small carpeted room at night with one window, subtle streetlamp hum implied through amber light",
+        "pose": "Seated low near the floor, shoulders forward, one hand braced behind her, gaze directly into camera",
+        "lighting": "Amber streetlight from one side, cool window shadow from the other, restrained film grain",
+        "title_treatment": "SLEEP ON THE FLOOR in narrow warm-cream type; LUZARIA smaller in aged gold",
+        "no_go": [
+          "glamour pose",
+          "clean luxury penthouse",
+          "fantasy armor",
+          "weapons",
+          "crying-beautiful cliché"
+        ]
+      }
+    }
+  },
+  "status": {
+    "identity_wardrobe": "locked",
+    "sleep_on_the_floor_look": "locked",
+    "cover_art_render": "pending",
+    "performance_visuals": "pending"
+  }
+}
