@@ -18,6 +18,7 @@ on:
       - "api/vocal_forge.py"
       - "api/vocal_expression.py"
       - "api/vocal_performance.py"
+      - "api/vocal_forge_app.py"
       - "api/main.py"
       - "backend/tests/test_luzaria_assets.py"
       - "backend/tests/test_luzaria_identity.py"
@@ -33,6 +34,8 @@ on:
       - "docs/CULTURA_VOCAL_FORGE_LANGUAGE_ETHICS.md"
       - "docs/VOCAL_FORGE_SCORE_LOCKED_GUIDE.md"
       - "docs/VOCAL_FORGE_PERFORMANCE_CONTROLS.md"
+      - "Dockerfile.vocal-forge"
+      - "requirements.vocal-forge.txt"
       - "scripts/render_luzaria_voice_v0.py"
       - "frontend/src/main.tsx"
       - "frontend/src/pages/Luzaria.tsx"
@@ -81,6 +84,7 @@ jobs:
             api/vocal_forge.py \
             api/vocal_expression.py \
             api/vocal_performance.py \
+            api/vocal_forge_app.py \
             api/main.py \
             scripts/render_luzaria_voice_v0.py
 
@@ -110,6 +114,59 @@ jobs:
           path: artifacts/luzaria_voice_v0/
           if-no-files-found: error
           retention-days: 30
+
+  vocal-forge-service-image:
+    needs: identity-api-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build focused Vocal Forge image
+        run: |
+          docker build \
+            --tag lyrica3-vocal-forge:${{ github.sha }} \
+            --file Dockerfile.vocal-forge \
+            .
+
+      - name: Boot service and verify routes
+        env:
+          IMAGE: lyrica3-vocal-forge:${{ github.sha }}
+        run: |
+          container_id=$(docker run -d \
+            -e VOCAL_FORGE_INTERNAL_TOKEN=internal-token-for-ci-1234567890 \
+            -e VOCAL_FORGE_RECEIPT_SIGNING_KEY=receipt-signing-key-for-ci-1234567890 \
+            -p 18080:8080 \
+            "$IMAGE")
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+
+          ready=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18080/healthz > health.json; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" -eq 1
+          grep -q 'lyrica3-vocal-forge' health.json
+
+          curl --fail --silent \
+            http://127.0.0.1:18080/vocal-forge/performance/styles \
+            > performance-styles.json
+          grep -q 'Intimate' performance-styles.json
+          grep -q 'Gritty' performance-styles.json
+          grep -q 'Soaring' performance-styles.json
+          grep -q 'Corrido' performance-styles.json
+
+      - name: Verify container command
+        run: |
+          docker image inspect lyrica3-vocal-forge:${{ github.sha }} \
+            --format '{{json .Config.Cmd}}' \
+            | tee vocal-forge-entrypoint.txt
+          grep -q 'vocal_forge_app:app' vocal-forge-entrypoint.txt
 
   public-profile-build:
     runs-on: ubuntu-latest
