@@ -14,14 +14,26 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ /app/backend/
 
-# Focused Empire-1 integration package. We intentionally do not copy the full
-# optional Duo-Soul application dependency tree into the backend image.
-RUN mkdir -p /app/backend/api
+# Focused Empire-1 integration package. Copy the royalty controls plus the
+# shared Aether-Voice and Cultura runtime required by production routes.
+RUN mkdir -p \
+      /app/backend/api \
+      /app/backend/canon/vocal_forge \
+      /app/backend/canon/cultura \
+      /app/backend/canon/luzaria
 COPY api/__init__.py \
      api/vics_bridge.py \
      api/royalty_outbox.py \
      api/royalty_dispatch.py \
+     api/cultura_pronunciation.py \
+     api/aether_voice.py \
      /app/backend/api/
+COPY canon/vocal_forge/engine_registry_v1.json \
+     /app/backend/canon/vocal_forge/
+COPY canon/cultura/pronunciation_policy_v1.json \
+     /app/backend/canon/cultura/
+COPY canon/luzaria/voice_model_v0.json \
+     /app/backend/canon/luzaria/
 
 WORKDIR /app/backend
 
