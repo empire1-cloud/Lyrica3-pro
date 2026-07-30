@@ -1,4 +1,4 @@
-name: Luzaria Identity Gate
+name: Lyrica Voice + Identity Gate
 
 on:
   push:
@@ -6,6 +6,7 @@ on:
       - codex/luzaria-identity-kernel
       - agent/vocal-forge-nahuatl-pronunciation
       - agent/vocal-forge-score-locked-guide
+      - agent/vocal-forge-multi-artist-runtime
   pull_request:
     paths:
       - "api/luzaria.py"
@@ -15,6 +16,7 @@ on:
       - "api/luzaria_voice_performance.py"
       - "api/cultura_pronunciation.py"
       - "api/vocal_forge.py"
+      - "api/aether_voice.py"
       - "api/main.py"
       - "backend/tests/test_luzaria_assets.py"
       - "backend/tests/test_luzaria_identity.py"
@@ -23,11 +25,14 @@ on:
       - "backend/tests/test_luzaria_voice_math.py"
       - "backend/tests/test_cultura_pronunciation.py"
       - "backend/tests/test_vocal_forge.py"
+      - "backend/tests/test_aether_voice.py"
       - "canon/luzaria/**"
       - "canon/cultura/**"
+      - "canon/vocal_forge/**"
       - "docs/luzaria/**"
       - "docs/CULTURA_VOCAL_FORGE_LANGUAGE_ETHICS.md"
       - "docs/VOCAL_FORGE_SCORE_LOCKED_GUIDE.md"
+      - "docs/AETHER_VOICE_MULTI_ARTIST_ENGINE.md"
       - "scripts/render_luzaria_voice_v0.py"
       - "frontend/src/main.tsx"
       - "frontend/src/pages/Luzaria.tsx"
@@ -40,7 +45,7 @@ permissions:
   contents: read
 
 jobs:
-  identity-api-tests:
+  voice-and-identity-api-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 12
 
@@ -64,7 +69,7 @@ jobs:
             "numpy>=1.26,<3" \
             "scipy>=1.11,<2"
 
-      - name: Compile Luzaria, Cultura, and Vocal Forge integration
+      - name: Compile Lyrica voice, Cultura, and identity integration
         run: |
           python -m py_compile \
             api/luzaria.py \
@@ -74,10 +79,11 @@ jobs:
             api/luzaria_voice_performance.py \
             api/cultura_pronunciation.py \
             api/vocal_forge.py \
+            api/aether_voice.py \
             api/main.py \
             scripts/render_luzaria_voice_v0.py
 
-      - name: Run identity, release, receipt, voice, asset, Cultura, and Vocal Forge tests
+      - name: Run voice, identity, release, receipt, asset, and Cultura tests
         env:
           PYTHONPATH: .
         run: |
@@ -88,7 +94,8 @@ jobs:
             backend/tests/test_luzaria_receipts.py \
             backend/tests/test_luzaria_voice_math.py \
             backend/tests/test_cultura_pronunciation.py \
-            backend/tests/test_vocal_forge.py
+            backend/tests/test_vocal_forge.py \
+            backend/tests/test_aether_voice.py
 
       - name: Render mathematical Luzaria Voice v0 artifact
         env:

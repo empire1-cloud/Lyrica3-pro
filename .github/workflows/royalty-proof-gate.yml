@@ -10,11 +10,18 @@ on:
       - "api/vics_bridge.py"
       - "api/royalty_outbox.py"
       - "api/royalty_dispatch.py"
+      - "api/cultura_pronunciation.py"
+      - "api/aether_voice.py"
       - "api/main.py"
       - "backend/production_app.py"
+      - "backend/server.py"
+      - "backend/requirements.txt"
       - "backend/tests/test_vics_bridge.py"
       - "backend/tests/test_royalty_outbox.py"
       - "backend/tests/test_royalty_dispatch.py"
+      - "canon/vocal_forge/**"
+      - "canon/cultura/**"
+      - "canon/luzaria/voice_model_v0.json"
       - "Dockerfile"
       - ".github/workflows/royalty-proof-gate.yml"
 
@@ -45,7 +52,9 @@ jobs:
             "pydantic==2.5.0" \
             "cryptography>=41,<45" \
             "pytest>=8,<9" \
-            "pytest-asyncio>=0.23,<1"
+            "pytest-asyncio>=0.23,<1" \
+            "numpy>=1.26,<3" \
+            "scipy>=1.11,<2"
 
       - name: Compile integration modules
         run: |
@@ -53,6 +62,8 @@ jobs:
             api/vics_bridge.py \
             api/royalty_outbox.py \
             api/royalty_dispatch.py \
+            api/cultura_pronunciation.py \
+            api/aether_voice.py \
             backend/production_app.py
 
       - name: Run focused proof and royalty suite
@@ -103,9 +114,22 @@ jobs:
             --file Dockerfile \
             .
 
-      - name: Verify production entrypoint exists
+      - name: Verify production entrypoint and voice routes
         run: |
-          docker image inspect lyrica3-royalty-proof:${{ github.sha }} \
+          image="lyrica3-royalty-proof:${{ github.sha }}"
+          docker image inspect "$image" \
             --format '{{json .Config.Cmd}}' \
             | tee docker-entrypoint.txt
           grep -q 'production_app:app' docker-entrypoint.txt
+          docker run --rm --entrypoint python "$image" -c "
+          from production_app import app
+          paths = {getattr(route, 'path', None) for route in app.routes}
+          required = {
+              '/duo-soul/vocal-forge/engine',
+              '/duo-soul/vocal-forge/voice/render',
+              '/duo-soul/vocal-forge/tts/render',
+          }
+          missing = required - paths
+          assert not missing, f'missing production routes: {sorted(missing)}'
+          print('Aether-Voice production routes verified.')
+          "

@@ -1,0 +1,342 @@
+{
+  "schema_version": "lyrica.aether-voice.registry.v1",
+  "engine": {
+    "name": "Aether-Voice",
+    "owner": "Empire-1 / Lyrica 3",
+    "role": "shared multi-artist vocal synthesis runtime",
+    "modes": [
+      "singing",
+      "speech",
+      "spoken_hook",
+      "chant"
+    ],
+    "public_promise": "Turn words and melody into an expressive vocal."
+  },
+  "thematic_models": {
+    "heartbreak": {
+      "status": "in_progress",
+      "purpose": "love, loss, longing, intimacy",
+      "dataset_policy": "licensed_or_creator_authorized_only"
+    },
+    "struggle_triumph": {
+      "status": "in_progress",
+      "purpose": "resilience, empowerment, defiance",
+      "dataset_policy": "licensed_or_creator_authorized_only"
+    },
+    "diversity": {
+      "status": "planning",
+      "purpose": "cross-cultural and multilingual themes",
+      "dataset_policy": "community_review_required"
+    }
+  },
+  "vernacular_models": {
+    "contemporary_regional": {
+      "status": "in_progress",
+      "languages": [
+        "en"
+      ],
+      "community_review": "recommended"
+    },
+    "aave": {
+      "status": "in_progress",
+      "languages": [
+        "en-US"
+      ],
+      "community_review": "required",
+      "release_gate": "no caricature or forced dialect"
+    },
+    "corrido_narrative": {
+      "status": "planning",
+      "languages": [
+        "es-MX"
+      ],
+      "community_review": "required"
+    },
+    "corridos_tumbados_modern": {
+      "status": "planning",
+      "languages": [
+        "es-MX"
+      ],
+      "community_review": "required"
+    },
+    "spanglish_calo": {
+      "status": "implemented_policy",
+      "languages": [
+        "en",
+        "es"
+      ],
+      "community_review": "required_for_release"
+    }
+  },
+  "performance_styles": {
+    "grit_gravel": {
+      "label": "Grit & Gravel",
+      "status": "in_progress",
+      "pitch_offset_semitones": -1.0,
+      "vibrato_rate_hz": 4.9,
+      "vibrato_depth_cents": 18.0,
+      "breathiness": 0.08,
+      "grit": 0.42,
+      "chest": 0.38,
+      "timing_offset_ms": 18,
+      "melisma_rate": 0.75
+    },
+    "soaring_passion": {
+      "label": "Soaring Passion",
+      "status": "complete",
+      "pitch_offset_semitones": 2.0,
+      "vibrato_rate_hz": 6.1,
+      "vibrato_depth_cents": 26.0,
+      "breathiness": 0.1,
+      "grit": 0.08,
+      "chest": 0.18,
+      "timing_offset_ms": 0,
+      "melisma_rate": 1.6
+    },
+    "intimate_confession": {
+      "label": "Intimate Confession",
+      "status": "in_progress",
+      "pitch_offset_semitones": 0.0,
+      "vibrato_rate_hz": 4.4,
+      "vibrato_depth_cents": 10.0,
+      "breathiness": 0.28,
+      "grit": 0.04,
+      "chest": 0.14,
+      "timing_offset_ms": 24,
+      "melisma_rate": 0.9
+    },
+    "corrido_narrative": {
+      "label": "Corrido Narrative",
+      "status": "in_progress",
+      "pitch_offset_semitones": -0.5,
+      "vibrato_rate_hz": 5.4,
+      "vibrato_depth_cents": 15.0,
+      "breathiness": 0.09,
+      "grit": 0.2,
+      "chest": 0.3,
+      "timing_offset_ms": 12,
+      "melisma_rate": 1.05
+    },
+    "neutral_studio": {
+      "label": "Neutral Studio",
+      "status": "complete",
+      "pitch_offset_semitones": 0.0,
+      "vibrato_rate_hz": 5.2,
+      "vibrato_depth_cents": 12.0,
+      "breathiness": 0.12,
+      "grit": 0.08,
+      "chest": 0.2,
+      "timing_offset_ms": 0,
+      "melisma_rate": 1.0
+    }
+  },
+  "emotion_traits": {
+    "vocal_cracks": {
+      "status": "in_progress"
+    },
+    "breathy_delivery": {
+      "status": "in_progress"
+    },
+    "hesitation_stutter": {
+      "status": "complete"
+    },
+    "vibrato_control": {
+      "status": "complete"
+    },
+    "vocal_fry": {
+      "status": "planning"
+    },
+    "melodic_runs": {
+      "status": "planning"
+    }
+  },
+  "voice_profiles": {
+    "aether_warm_alto": {
+      "label": "Warm Alto",
+      "kind": "platform_voice",
+      "owner": "Empire-1",
+      "home_midi": 57,
+      "range": [
+        48,
+        76
+      ],
+      "formants_hz": {
+        "a": [
+          760,
+          1180,
+          2460
+        ],
+        "e": [
+          520,
+          1840,
+          2480
+        ],
+        "i": [
+          310,
+          2260,
+          2960
+        ],
+        "o": [
+          560,
+          940,
+          2440
+        ],
+        "u": [
+          350,
+          780,
+          2240
+        ]
+      },
+      "harmonic_rolloff": 1.34,
+      "odd_bias": 1.1,
+      "breath": 0.11,
+      "chest": 0.24,
+      "grit": 0.08
+    },
+    "aether_soul_tenor": {
+      "label": "Soul Tenor",
+      "kind": "platform_voice",
+      "owner": "Empire-1",
+      "home_midi": 52,
+      "range": [
+        40,
+        72
+      ],
+      "formants_hz": {
+        "a": [
+          700,
+          1120,
+          2400
+        ],
+        "e": [
+          500,
+          1760,
+          2440
+        ],
+        "i": [
+          300,
+          2180,
+          2880
+        ],
+        "o": [
+          520,
+          900,
+          2360
+        ],
+        "u": [
+          330,
+          740,
+          2160
+        ]
+      },
+      "harmonic_rolloff": 1.28,
+      "odd_bias": 1.14,
+      "breath": 0.08,
+      "chest": 0.32,
+      "grit": 0.13
+    },
+    "aether_deep_baritone": {
+      "label": "Deep Baritone",
+      "kind": "platform_voice",
+      "owner": "Empire-1",
+      "home_midi": 45,
+      "range": [
+        33,
+        64
+      ],
+      "formants_hz": {
+        "a": [
+          650,
+          1040,
+          2260
+        ],
+        "e": [
+          470,
+          1650,
+          2320
+        ],
+        "i": [
+          285,
+          2050,
+          2740
+        ],
+        "o": [
+          480,
+          830,
+          2220
+        ],
+        "u": [
+          310,
+          690,
+          2060
+        ]
+      },
+      "harmonic_rolloff": 1.22,
+      "odd_bias": 1.18,
+      "breath": 0.06,
+      "chest": 0.4,
+      "grit": 0.16
+    },
+    "aether_clear_narrator": {
+      "label": "Clear Narrator",
+      "kind": "platform_voice",
+      "owner": "Empire-1",
+      "home_midi": 60,
+      "range": [
+        50,
+        74
+      ],
+      "formants_hz": {
+        "a": [
+          800,
+          1250,
+          2550
+        ],
+        "e": [
+          550,
+          1920,
+          2580
+        ],
+        "i": [
+          330,
+          2320,
+          3020
+        ],
+        "o": [
+          590,
+          990,
+          2520
+        ],
+        "u": [
+          370,
+          820,
+          2320
+        ]
+      },
+      "harmonic_rolloff": 1.42,
+      "odd_bias": 1.04,
+      "breath": 0.07,
+      "chest": 0.12,
+      "grit": 0.02
+    },
+    "luzaria_velvet_grit": {
+      "label": "Luzaria — Velvet Grit",
+      "kind": "registered_artist_voice",
+      "owner": "Empire-1 / LZR-00000001",
+      "home_midi": 57,
+      "range": [
+        52,
+        77
+      ],
+      "source_profile": "canon/luzaria/voice_model_v0.json",
+      "status": "registered_profile_not_default"
+    }
+  },
+  "safety": {
+    "celebrity_imitation": "blocked",
+    "unlicensed_training": "blocked",
+    "creator_voice_requires_consent": true,
+    "cultural_release_gate": true,
+    "artist_profiles_are_separate_from_platform_engine": true
+  }
+}
