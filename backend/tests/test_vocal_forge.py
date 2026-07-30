@@ -1,6 +1,7 @@
 import json
 import wave
-from pathlib import Path
+
+import pytest
 
 from api.cultura_pronunciation import CulturaPronunciationPlan, PronunciationToken
 from api.vocal_forge import (
@@ -8,6 +9,7 @@ from api.vocal_forge import (
     ScoreNote,
     VocalGuideRequest,
     VoiceConsent,
+    _require_internal_token,
     preflight_vocal_guide,
     provider_preflight,
     render_vocal_guide,
@@ -85,13 +87,36 @@ def test_release_requires_clear_cultura_gate_and_signing_key(monkeypatch):
     assert "release_receipt_signing_key_missing_or_short" in result["blocks"]
 
 
+def test_release_requires_note_to_pronunciation_mapping(monkeypatch):
+    monkeypatch.setenv("VOCAL_FORGE_RECEIPT_SIGNING_KEY", "x" * 40)
+    plan = CulturaPronunciationPlan(
+        lyric_line="Stay close",
+        tokens=[
+            PronunciationToken(text="Stay", language="english"),
+            PronunciationToken(text="close", language="english"),
+        ],
+    )
+    result = preflight_vocal_guide(
+        request_factory(release_intent="release", pronunciation_plan=plan)
+    )
+    assert "note_0_pronunciation_token_required" in result["blocks"]
+    assert "note_1_pronunciation_token_required" in result["blocks"]
+
+
+def test_internal_token_fails_closed(monkeypatch):
+    monkeypatch.delenv("VOCAL_FORGE_INTERNAL_TOKEN", raising=False)
+    with pytest.raises(Exception) as exc:
+        _require_internal_token("Bearer anything")
+    assert getattr(exc.value, "status_code", None) == 503
+
+
 def test_research_render_writes_valid_wav_and_receipt(tmp_path, monkeypatch):
     monkeypatch.setenv("VOCAL_FORGE_ARTIFACT_DIR", str(tmp_path))
     monkeypatch.delenv("VOCAL_FORGE_RECEIPT_SIGNING_KEY", raising=False)
     result = render_vocal_guide(request_factory())
 
-    wav_path = Path(result["audio_path"])
-    receipt_path = Path(result["receipt_path"])
+    wav_path = tmp_path / f'{result["artifact_id"]}.wav'
+    receipt_path = tmp_path / f'{result["artifact_id"]}.receipt.json'
     assert wav_path.exists()
     assert receipt_path.exists()
     with wave.open(str(wav_path), "rb") as rendered:
@@ -122,6 +147,24 @@ def test_release_receipt_is_signed_when_all_gates_clear(tmp_path, monkeypatch):
             PronunciationToken(text="close", language="english"),
         ],
     )
-    result = render_vocal_guide(request_factory(release_intent="release", pronunciation_plan=plan))
+    notes = [
+        ScoreNote(
+            midi_note=60,
+            start_beat=0,
+            duration_beats=1,
+            syllable="stay",
+            pronunciation_token_index=0,
+        ),
+        ScoreNote(
+            midi_note=64,
+            start_beat=1,
+            duration_beats=1,
+            syllable="close",
+            pronunciation_token_index=1,
+        ),
+    ]
+    result = render_vocal_guide(
+        request_factory(release_intent="release", pronunciation_plan=plan, notes=notes)
+    )
     assert result["receipt"]["signature"]["status"] == "signed"
     assert result["receipt"]["signature"]["algorithm"] == "hmac-sha256"
