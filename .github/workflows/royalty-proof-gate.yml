@@ -3,6 +3,7 @@ name: Royalty Proof Gate
 on:
   push:
     branches:
+      - main
       - codex/lyrica-vics-proof-endpoint
       - codex/lyrica-royalty-outbox
   pull_request:
