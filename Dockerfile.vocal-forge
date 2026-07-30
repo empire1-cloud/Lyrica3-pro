@@ -1,0 +1,31 @@
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PORT=8080 \
+    VOCAL_FORGE_ARTIFACT_DIR=/var/lib/lyrica3/vocal-forge
+
+WORKDIR /app
+
+COPY requirements.vocal-forge.txt .
+RUN pip install --no-cache-dir -r requirements.vocal-forge.txt
+
+RUN useradd --create-home --uid 10001 lyrica \
+    && mkdir -p /var/lib/lyrica3/vocal-forge /app/api /app/canon/cultura \
+    && chown -R lyrica:lyrica /var/lib/lyrica3 /app
+
+COPY --chown=lyrica:lyrica api/__init__.py \
+     api/cultura_pronunciation.py \
+     api/vocal_expression.py \
+     api/vocal_forge.py \
+     api/vocal_performance.py \
+     api/vocal_forge_app.py \
+     /app/api/
+COPY --chown=lyrica:lyrica canon/cultura/pronunciation_policy_v1.json \
+     /app/canon/cultura/pronunciation_policy_v1.json
+
+USER lyrica
+EXPOSE 8080
+
+CMD ["sh", "-c", "uvicorn api.vocal_forge_app:app --host 0.0.0.0 --port ${PORT:-8080} --workers ${WORKERS:-2} --proxy-headers"]
