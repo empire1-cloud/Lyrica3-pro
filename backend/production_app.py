@@ -19,6 +19,8 @@ from fastapi.routing import APIRoute
 from starlette.routing import Mount
 
 import server
+from api.aether_voice import create_aether_voice_router
+from api.cultura_pronunciation import create_cultura_pronunciation_router
 from api.royalty_dispatch import (
     create_safe_royalty_outbox_router,
     safe_send_outbox_event,
@@ -39,8 +41,8 @@ def _context():
 
 
 # In a full source checkout server.py may already mount api.main at /duo-soul.
-# The production Docker image copies only these focused integration modules, so
-# register the guarded internal routes directly when that optional app is absent.
+# The production Docker image copies focused integration and voice modules, so
+# register the guarded routes directly when that optional app is absent.
 _has_duo_soul_mount = any(
     isinstance(route, Mount) and route.path == "/duo-soul"
     for route in app.router.routes
@@ -51,6 +53,8 @@ if not _has_duo_soul_mount:
         create_safe_royalty_outbox_router(context_provider=_context),
         prefix="/duo-soul",
     )
+    app.include_router(create_cultura_pronunciation_router(), prefix="/duo-soul")
+    app.include_router(create_aether_voice_router(), prefix="/duo-soul")
 
 
 def _remove_original_flip_route() -> None:
