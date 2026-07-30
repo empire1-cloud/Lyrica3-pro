@@ -7,11 +7,13 @@ import math
 import os
 import re
 import wave
+from array import array
 from datetime import datetime, timezone
 from pathlib import Path
+from sys import byteorder
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, model_validator
 
@@ -40,6 +42,7 @@ class ScoreNote(BaseModel):
     syllable: str = Field(min_length=1, max_length=120)
     velocity: float = Field(default=0.82, gt=0, le=1)
     vibrato_cents: float = Field(default=12.0, ge=0, le=80)
+    pronunciation_token_index: int | None = Field(default=None, ge=0)
 
 
 class VoiceConsent(BaseModel):
@@ -98,6 +101,17 @@ def _artifact_dir() -> Path:
     target = Path(os.environ.get("VOCAL_FORGE_ARTIFACT_DIR", "/tmp/lyrica3-vocal-forge"))
     target.mkdir(parents=True, exist_ok=True)
     return target
+
+
+def _require_internal_token(authorization: str | None) -> None:
+    expected = os.environ.get("VOCAL_FORGE_INTERNAL_TOKEN", "")
+    if len(expected) < 24:
+        raise HTTPException(status_code=503, detail="Vocal Forge internal access is not configured")
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Bearer token required")
+    supplied = authorization.removeprefix("Bearer ").strip()
+    if not hmac.compare_digest(supplied, expected):
+        raise HTTPException(status_code=403, detail="Invalid Vocal Forge token")
 
 
 def _provider_rules() -> dict[str, dict[str, Any]]:
@@ -223,6 +237,22 @@ def preflight_vocal_guide(request: VocalGuideRequest) -> dict[str, Any]:
 
     if request.pronunciation_plan is not None:
         cultura_result = evaluate_pronunciation_plan(request.pronunciation_plan)
+        invalid_mappings = [
+            index
+            for index, note in enumerate(score["ordered_notes"])
+            if note.pronunciation_token_index is not None
+            and note.pronunciation_token_index >= len(request.pronunciation_plan.tokens)
+        ]
+        if invalid_mappings:
+            blocks.extend(f"note_{index}_pronunciation_token_out_of_range" for index in invalid_mappings)
+        if request.release_intent == "release":
+            unmapped = [
+                index
+                for index, note in enumerate(score["ordered_notes"])
+                if note.pronunciation_token_index is None
+            ]
+            if unmapped:
+                blocks.extend(f"note_{index}_pronunciation_token_required" for index in unmapped)
         if cultura_result["hard_blocks"]:
             blocks.extend(f"cultura:{item}" for item in cultura_result["hard_blocks"])
         if request.release_intent == "release" and not cultura_result["release_eligible"]:
@@ -268,46 +298,51 @@ def _midi_frequency(note: int) -> float:
 def _render_wave(path: Path, request: VocalGuideRequest, ordered_notes: list[ScoreNote]) -> None:
     sample_rate = request.sample_rate
     beat_seconds = 60.0 / request.bpm
-    total_seconds = max(note.start_beat + note.duration_beats for note in ordered_notes) * beat_seconds
-    total_samples = int(math.ceil(total_seconds * sample_rate))
-    samples = [0] * total_samples
-
-    for note in ordered_notes:
-        start = int(round(note.start_beat * beat_seconds * sample_rate))
-        length = max(1, int(round(note.duration_beats * beat_seconds * sample_rate)))
-        end = min(total_samples, start + length)
-        frequency = _midi_frequency(note.midi_note)
-        attack = max(1, int(0.025 * sample_rate))
-        release = max(1, int(0.045 * sample_rate))
-        vibrato_rate = 5.4
-        amplitude = 0.28 * note.velocity
-
-        for offset, sample_index in enumerate(range(start, end)):
-            local_t = offset / sample_rate
-            progress = offset / max(1, length - 1)
-            envelope = min(1.0, offset / attack, (length - offset) / release)
-            envelope = max(0.0, envelope)
-            vibrato_depth = note.vibrato_cents / 1200.0
-            vibrato_multiplier = 2.0 ** (vibrato_depth * math.sin(2.0 * math.pi * vibrato_rate * local_t))
-            phase = 2.0 * math.pi * frequency * vibrato_multiplier * local_t
-            # A deterministic, vowel-like guide timbre. This is intentionally not a cloned voice.
-            value = (
-                math.sin(phase)
-                + 0.32 * math.sin(2.0 * phase)
-                + 0.14 * math.sin(3.0 * phase)
-                + 0.06 * math.sin(4.0 * phase)
-            )
-            value *= amplitude * envelope * (0.96 + 0.04 * math.cos(math.pi * progress))
-            samples[sample_index] = max(-32767, min(32767, int(value * 32767)))
+    current_sample = 0
 
     with wave.open(str(path), "wb") as output:
         output.setnchannels(1)
         output.setsampwidth(2)
         output.setframerate(sample_rate)
-        frame_bytes = bytearray()
-        for sample in samples:
-            frame_bytes.extend(int(sample).to_bytes(2, byteorder="little", signed=True))
-        output.writeframes(bytes(frame_bytes))
+
+        for note in ordered_notes:
+            start = int(round(note.start_beat * beat_seconds * sample_rate))
+            length = max(1, int(round(note.duration_beats * beat_seconds * sample_rate)))
+            if start > current_sample:
+                output.writeframes(b"\x00\x00" * (start - current_sample))
+                current_sample = start
+
+            frequency = _midi_frequency(note.midi_note)
+            attack = max(1, int(0.025 * sample_rate))
+            release = max(1, int(0.045 * sample_rate))
+            vibrato_rate = 5.4
+            amplitude = 0.28 * note.velocity
+            note_samples = array("h")
+
+            for offset in range(length):
+                local_t = offset / sample_rate
+                progress = offset / max(1, length - 1)
+                envelope = min(1.0, offset / attack, (length - offset) / release)
+                envelope = max(0.0, envelope)
+                vibrato_depth = note.vibrato_cents / 1200.0
+                vibrato_multiplier = 2.0 ** (
+                    vibrato_depth * math.sin(2.0 * math.pi * vibrato_rate * local_t)
+                )
+                phase = 2.0 * math.pi * frequency * vibrato_multiplier * local_t
+                # A deterministic, vowel-like guide timbre. This is intentionally not a cloned voice.
+                value = (
+                    math.sin(phase)
+                    + 0.32 * math.sin(2.0 * phase)
+                    + 0.14 * math.sin(3.0 * phase)
+                    + 0.06 * math.sin(4.0 * phase)
+                )
+                value *= amplitude * envelope * (0.96 + 0.04 * math.cos(math.pi * progress))
+                note_samples.append(max(-32767, min(32767, int(value * 32767))))
+
+            if byteorder != "little":
+                note_samples.byteswap()
+            output.writeframes(note_samples.tobytes())
+            current_sample += length
 
 
 def _receipt_signature(receipt_payload: dict[str, Any]) -> dict[str, str | None]:
@@ -366,8 +401,6 @@ def render_vocal_guide(request: VocalGuideRequest) -> dict[str, Any]:
     return {
         "status": "rendered",
         "artifact_id": artifact_id,
-        "audio_path": str(wav_path),
-        "receipt_path": str(receipt_path),
         "audio_sha256": audio_sha256,
         "download_route": f"/vocal-forge/artifacts/{artifact_id}",
         "preflight": preflight,
@@ -391,6 +424,11 @@ def capabilities() -> dict[str, Any]:
         "receipt_signing": {
             "environment_key": "VOCAL_FORGE_RECEIPT_SIGNING_KEY",
             "release_requires_minimum_characters": 32,
+        },
+        "internal_access": {
+            "environment_key": "VOCAL_FORGE_INTERNAL_TOKEN",
+            "minimum_characters": 24,
+            "render_and_download_fail_closed": True,
         },
         "truth_boundary": {
             "guide_renderer_is_not_final_singing_model": True,
@@ -416,14 +454,22 @@ def create_vocal_forge_router() -> APIRouter:
         return preflight_vocal_guide(request)
 
     @router.post("/vocal-forge/guide/render")
-    async def render_guide(request: VocalGuideRequest):
+    async def render_guide(
+        request: VocalGuideRequest,
+        authorization: str | None = Header(default=None),
+    ):
+        _require_internal_token(authorization)
         try:
             return render_vocal_guide(request)
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @router.get("/vocal-forge/artifacts/{artifact_id}")
-    async def download_artifact(artifact_id: str):
+    async def download_artifact(
+        artifact_id: str,
+        authorization: str | None = Header(default=None),
+    ):
+        _require_internal_token(authorization)
         if not ARTIFACT_ID_RE.fullmatch(artifact_id):
             raise HTTPException(status_code=404, detail="Artifact not found")
         path = _artifact_dir() / f"{artifact_id}.wav"
