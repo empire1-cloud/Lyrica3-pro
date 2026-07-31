@@ -1,0 +1,100 @@
+name: Lyrica Neural Worker Gate
+
+on:
+  push:
+    branches:
+      - agent/ubuntu-studio-neural-workers
+  pull_request:
+    paths:
+      - "api/neural_voice_workers.py"
+      - "api/main.py"
+      - "backend/production_app.py"
+      - "backend/tests/test_neural_voice_workers.py"
+      - "backend/tests/test_ubuntu_studio_worker.py"
+      - "workers/ubuntu_studio/**"
+      - "scripts/install_ubuntu_neural_workers.sh"
+      - "deploy/systemd/lyrica-audio-worker.service.example"
+      - "canon/vocal_forge/neural_worker_manifest_v1.json"
+      - "docs/UBUNTU_STUDIO_NEURAL_VOICE_WORKERS.md"
+      - "Dockerfile"
+      - ".github/workflows/neural-worker-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  bridge-and-worker-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install focused dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "fastapi==0.104.1" \
+            "pydantic==2.5.0" \
+            "python-multipart==0.0.6" \
+            "pytest>=8,<9"
+
+      - name: Compile neural integration
+        run: |
+          python -m py_compile \
+            api/neural_voice_workers.py \
+            workers/ubuntu_studio/adapters.py \
+            workers/ubuntu_studio/app.py \
+            workers/ubuntu_studio/openvoice_v2_cli.py \
+            backend/production_app.py
+
+      - name: Validate installer syntax
+        run: bash -n scripts/install_ubuntu_neural_workers.sh
+
+      - name: Run focused neural worker tests
+        env:
+          PYTHONPATH: .
+        run: |
+          pytest -q \
+            backend/tests/test_neural_voice_workers.py \
+            backend/tests/test_ubuntu_studio_worker.py
+
+  production-route-proof:
+    needs: bridge-and-worker-contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build focused production image
+        run: |
+          docker build \
+            --tag lyrica3-neural-worker:${{ github.sha }} \
+            --file Dockerfile \
+            .
+
+      - name: Verify neural routes are mounted
+        run: |
+          image="lyrica3-neural-worker:${{ github.sha }}"
+          docker run --rm --entrypoint python "$image" -c "
+          from production_app import app
+          paths = {getattr(route, 'path', None) for route in app.routes}
+          required = {
+              '/duo-soul/vocal-forge/neural/status',
+              '/duo-soul/vocal-forge/neural/assets',
+              '/duo-soul/vocal-forge/neural/preflight',
+              '/duo-soul/vocal-forge/neural/render',
+              '/duo-soul/vocal-forge/neural/artifacts/{artifact_id}',
+          }
+          missing = required - paths
+          assert not missing, f'missing neural production routes: {sorted(missing)}'
+          print('Lyrica neural worker production routes verified.')
+          "
