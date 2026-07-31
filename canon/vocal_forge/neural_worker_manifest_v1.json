@@ -1,0 +1,54 @@
+{
+  "schema_version": "lyrica.neural-worker-manifest.v1",
+  "architecture": {
+    "control_plane": "Lyrica 3 / Aether-Voice",
+    "execution_host": "founder-controlled Ubuntu Studio",
+    "transport": "authenticated loopback HTTP",
+    "shared_artifact_root": "VOCAL_FORGE_ARTIFACT_DIR / LYRICA_AUDIO_ROOT",
+    "public_promise": "Create a voice for your song or spoken project."
+  },
+  "providers": {
+    "seed_vc_singing": {
+      "purpose": "zero-shot singing voice conversion from a real dry sung source",
+      "code_repository": "https://github.com/Plachtaa/seed-vc",
+      "code_license": "GPL-3.0",
+      "code_commit": "51383efd921027683c89e5348211d93ff12ac2a8",
+      "deployment_boundary": "separate external worker service",
+      "weights_repository": "https://huggingface.co/Plachta/Seed-VC",
+      "weights_revision": "609dd03a0312184629d90659f56d72b3132fb696",
+      "checkpoint": "DiT_seed_v2_uvit_whisper_base_f0_44k_bigvgan_pruned_ft_ema_v2.pth",
+      "checkpoint_sha256": "42aef93ffe65857c840d270252fa040f7ba04514945ec460f3ac1ac2a96de684",
+      "status": "installable_worker",
+      "truth_boundary": "requires source audio that already contains the sung lyrics and melody"
+    },
+    "openvoice_v2_tts": {
+      "purpose": "zero-shot multilingual spoken TTS tone-color cloning",
+      "code_repository": "https://github.com/myshell-ai/OpenVoice",
+      "code_license": "MIT",
+      "code_commit": "74a1d147b17a8c3092dd5430504bd83ef6c7eb23",
+      "weights_repository": "https://huggingface.co/myshell-ai/OpenVoiceV2",
+      "weights_revision": "fd981100305a0e4291f93a9ad169c6d9f7bed54a",
+      "converter_checkpoint": "converter/checkpoint.pth",
+      "converter_checkpoint_sha256": "9652c27e92b6b2a91632590ac9962ef7ae2b712e5c5b7f4c34ec55ee2b37ab9e",
+      "status": "installable_worker",
+      "truth_boundary": "speech cloning, not score-controlled singing"
+    },
+    "demucs_v4": {
+      "purpose": "vocal and instrumental stem separation",
+      "code_repository": "https://github.com/adefossez/demucs",
+      "code_license": "MIT",
+      "model": "htdemucs",
+      "status": "installable_worker"
+    }
+  },
+  "required_controls": {
+    "explicit_voice_consent": true,
+    "reference_audio_sha256_binding": true,
+    "provider_specific_scope": true,
+    "loopback_or_https_worker_url": true,
+    "worker_bearer_token": true,
+    "release_pronunciation_gate": true,
+    "release_receipt_signature": true,
+    "arbitrary_filesystem_paths": "blocked"
+  }
+}

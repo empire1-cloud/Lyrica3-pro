@@ -1,0 +1,17 @@
+[Unit]
+Description=Lyrica Ubuntu Studio Neural Audio Worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/Lyrica3-pro
+EnvironmentFile=%h/LyricaStudio/config/audio-worker.env
+ExecStart=%h/LyricaStudio/worker-venv/bin/python -m uvicorn workers.ubuntu_studio.app:app --host 127.0.0.1 --port 8787
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

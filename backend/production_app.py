@@ -21,6 +21,7 @@ from starlette.routing import Mount
 import server
 from api.aether_voice import create_aether_voice_router
 from api.cultura_pronunciation import create_cultura_pronunciation_router
+from api.neural_voice_workers import create_neural_voice_worker_router
 from api.royalty_dispatch import (
     create_safe_royalty_outbox_router,
     safe_send_outbox_event,
@@ -55,6 +56,7 @@ if not _has_duo_soul_mount:
     )
     app.include_router(create_cultura_pronunciation_router(), prefix="/duo-soul")
     app.include_router(create_aether_voice_router(), prefix="/duo-soul")
+    app.include_router(create_neural_voice_worker_router(), prefix="/duo-soul")
 
 
 def _remove_original_flip_route() -> None:
