@@ -1,6 +1,18 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let ai: GoogleGenAI | null = null;
+
+function getClient(): GoogleGenAI {
+  if (ai) return ai;
+
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing VITE_GEMINI_API_KEY");
+  }
+
+  ai = new GoogleGenAI({ apiKey });
+  return ai;
+}
 
 export interface VibeParams {
   style: string;
@@ -68,7 +80,7 @@ export async function translateVibeToParams(vibe: string, context?: { weather?: 
      - Vocal Design: Set "vocalStyle" strictly to "Voz Campirana con Sentimiento" or "Dueto de la Sierra featuring traditional, high-pitched nasal harmonies".
   ` : '';
 
-  const response = await ai.models.generateContent({
+  const response = await getClient().models.generateContent({
     model: "gemini-3.5-flash",
     contents: `Translate this music vibe into a full technical emotional blueprint for the music generation engine: "${vibe}".${contextStr}${corridoInstructions}
     The engine supports multi-genre blending (R&B, Oldies, Funk, Rock, Country, Soul, Chicano oldies, 90s duos, 70s funk, 2000s heartbreak, Modern trap-soul, Acoustic country, Corrido / Regional Mexicano).
@@ -138,7 +150,7 @@ export async function translateVibeToParams(vibe: string, context?: { weather?: 
 export async function generateMusicStream(params: VibeParams) {
   try {
     // Using Soulfire Clip for 30s preview
-    const response = await ai.models.generateContentStream({
+    const response = await getClient().models.generateContentStream({
       model: "lyria-3-clip-preview",
       contents: `Generate a 30-second track. Style: ${params.style}. Mood: ${params.mood}. Tempo: ${params.tempo} BPM. Key: ${params.key}. Vocal Style: ${params.vocalStyle}. Lyrics: ${params.lyrics}`,
     });
