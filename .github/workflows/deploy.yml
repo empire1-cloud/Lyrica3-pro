@@ -7,20 +7,30 @@ on:
 jobs:
   build-frontend:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_o4hXvG7NKKvqc9jwH36bgts9
+      VERCEL_PROJECT_ID: prj_8MvK3RHNV2e4jacg9x8ob02hZ5f8
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      
+
       - name: Build frontend
+        working-directory: frontend
         run: |
-          cd frontend
           npm install
           npm run build
-      
-      - name: Deploy to Vercel
-        run: npx vercel deploy --prod
+
+      - name: Pull Vercel production settings
+        working-directory: frontend
+        run: npx vercel pull --yes --environment=production --token "$VERCEL_TOKEN" --scope monieqs-projects
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to monieq Vercel production
+        working-directory: frontend
+        run: npx vercel deploy --prod --token "$VERCEL_TOKEN" --scope monieqs-projects --yes
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
