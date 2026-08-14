@@ -29,6 +29,16 @@ import bcrypt
 # ── Music Engine ──────────────────────────────────────────────────
 from music_engine.composer import compose as compose_track
 
+# ── Verified-generation gate ──────────────────
+# Imported at module scope on purpose. If this gate cannot be loaded the server
+# must not boot: a running server without it would persist and mint tracks that
+# no provider generated, which is the exact failure the gate exists to prevent.
+from generation_gate import (
+    UnverifiedGenerationError,
+    assert_generation_verified,
+    generation_refusal_payload,
+)
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -1172,6 +1182,25 @@ async def generate(request: Request, req: GenerateRequest, user: Dict = Depends(
         track = sign_track(track)
     except ImportError:
         pass
+
+    # ── Verified-generation gate ──────────────────────
+    # Last point before the authoritative writes. Everything downstream of here
+    # — the track record, the mint event, and the attribution and payout
+    # references built from them — treats this track as genuinely generated
+    # output, so a track backed by placeholder audio must stop here rather than
+    # be marked BLOCKED after the fact.
+    try:
+        assert_generation_verified(
+            synth_provider=synth_provider,
+            stems=stems,
+            synth_source_url=synth_source_url,
+        )
+    except UnverifiedGenerationError as gate_err:
+        logger.error(
+            "verified-generation gate refused a track before persistence: "
+            f"code={gate_err.code} dna={dna} evidence={gate_err.evidence}"
+        )
+        raise HTTPException(status_code=502, detail=generation_refusal_payload(gate_err))
 
     await db.tracks.insert_one(track)
     await db.ledger.insert_one({
