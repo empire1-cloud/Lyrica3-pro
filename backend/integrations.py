@@ -3,11 +3,12 @@ Empire 1 · Live Audio Integrations
 ===================================
 - audio_synth(prompt)       → generated track URL via Replicate (MusicGen)
 - auto_split(url)           → 4 stem URLs via HTDemucs v4 worker
-- fallback_stems()          → CORS-safe Chicano/G-Funk placeholders for demos
+- fallback_stems()          → refuses unverified demo audio in the authoritative generation path
 - vocal_performance(lml, mood) → AI Vocal Performance via OpenAI TTS (Universal Key)
 
-All wire-ups are env-gated. Missing keys never crash the server —
-/api/generate returns beautiful mock data so the studio always ignites.
+All wire-ups are env-gated. Missing keys never fabricate a verified generation.
+When every genuine instrumental provider is unavailable, the generation request
+must stop before track persistence, minting, attribution, or payout can occur.
 """
 from __future__ import annotations
 import os
@@ -248,12 +249,12 @@ async def auto_split(
 
 
 # ============================================================
-# 3 · FALLBACK STEMS  (investor demo, no keys required)
+# 3 · FALLBACK STEMS  (legacy demo assets; never mint as generation)
 # ============================================================
 
-# 4 distinct royalty-free tracks that READ as Chicano / G-Funk / late-pocket
-# when the user hits play. When Replicate key is configured these are replaced
-# with the actual generated audio split by Demucs.
+# Kept for provenance/audit history. These URLs are legacy demo placeholders,
+# not provider-generated output and therefore must never cross the authoritative
+# generation boundary as a successful track.
 FALLBACK_STEM_URLS = {
     "Raw Human Pipes":               "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
     "Late-Pocket Drums":             "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
@@ -263,12 +264,16 @@ FALLBACK_STEM_URLS = {
 
 
 def fallback_stems(default_levels=(0.84, 0.77, 0.69, 0.61)) -> List[Dict]:
-    names = list(FALLBACK_STEM_URLS.keys())
-    return [
-        {"name": n, "level": default_levels[i], "peak": round(default_levels[i]*0.85, 2),
-         "src": FALLBACK_STEM_URLS[n]}
-        for i, n in enumerate(names)
-    ]
+    """Refuse provider exhaustion before persistence/minting.
+
+    The caller invokes this only after all genuine instrumental generation
+    routes have failed. Returning SoundHelix placeholders here previously let
+    the request continue into `db.tracks` and the mint ledger. Raising at this
+    choke point makes the failure authoritative: no fake generation can be
+    signed, persisted, minted, attributed, or paid out.
+    """
+    logger.error("verified-generation gate: all genuine providers exhausted; refusing legacy SoundHelix fallback")
+    raise RuntimeError("Verified generation required: no genuine instrumental provider produced audio")
 
 
 # ============================================================
