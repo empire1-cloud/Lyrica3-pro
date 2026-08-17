@@ -14,7 +14,8 @@ from typing import Any
 import urllib.error
 import urllib.request
 
-from .royalty_outbox import _canonical_event_bytes
+def _canonical_event_bytes(event: dict[str, Any]) -> bytes:
+    return json.dumps(event, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
 def _post_json(url: str, payload: dict[str, Any], headers: dict[str, str], timeout: float) -> tuple[int, dict[str, Any]]:
@@ -74,6 +75,18 @@ async def ensure_royalty_authorized(db: Any, event_id: str, transport=_post_json
             "idempotencyKey": event["idempotency_key"],
             "charterId": os.getenv("LYRICA_CHARTER_ID", "lyrica-creator-ownership-charter-v1"),
             "policyId": os.getenv("LYRICA_ROYALTY_POLICY_ID", "lyrica-royalty-policy-v1"),
+            "target": {
+                "track_id": event.get("track_id"),
+                "creator_id": event.get("creator_id"),
+                "recipient_id": event.get("recipient_id"),
+            },
+            "evidence": {
+                "source": "lyrica-vics",
+                "vics_proof_id": event.get("vics_proof_id"),
+                "dna_tag": event.get("dna_tag"),
+                "soulprint_hash": event.get("soulprint_hash"),
+                "provenance": event.get("provenance"),
+            },
         },
     }
     try:
