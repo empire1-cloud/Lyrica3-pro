@@ -82,6 +82,7 @@ async def ensure_royalty_authorized(db: Any, event_id: str, transport=_post_json
             },
             "evidence": {
                 "source": "lyrica-vics",
+                "coverage_surfaces": ["lyrica.vics", "lyrica.royalty"],
                 "vics_proof_id": event.get("vics_proof_id"),
                 "dna_tag": event.get("dna_tag"),
                 "soulprint_hash": event.get("soulprint_hash"),
