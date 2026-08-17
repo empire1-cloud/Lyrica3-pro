@@ -18,6 +18,7 @@ from typing import Any, Callable, Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
+from .economic_truth_bridge import ensure_royalty_authorized
 from .royalty_outbox import (
     _canonical_event_bytes,
     _clean_document,
@@ -78,6 +79,10 @@ async def safe_send_outbox_event(
             await db.royalty_outbox.find_one({"event_id": event_id}, {"_id": 0})
         )
 
+    document = await ensure_royalty_authorized(db, event_id)
+    if document.get("state") in {"authorization_pending", "rejected"}:
+        return _clean_document(document)
+    event = document.get("event")
     body = _canonical_event_bytes(event)
     if hashlib.sha256(body).hexdigest() != document.get("event_body_sha256"):
         await _set_outbox_state(
