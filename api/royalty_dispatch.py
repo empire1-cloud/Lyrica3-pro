@@ -79,10 +79,6 @@ async def safe_send_outbox_event(
             await db.royalty_outbox.find_one({"event_id": event_id}, {"_id": 0})
         )
 
-    document = await ensure_royalty_authorized(db, event_id)
-    if document.get("state") in {"authorization_pending", "rejected"}:
-        return _clean_document(document)
-    event = document.get("event")
     body = _canonical_event_bytes(event)
     if hashlib.sha256(body).hexdigest() != document.get("event_body_sha256"):
         await _set_outbox_state(
@@ -118,6 +114,32 @@ async def safe_send_outbox_event(
         return _clean_document(
             await db.royalty_outbox.find_one({"event_id": event_id}, {"_id": 0})
         )
+
+    document = await ensure_royalty_authorized(db, event_id)
+    if document.get("state") in {"authorization_pending", "rejected"}:
+        return _clean_document(document)
+    event = document.get("event")
+    body = _canonical_event_bytes(event)
+    if hashlib.sha256(body).hexdigest() != document.get("event_body_sha256"):
+        await _set_outbox_state(
+            db, event_id, {
+                "state": "rejected",
+                "last_error": {"code": "authorized_outbox_body_tampered"},
+                "updated_at": _iso(current_time),
+            },
+        )
+        return _clean_document(await db.royalty_outbox.find_one({"event_id": event_id}, {"_id": 0}))
+    try:
+        _validate_dispatch_configuration(event, body)
+    except (HTTPException, ValueError, TypeError) as exc:
+        detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
+        await _set_outbox_state(db, event_id, {
+            "state": "pending",
+            "last_error": {"code": "configuration_error", "message": str(detail)[:200]},
+            "next_attempt_at": _iso(current_time + timedelta(seconds=60)),
+            "updated_at": _iso(current_time),
+        })
+        return _clean_document(await db.royalty_outbox.find_one({"event_id": event_id}, {"_id": 0}))
 
     kwargs: dict[str, Any] = {"db": db, "event_id": event_id}
     if transport is not None:
