@@ -1,0 +1,16 @@
+{
+  "installCommand": "cd frontend && npm ci --legacy-peer-deps",
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://lyrica3-pro.onrender.com/api/$1"
+    },
+    {
+      "source": "/((?!service-worker\\.js|manifest\\.json|icon-.*|favicon\\.ico|assets/.*).*)",
+      "destination": "/frontend/index.html"
+    }
+  ]
+}

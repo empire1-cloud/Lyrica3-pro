@@ -1,0 +1,9 @@
+{
+  "name": "run-lyrica3-pro-driver",
+  "private": true,
+  "type": "module",
+  "description": "Playwright driver for the run-lyrica3-pro skill. Not part of the app's dependency tree.",
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}
