@@ -15,7 +15,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ /app/backend/
 
 # Focused Empire-1 integration package. Copy the royalty controls plus the
-# shared Aether-Voice and Cultura runtime required by production routes.
+# shared Aether-Voice, neural worker bridge, and Cultura runtime required by
+# production routes. Model repositories and weights stay on Ubuntu Studio and
+# are never baked into the API image.
 RUN mkdir -p \
       /app/backend/api \
       /app/backend/canon/vocal_forge \
@@ -27,8 +29,10 @@ COPY api/__init__.py \
      api/royalty_dispatch.py \
      api/cultura_pronunciation.py \
      api/aether_voice.py \
+     api/neural_voice_workers.py \
      /app/backend/api/
 COPY canon/vocal_forge/engine_registry_v1.json \
+     canon/vocal_forge/neural_worker_manifest_v1.json \
      /app/backend/canon/vocal_forge/
 COPY canon/cultura/pronunciation_policy_v1.json \
      /app/backend/canon/cultura/

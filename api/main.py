@@ -13,6 +13,7 @@ from .luzaria_receipts import create_luzaria_receipt_router
 from .cultura_pronunciation import create_cultura_pronunciation_router
 from .vocal_forge import create_vocal_forge_router
 from .aether_voice import create_aether_voice_router
+from .neural_voice_workers import create_neural_voice_worker_router
 
 from lyrica3_soulfire.soul_card.models import SoulCard, GenerateResponse, InspectResponse
 from lyrica3_soulfire.two_pass_pipeline import generate_track_from_soul_card
@@ -59,6 +60,12 @@ app.add_middleware(
 #   POST /duo-soul/vocal-forge/voice/render
 #   POST /duo-soul/vocal-forge/tts/render
 #   GET  /duo-soul/vocal-forge/voice/artifacts/{artifact_id}
+# Real Ubuntu Studio neural worker routes:
+#   GET  /duo-soul/vocal-forge/neural/status
+#   POST /duo-soul/vocal-forge/neural/assets
+#   POST /duo-soul/vocal-forge/neural/preflight
+#   POST /duo-soul/vocal-forge/neural/render
+#   GET  /duo-soul/vocal-forge/neural/artifacts/{artifact_id}
 app.include_router(create_vics_router())
 app.include_router(create_safe_royalty_outbox_router())
 app.include_router(create_luzaria_router())
@@ -67,6 +74,7 @@ app.include_router(create_luzaria_receipt_router())
 app.include_router(create_cultura_pronunciation_router())
 app.include_router(create_vocal_forge_router())
 app.include_router(create_aether_voice_router())
+app.include_router(create_neural_voice_worker_router())
 
 
 @app.post("/analyze-voice", response_model=DNAResponse)
