@@ -25,6 +25,7 @@ COPY api/__init__.py \
      api/vics_bridge.py \
      api/royalty_outbox.py \
      api/royalty_dispatch.py \
+     api/economic_truth_bridge.py \
      api/cultura_pronunciation.py \
      api/aether_voice.py \
      /app/backend/api/
